@@ -1,82 +1,96 @@
 # MayaLanguageTranslatorApp
 
-Final Year Project Android application for **Yucatec Maya ↔ English** text translation, image OCR, and English voice-to-Yucatec-Maya translation.
+Android Final Year Project application for Yucatec Maya ↔ English translation.
 
-## Current implementation scope
+## Application
 
-This development branch follows the Project I design:
+The fyp-development branch contains the complete application flow:
 
-- Kotlin + Jetpack Compose
-- MVVM-style presentation layer
-- Firebase Authentication and Cloud Firestore
-- Dictionary-based Yucatec Maya ↔ English translation
-- Google ML Kit Latin-script OCR for modern Yucatec Maya text
-- Android speech recognition / text-to-speech planned for later iterations
-- Translation history, saved vocabulary, analytics, feedback and admin functions planned after the core translation flow
+- account registration, login, logout and password reset
+- typed Yucatec Maya ↔ English translation
+- camera and gallery image input
+- Google ML Kit Latin-script OCR
+- English speech recognition
+- device text-to-speech playback
+- translation history
+- saved vocabulary
+- usage analytics
+- profile editing
+- feedback submission
+- administrator feedback review
+- Firebase Authentication and Cloud Firestore repositories
+- development-mode repositories for testing before Firebase setup
 
-Ancient Maya hieroglyph recognition is **not** part of this implementation scope.
+The main mobile navigation is:
+
+Home · Translate · History · Saved · Profile
+
+## Scope
+
+The implementation targets modern Yucatec Maya written in Latin orthography.
+
+Ancient Maya hieroglyph recognition is outside the current application scope.
 
 ## Branches
 
-- `main` — clean baseline
-- `fyp-development` — active FYP development
+- main — clean baseline
+- fyp-development — active FYP application branch
 
-## Android Studio setup
+## Run in Android Studio
 
-1. Clone the repository.
-2. Checkout `fyp-development`.
-3. Open the repository root in Android Studio.
-4. Use JDK 17.
-5. Let Android Studio sync Gradle.
-6. Before enabling Firebase, create a Firebase project and register Android package:
-   `com.chuahws.mayalanguageapp`
-7. Download `google-services.json` from Firebase Console and place it in `app/`.
-8. Never commit that file.
+1. Checkout fyp-development.
+2. Pull the latest changes.
+3. Sync Gradle.
+4. Run the app configuration on an emulator or Android device.
+5. Before Firebase is configured, create a temporary development account.
+6. Use the sample dictionary to test translation.
+7. For persistent data, follow docs/FIREBASE_SETUP.md.
 
-The starter currently uses an in-memory dictionary so it can be developed before Firebase is configured.
+## Development sample dictionary
 
-## Dataset pipeline
+A small source-checked dictionary is included so the interface can be tested before Firestore is ready.
 
-The initial dataset pipeline is designed around machine-readable **Yucatec Maya** lexical data.
+Example English searches:
 
-Place raw JSONL at:
+- water
+- house
+- tree
+- moon
+- green
+- turtle
+- papaya
+- person
+- cloud
+- stone
+- forest
+- book
+- make
+- understand
+- with
 
-`dataset/raw/kaikki-yucatec-maya.jsonl`
+This sample is not the final dataset. See docs/DATA_SOURCES.md.
 
-Then run:
+## Firebase collections
 
-```bash
-python dataset/scripts/convert_kaikki.py dataset/raw/kaikki-yucatec-maya.jsonl dataset/processed/maya_english_dictionary.csv
-python dataset/scripts/validate_dictionary.py dataset/processed/maya_english_dictionary.csv
-```
+The application expects:
 
-The converter marks automatically imported entries as `verified=false`. Do not treat automatically extracted dictionary data as gold-standard evaluation data until the evaluation subset has been manually checked against reliable linguistic sources.
+- users
+- dictionary
+- translations
+- savedVocabulary
+- analytics
+- feedback
 
-## Firestore import
+Security rules are included in firestore.rules.
 
-Install:
+Firebase configuration files and Admin service-account credentials must not be committed to Git.
 
-```bash
-pip install -r dataset/requirements.txt
-```
+## Dataset
 
-Set a Firebase Admin service account outside the repository:
+The full dictionary is prepared through the dataset scripts:
 
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-```
+- dataset/scripts/convert_kaikki.py
+- dataset/scripts/validate_dictionary.py
+- dataset/scripts/import_firestore.py
 
-Import:
-
-```bash
-python dataset/scripts/import_firestore.py dataset/processed/maya_english_dictionary.csv
-```
-
-## Development order
-
-1. Account management + typed text translation
-2. Image translation with ML Kit OCR and editable recognised text
-3. English speech recognition + Yucatec Maya translation + pronunciation
-4. Translation history + saved vocabulary + usage analytics
-5. Feedback + administrator functions
-6. Integration, security, performance and testing
+See docs/DATA_SOURCES.md for the source and attribution notes.
