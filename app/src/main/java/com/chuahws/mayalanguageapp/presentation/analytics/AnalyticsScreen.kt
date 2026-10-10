@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -113,7 +114,9 @@ private fun TranslationDonut(
         analytics.voiceTranslations.toFloat(),
     )
     val colors = listOf(MayaBlue, MayaGreen, MayaOrange)
-    val total = values.sum().coerceAtLeast(1f)
+    val rawTotal = values.sum()
+    val total = rawTotal.coerceAtLeast(1f)
+    val emptyColor = MaterialTheme.colorScheme.surfaceVariant
 
     Canvas(
         modifier = Modifier
@@ -129,18 +132,14 @@ private fun TranslationDonut(
         var start = -90f
 
         values.forEachIndexed { index, value ->
-            val sweep = if (values.sum() == 0f) {
+            val sweep = if (rawTotal == 0f) {
                 if (index == 0) 360f else 0f
             } else {
                 360f * (value / total)
             }
 
             drawArc(
-                color = if (values.sum() == 0f) {
-                    MaterialTheme.colorScheme.surfaceVariant
-                } else {
-                    colors[index]
-                },
+                color = if (rawTotal == 0f) emptyColor else colors[index],
                 startAngle = start,
                 sweepAngle = sweep,
                 useCenter = false,
@@ -167,12 +166,8 @@ private fun LegendRow(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Canvas(modifier = Modifier.height(14.dp)) {
-                drawCircle(
-                    color = color,
-                    radius = 6.dp.toPx(),
-                    center = Offset(6.dp.toPx(), center.y),
-                )
+            Canvas(modifier = Modifier.size(14.dp)) {
+                drawCircle(color = color)
             }
             Text(label)
         }
