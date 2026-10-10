@@ -2,10 +2,14 @@ package com.chuahws.mayalanguageapp.presentation.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -32,22 +36,22 @@ fun RegisterScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "Register Account",
-            style = MaterialTheme.typography.headlineMedium,
+        AuthHeader(
+            title = "Create your account",
+            subtitle = "Save translations, build a vocabulary list and track your activity.",
         )
+
+        Spacer(Modifier.height(24.dp))
 
         OutlinedTextField(
             value = state.displayName,
             onValueChange = onDisplayNameChanged,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 20.dp),
-            label = { Text("Display name") },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Name") },
             singleLine = true,
         )
 
@@ -71,6 +75,7 @@ fun RegisterScreen(
                 .fillMaxWidth()
                 .padding(top = 12.dp),
             label = { Text("Password") },
+            supportingText = { Text("At least 6 characters") },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
@@ -96,7 +101,8 @@ fun RegisterScreen(
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 12.dp),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 10.dp),
             )
         }
 
@@ -105,18 +111,22 @@ fun RegisterScreen(
             enabled = !state.loading,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),
+                .padding(top = 20.dp),
         ) {
-            Text("Register")
+            if (state.loading) {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.height(20.dp),
+                )
+            } else {
+                Text("Create account")
+            }
         }
 
-        if (state.loading) {
-            CircularProgressIndicator(
-                modifier = Modifier.padding(top = 12.dp)
-            )
-        }
-
-        TextButton(onClick = onBackToLogin) {
+        TextButton(
+            onClick = onBackToLogin,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        ) {
             Text("Back to login")
         }
     }

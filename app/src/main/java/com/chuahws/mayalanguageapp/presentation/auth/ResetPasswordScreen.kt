@@ -1,9 +1,10 @@
 package com.chuahws.mayalanguageapp.presentation.auth
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -28,25 +29,20 @@ fun ResetPasswordScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(horizontal = 24.dp, vertical = 48.dp),
     ) {
-        Text(
-            text = "Reset Password",
-            style = MaterialTheme.typography.headlineMedium,
+        AuthHeader(
+            title = "Reset password",
+            subtitle = "Enter your account email and we will send a reset link.",
         )
 
-        Text(
-            text = "Enter the email address used for your account.",
-            modifier = Modifier.padding(top = 8.dp, bottom = 20.dp),
-        )
+        Spacer(Modifier.height(28.dp))
 
         OutlinedTextField(
             value = state.email,
             onValueChange = onEmailChanged,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Registered email") },
+            label = { Text("Email") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email
@@ -61,7 +57,8 @@ fun ResetPasswordScreen(
                 } else {
                     MaterialTheme.colorScheme.error
                 },
-                modifier = Modifier.padding(top = 12.dp),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 10.dp),
             )
         }
 
@@ -70,18 +67,22 @@ fun ResetPasswordScreen(
             enabled = !state.loading,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),
+                .padding(top = 20.dp),
         ) {
-            Text("Send reset email")
+            if (state.loading) {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.height(20.dp),
+                )
+            } else {
+                Text("Send reset link")
+            }
         }
 
-        if (state.loading) {
-            CircularProgressIndicator(
-                modifier = Modifier.padding(top = 12.dp)
-            )
-        }
-
-        TextButton(onClick = onBackToLogin) {
+        TextButton(
+            onClick = onBackToLogin,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        ) {
             Text("Back to login")
         }
     }

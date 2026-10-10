@@ -2,10 +2,14 @@ package com.chuahws.mayalanguageapp.presentation.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -32,25 +36,28 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 36.dp),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "Maya Language Translator",
-            style = MaterialTheme.typography.headlineMedium,
+        AuthHeader(
+            title = "Welcome back",
+            subtitle = "Translate between Yucatec Maya and English.",
         )
 
-        Text(
-            text = "Yucatec Maya ↔ English",
-            modifier = Modifier.padding(top = 8.dp, bottom = 20.dp),
-        )
+        Spacer(Modifier.height(28.dp))
 
         if (!firebaseConfigured) {
             Text(
-                text = "Development mode: Firebase is not connected yet.",
-                color = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.padding(bottom = 12.dp),
+                text = "Development mode",
+                color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.labelLarge,
+            )
+            Text(
+                text = "Firebase is not connected yet. Test accounts are kept only for this app session.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
             )
         }
 
@@ -83,7 +90,8 @@ fun LoginScreen(
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 12.dp),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 10.dp),
             )
         }
 
@@ -92,23 +100,30 @@ fun LoginScreen(
             enabled = !state.loading,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),
+                .padding(top = 20.dp),
         ) {
-            Text("Log In")
+            if (state.loading) {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.height(20.dp),
+                )
+            } else {
+                Text("Log in")
+            }
         }
 
-        if (state.loading) {
-            CircularProgressIndicator(
-                modifier = Modifier.padding(top = 12.dp)
-            )
-        }
-
-        TextButton(onClick = onForgotPassword) {
+        TextButton(
+            onClick = onForgotPassword,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        ) {
             Text("Forgot password?")
         }
 
-        TextButton(onClick = onRegister) {
-            Text("Create a new account")
+        TextButton(
+            onClick = onRegister,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        ) {
+            Text("Create an account")
         }
     }
 }
