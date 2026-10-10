@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +63,10 @@ fun ImageTranslationScreen(
     var cameraUri by remember { mutableStateOf<Uri?>(null) }
     var readingImage by remember { mutableStateOf(false) }
     var imageMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.setDirection(TranslationDirection.MAYA_TO_ENGLISH)
+    }
 
     fun readImage(uri: Uri) {
         imageUri = uri
@@ -122,17 +127,6 @@ fun ImageTranslationScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(
-            text = "Scan text",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
-
-        Text(
-            text = "Take a clear photo or choose one from your gallery.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -193,6 +187,7 @@ fun ImageTranslationScreen(
                 text = "$source → " +
                     if (source == "English") "Yucatec Maya" else "English",
                 style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
             )
 
             FilledTonalIconButton(onClick = viewModel::swapDirection) {
@@ -207,9 +202,9 @@ fun ImageTranslationScreen(
             value = state.input,
             onValueChange = viewModel::updateInput,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Detected text") },
+            label = { Text("Extracted text") },
             supportingText = {
-                Text("Check the text before translating.")
+                Text("Check and correct the text before translating.")
             },
             minLines = 4,
         )

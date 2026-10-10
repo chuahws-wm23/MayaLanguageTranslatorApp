@@ -109,7 +109,7 @@ class TranslationViewModel(
                             loading = false,
                             output = "",
                             matchedEntry = null,
-                            message = "No matching entry found.",
+                            message = "This word or phrase is not in the dictionary yet.",
                         )
                     }
 

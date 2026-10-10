@@ -12,10 +12,12 @@ import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -33,6 +35,10 @@ fun TranslationScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.setDirection(TranslationDirection.ENGLISH_TO_MAYA)
+    }
+
     val source = if (
         state.direction == TranslationDirection.MAYA_TO_ENGLISH
     ) "Yucatec Maya" else "English"
@@ -47,12 +53,6 @@ fun TranslationScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(
-            text = "Type to translate",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -62,9 +62,10 @@ fun TranslationScreen(
                 Text(
                     text = source,
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = target,
+                    text = "to $target",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -73,7 +74,7 @@ fun TranslationScreen(
             FilledTonalIconButton(
                 onClick = viewModel::swapDirection,
             ) {
-                androidx.compose.material3.Icon(
+                Icon(
                     imageVector = Icons.Rounded.SwapHoriz,
                     contentDescription = "Swap languages",
                 )
@@ -84,8 +85,16 @@ fun TranslationScreen(
             value = state.input,
             onValueChange = viewModel::updateInput,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Enter $source text") },
-            placeholder = { Text("Start typing") },
+            label = { Text("Enter text") },
+            placeholder = {
+                Text(
+                    if (source == "English") {
+                        "Try: hi"
+                    } else {
+                        "Try: Ba'ax ka wa'alik?"
+                    }
+                )
+            },
             minLines = 5,
             maxLines = 9,
         )
