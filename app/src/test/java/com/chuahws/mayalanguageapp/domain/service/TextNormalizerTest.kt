@@ -7,7 +7,7 @@ class TextNormalizerTest {
     @Test
     fun normalize_preservesMeaningfulMarksAndNormalizesSpacing() {
         assertEquals(
-            "ba'ax k'iin",
+            "baʼax kʼiin",
             TextNormalizer.normalize("  BA'AX   K'IIN  ")
         )
     }
