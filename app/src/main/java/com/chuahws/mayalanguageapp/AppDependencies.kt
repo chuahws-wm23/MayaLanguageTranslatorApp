@@ -2,6 +2,7 @@ package com.chuahws.mayalanguageapp
 
 import android.content.Context
 import com.chuahws.mayalanguageapp.data.repository.DevelopmentAuthRepository
+import com.chuahws.mayalanguageapp.data.repository.DevelopmentDictionaryData
 import com.chuahws.mayalanguageapp.data.repository.FirebaseAuthRepository
 import com.chuahws.mayalanguageapp.data.repository.FirebaseUserDataRepository
 import com.chuahws.mayalanguageapp.data.repository.FirestoreDictionaryRepository
@@ -45,7 +46,9 @@ data class AppDependencies(
                     userProfileRepository =
                         InMemoryUserProfileRepository(),
                     dictionaryRepository =
-                        InMemoryDictionaryRepository(emptyList()),
+                        InMemoryDictionaryRepository(
+                            DevelopmentDictionaryData.entries()
+                        ),
                     userDataRepository =
                         InMemoryUserDataRepository(),
                     firebaseConfigured = false,
