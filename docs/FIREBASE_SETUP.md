@@ -1,65 +1,50 @@
 # Firebase Setup
 
-The repository does not contain Firebase secrets. Complete these steps locally before testing real authentication and Firestore.
+The source code already contains Firebase repositories. Complete these steps locally to turn on persistent authentication and Firestore data.
 
-## 1. Create the Firebase project
+## Android app
 
-Create a Firebase project for the FYP and register an Android application with package name:
+Register an Android app in Firebase using this package name:
 
-`com.chuahws.mayalanguageapp`
+com.chuahws.mayalanguageapp
 
-The package name must match `applicationId` in `app/build.gradle.kts`.
+Download google-services.json and place it in:
 
-## 2. Add the local Android configuration
+app/google-services.json
 
-Download `google-services.json` and place it at:
+The file is ignored by Git.
 
-`app/google-services.json`
+## Gradle plugin
 
-The file is ignored by Git and must not be committed.
+Open app/build.gradle.kts and uncomment:
 
-## 3. Enable the Google Services plugin
-
-In `app/build.gradle.kts`, uncomment:
-
-```kotlin
 id("com.google.gms.google-services")
-```
 
-The root project already declares the plugin version.
+Then sync Gradle.
 
-## 4. Enable authentication
+## Authentication
 
-In Firebase Console, enable Email/Password under Authentication providers.
+In Firebase Console:
 
-## 5. Create Cloud Firestore
+Authentication → Sign-in method → Email/Password → Enable
 
-Create Cloud Firestore and use development rules only for the initial local setup. Replace them with user-scoped and role-based rules before system testing.
+## Firestore
 
-Expected collections:
+Create Cloud Firestore.
 
-- `users`
-- `dictionary`
-- `translations`
-- `savedVocabulary`
-- `analytics`
-- `feedback`
+The application uses these collections:
 
-## 6. Confirm backend selection
+- users
+- dictionary
+- translations
+- savedVocabulary
+- analytics
+- feedback
 
-When Firebase is configured correctly, the login screen will no longer show the development-mode message. The application will automatically select:
+Copy the repository file firestore.rules into the Firestore Rules editor and publish it.
 
-- `FirebaseAuthRepository`
-- `FirestoreUserProfileRepository`
-- `FirestoreDictionaryRepository`
+## Dictionary
 
-Without Firebase configuration, it uses in-memory development repositories so the UI can still be opened and reviewed.
+After Firebase works, process and import the full Yucatec Maya dictionary using the scripts under dataset/scripts.
 
-## Security reminder
-
-Never commit:
-
-- `google-services.json`
-- Firebase Admin service-account JSON
-- keystores or signing passwords
-- API secrets
+Do not upload a Firebase Admin service-account JSON file to GitHub.
