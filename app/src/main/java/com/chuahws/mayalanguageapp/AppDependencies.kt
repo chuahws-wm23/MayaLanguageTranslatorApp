@@ -1,6 +1,7 @@
 package com.chuahws.mayalanguageapp
 
 import android.content.Context
+import com.chuahws.mayalanguageapp.data.repository.CompositeDictionaryRepository
 import com.chuahws.mayalanguageapp.data.repository.DevelopmentAuthRepository
 import com.chuahws.mayalanguageapp.data.repository.DevelopmentDictionaryData
 import com.chuahws.mayalanguageapp.data.repository.FirebaseAuthRepository
@@ -29,28 +30,29 @@ data class AppDependencies(
                 FirebaseApp.initializeApp(context.applicationContext)
             }.getOrNull() != null
 
+            val coreDictionary = InMemoryDictionaryRepository(
+                DevelopmentDictionaryData.entries()
+            )
+
             return if (firebaseConfigured) {
                 AppDependencies(
                     authRepository = FirebaseAuthRepository(),
-                    userProfileRepository =
-                        FirestoreUserProfileRepository(),
-                    dictionaryRepository =
-                        FirestoreDictionaryRepository(),
-                    userDataRepository =
-                        FirebaseUserDataRepository(),
+                    userProfileRepository = FirestoreUserProfileRepository(),
+                    dictionaryRepository = CompositeDictionaryRepository(
+                        listOf(
+                            coreDictionary,
+                            FirestoreDictionaryRepository(),
+                        )
+                    ),
+                    userDataRepository = FirebaseUserDataRepository(),
                     firebaseConfigured = true,
                 )
             } else {
                 AppDependencies(
                     authRepository = DevelopmentAuthRepository(),
-                    userProfileRepository =
-                        InMemoryUserProfileRepository(),
-                    dictionaryRepository =
-                        InMemoryDictionaryRepository(
-                            DevelopmentDictionaryData.entries()
-                        ),
-                    userDataRepository =
-                        InMemoryUserDataRepository(),
+                    userProfileRepository = InMemoryUserProfileRepository(),
+                    dictionaryRepository = coreDictionary,
+                    userDataRepository = InMemoryUserDataRepository(),
                     firebaseConfigured = false,
                 )
             }

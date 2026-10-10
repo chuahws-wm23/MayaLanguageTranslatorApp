@@ -15,5 +15,7 @@ object TextNormalizer {
             Normalizer.Form.NFC,
         )
             .lowercase(Locale.ROOT)
+            .replace(Regex("[?!.,;:]+"), "")
             .replace(Regex("\\s+"), " ")
+            .trim()
 }
