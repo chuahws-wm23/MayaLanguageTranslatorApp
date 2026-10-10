@@ -12,4 +12,8 @@ class InMemoryUserProfileRepository : UserProfileRepository {
 
     override suspend fun getProfile(userId: String): UserProfile? =
         profiles[userId]
+
+    override suspend fun updateProfile(profile: UserProfile) {
+        profiles[profile.userId] = profile
+    }
 }

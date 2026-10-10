@@ -3,13 +3,13 @@ package com.chuahws.mayalanguageapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.lifecycle.ViewModelProvider
 import com.chuahws.mayalanguageapp.domain.service.TranslationService
+import com.chuahws.mayalanguageapp.presentation.app.AppDataViewModel
 import com.chuahws.mayalanguageapp.presentation.auth.AuthViewModel
 import com.chuahws.mayalanguageapp.presentation.common.AppViewModelFactory
 import com.chuahws.mayalanguageapp.presentation.navigation.MayaLanguageApp
+import com.chuahws.mayalanguageapp.presentation.theme.MayaTranslateTheme
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationViewModel
 
 class MainActivity : ComponentActivity() {
@@ -23,10 +23,23 @@ class MainActivity : ComponentActivity() {
             AppViewModelFactory {
                 AuthViewModel(
                     authRepository = dependencies.authRepository,
-                    userProfileRepository = dependencies.userProfileRepository,
+                    userProfileRepository =
+                        dependencies.userProfileRepository,
                 )
             },
         )[AuthViewModel::class.java]
+
+        val appDataViewModel = ViewModelProvider(
+            this,
+            AppViewModelFactory {
+                AppDataViewModel(
+                    userDataRepository =
+                        dependencies.userDataRepository,
+                    userProfileRepository =
+                        dependencies.userProfileRepository,
+                )
+            },
+        )[AppDataViewModel::class.java]
 
         val translationViewModel = ViewModelProvider(
             this,
@@ -34,20 +47,29 @@ class MainActivity : ComponentActivity() {
                 TranslationViewModel(
                     translationService = TranslationService(
                         dependencies.dictionaryRepository
-                    )
+                    ),
+                    userDataRepository =
+                        dependencies.userDataRepository,
+                    userIdProvider = {
+                        authViewModel.uiState.value
+                            .currentUser?.userId
+                    },
+                    onDataChanged = {
+                        appDataViewModel.refresh()
+                    },
                 )
             },
         )[TranslationViewModel::class.java]
 
         setContent {
-            MaterialTheme {
-                Surface {
-                    MayaLanguageApp(
-                        authViewModel = authViewModel,
-                        translationViewModel = translationViewModel,
-                        firebaseConfigured = dependencies.firebaseConfigured,
-                    )
-                }
+            MayaTranslateTheme {
+                MayaLanguageApp(
+                    authViewModel = authViewModel,
+                    appDataViewModel = appDataViewModel,
+                    translationViewModel = translationViewModel,
+                    firebaseConfigured =
+                        dependencies.firebaseConfigured,
+                )
             }
         }
     }

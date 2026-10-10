@@ -3,6 +3,7 @@ package com.chuahws.mayalanguageapp.data.repository
 import com.chuahws.mayalanguageapp.domain.model.UserProfile
 import com.chuahws.mayalanguageapp.domain.repository.UserProfileRepository
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
 class FirestoreUserProfileRepository(
@@ -20,4 +21,10 @@ class FirestoreUserProfileRepository(
             .get()
             .await()
             .toObject(UserProfile::class.java)
+
+    override suspend fun updateProfile(profile: UserProfile) {
+        users.document(profile.userId)
+            .set(profile, SetOptions.merge())
+            .await()
+    }
 }
