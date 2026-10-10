@@ -6,23 +6,27 @@ import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,15 +53,13 @@ fun VoiceTranslationScreen(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val spoken = result.data
+            result.data
                 ?.getStringArrayListExtra(
                     RecognizerIntent.EXTRA_RESULTS
                 )
                 ?.firstOrNull()
-
-            if (!spoken.isNullOrBlank()) {
-                viewModel.updateInput(spoken)
-            }
+                ?.takeIf { it.isNotBlank() }
+                ?.let(viewModel::updateInput)
         }
     }
 
@@ -65,20 +67,15 @@ fun VoiceTranslationScreen(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
             .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = "Speak in English",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
-
-        Text(
-            text = "Speak clearly, check the transcript, then translate it to Yucatec Maya.",
+            text = "Tap the microphone and speak in English",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        FilledTonalButton(
+        Surface(
             onClick = {
                 val intent = Intent(
                     RecognizerIntent.ACTION_RECOGNIZE_SPEECH
@@ -96,24 +93,38 @@ fun VoiceTranslationScreen(
                         "Speak now",
                     )
                 }
-
                 speechLauncher.launch(intent)
             },
-            modifier = Modifier.fillMaxWidth(),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary,
+            shadowElevation = 8.dp,
         ) {
-            Icon(Icons.Rounded.Mic, contentDescription = null)
-            Text(
-                text = "Start listening",
-                modifier = Modifier.padding(start = 8.dp),
-            )
+            Box(
+                modifier = Modifier.size(96.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Mic,
+                    contentDescription = "Start listening",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(44.dp),
+                )
+            }
         }
+
+        Text(
+            text = "Recognised speech",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         OutlinedTextField(
             value = state.input,
             onValueChange = viewModel::updateInput,
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Transcript") },
-            minLines = 4,
+            minLines = 3,
         )
 
         Button(
@@ -121,13 +132,14 @@ fun VoiceTranslationScreen(
             enabled = !state.loading && state.input.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Translate to Yucatec Maya")
+            Text("Translate")
         }
 
         state.message?.let {
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
 

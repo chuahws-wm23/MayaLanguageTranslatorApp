@@ -43,30 +43,15 @@ fun SavedScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.padding(
-                start = 20.dp,
-                end = 20.dp,
-                top = 20.dp,
-                bottom = 10.dp,
-            ),
-        ) {
-            Text(
-                text = "Saved words",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
-
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 14.dp),
-                label = { Text("Search saved words") },
-                singleLine = true,
-            )
-        }
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            label = { Text("Search dictionary") },
+            singleLine = true,
+        )
 
         if (filtered.isEmpty()) {
             Column(
@@ -80,12 +65,12 @@ fun SavedScreen(
                     contentDescription = null,
                 )
                 Text(
-                    text = "Nothing saved yet",
+                    text = "No saved words yet",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(top = 10.dp),
                 )
                 Text(
-                    text = "Save useful words from a translation.",
+                    text = "Save a word from any translation result.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -115,16 +100,6 @@ fun SavedScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(top = 3.dp),
                                 )
-                                item.pronunciation
-                                    ?.takeIf { it.isNotBlank() }
-                                    ?.let {
-                                        Text(
-                                            text = it,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.padding(top = 6.dp),
-                                        )
-                                    }
                             }
                             SpeakButton(item.mayaText)
                             IconButton(onClick = { onRemove(item) }) {

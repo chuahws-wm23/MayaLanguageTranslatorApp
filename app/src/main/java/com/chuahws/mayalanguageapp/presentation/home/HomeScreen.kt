@@ -5,239 +5,218 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.CameraAlt
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.ChatBubble
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
-import com.chuahws.mayalanguageapp.domain.model.UsageAnalytics
-import com.chuahws.mayalanguageapp.presentation.translation.TranslateMode
+import com.chuahws.mayalanguageapp.presentation.theme.MayaBlue
+import com.chuahws.mayalanguageapp.presentation.theme.MayaGreen
+import com.chuahws.mayalanguageapp.presentation.theme.MayaOrange
+import com.chuahws.mayalanguageapp.presentation.theme.MayaPink
+import com.chuahws.mayalanguageapp.presentation.theme.MayaPurple
 
 @Composable
 fun HomeScreen(
     displayName: String,
-    analytics: UsageAnalytics,
-    recent: List<TranslationRecord>,
-    onTranslate: (TranslateMode) -> Unit,
+    onTextTranslation: () -> Unit,
+    onImageTranslation: () -> Unit,
+    onVoiceTranslation: () -> Unit,
+    onHistory: () -> Unit,
+    onAnalytics: () -> Unit,
+    onFeedback: () -> Unit,
+    onProfile: () -> Unit,
 ) {
     LazyColumn(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
             Column(
+                modifier = Modifier.padding(bottom = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = "Welcome back",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = displayName.ifBlank { "Maya Translate" },
-                    style = MaterialTheme.typography.headlineMedium,
+                    text = "Hello, ${displayName.ifBlank { "there" }}!",
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                 )
-            }
-        }
-
-        item {
-            Text(
-                text = "Translate",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                QuickActionCard(
-                    title = "Type",
-                    subtitle = "Enter text",
-                    icon = {
-                        Icon(Icons.Rounded.Edit, contentDescription = null)
-                    },
-                    modifier = Modifier.weight(1f),
-                    onClick = { onTranslate(TranslateMode.TEXT) },
-                )
-                QuickActionCard(
-                    title = "Scan",
-                    subtitle = "Use a photo",
-                    icon = {
-                        Icon(Icons.Rounded.CameraAlt, contentDescription = null)
-                    },
-                    modifier = Modifier.weight(1f),
-                    onClick = { onTranslate(TranslateMode.IMAGE) },
-                )
-                QuickActionCard(
-                    title = "Voice",
-                    subtitle = "Speak English",
-                    icon = {
-                        Icon(Icons.Rounded.Mic, contentDescription = null)
-                    },
-                    modifier = Modifier.weight(1f),
-                    onClick = { onTranslate(TranslateMode.VOICE) },
+                Text(
+                    text = "Let's learn and translate Maya.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
 
         item {
-            Text(
-                text = "Your activity",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
+            FeatureRow(
+                left = Feature(
+                    "Text Translation",
+                    Icons.Rounded.Keyboard,
+                    MayaPurple,
+                    onTextTranslation,
+                ),
+                right = Feature(
+                    "Image Translation",
+                    Icons.Rounded.CameraAlt,
+                    MayaPink,
+                    onImageTranslation,
+                ),
             )
         }
 
         item {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.primaryContainer,
+            FeatureRow(
+                left = Feature(
+                    "Voice Translation",
+                    Icons.Rounded.Mic,
+                    MayaBlue,
+                    onVoiceTranslation,
+                ),
+                right = Feature(
+                    "History",
+                    Icons.Rounded.History,
+                    MayaOrange,
+                    onHistory,
+                ),
+            )
+        }
+
+        item {
+            FeatureRow(
+                left = Feature(
+                    "Analytics",
+                    Icons.Rounded.Analytics,
+                    MayaGreen,
+                    onAnalytics,
+                ),
+                right = Feature(
+                    "Feedback",
+                    Icons.Rounded.ChatBubble,
+                    MayaPurple,
+                    onFeedback,
+                ),
+            )
+        }
+
+        item {
+            FeatureCard(
+                feature = Feature(
+                    "Profile",
+                    Icons.Rounded.Person,
+                    MayaPurple,
+                    onProfile,
                 ),
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    horizontalArrangement =
-                        Arrangement.SpaceBetween,
-                ) {
-                    Metric(
-                        value = analytics.totalTranslations.toString(),
-                        label = "Translations",
-                    )
-                    Metric(
-                        value = analytics.savedWords.toString(),
-                        label = "Saved",
-                    )
-                    Metric(
-                        value = analytics.imageTranslations.toString(),
-                        label = "Scans",
-                    )
-                }
-            }
-        }
-
-        item {
-            Text(
-                text = "Recent translations",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
+                horizontal = true,
             )
-        }
-
-        if (recent.isEmpty()) {
-            item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "Your latest translations will appear here.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(18.dp),
-                    )
-                }
-            }
-        } else {
-            items(recent.take(4), key = { it.translationId }) {
-                RecentTranslationRow(it)
-            }
         }
     }
 }
 
+private data class Feature(
+    val title: String,
+    val icon: ImageVector,
+    val color: Color,
+    val onClick: () -> Unit,
+)
+
 @Composable
-private fun QuickActionCard(
-    title: String,
-    subtitle: String,
-    icon: @Composable () -> Unit,
+private fun FeatureRow(
+    left: Feature,
+    right: Feature,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        FeatureCard(
+            feature = left,
+            modifier = Modifier.weight(1f),
+        )
+        FeatureCard(
+            feature = right,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun FeatureCard(
+    feature: Feature,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit,
+    horizontal: Boolean = false,
 ) {
     Card(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier
+            .height(if (horizontal) 82.dp else 120.dp)
+            .clickable(onClick = feature.onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            icon()
-            Text(
-                text = title,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-            )
-        }
-    }
-}
-
-@Composable
-private fun Metric(
-    value: String,
-    label: String,
-) {
-    Column {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-        )
-    }
-}
-
-@Composable
-private fun RecentTranslationRow(
-    item: TranslationRecord,
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
+        if (horizontal) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                FeatureIcon(feature)
                 Text(
-                    text = item.sourceText,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.Medium,
-                )
-                Text(
-                    text = item.translatedText,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 3.dp),
+                    text = feature.title,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium,
                 )
             }
-            Icon(
-                Icons.Rounded.ChevronRight,
-                contentDescription = null,
-            )
+        } else {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                FeatureIcon(feature)
+                Text(
+                    text = feature.title,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun FeatureIcon(feature: Feature) {
+    Surface(
+        color = feature.color.copy(alpha = 0.13f),
+        shape = MaterialTheme.shapes.medium,
+    ) {
+        Icon(
+            imageVector = feature.icon,
+            contentDescription = null,
+            tint = feature.color,
+            modifier = Modifier.padding(11.dp),
+        )
     }
 }
