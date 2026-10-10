@@ -5,27 +5,48 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import com.chuahws.mayalanguageapp.data.repository.InMemoryDictionaryRepository
+import androidx.lifecycle.ViewModelProvider
 import com.chuahws.mayalanguageapp.domain.service.TranslationService
-import com.chuahws.mayalanguageapp.presentation.translation.TranslationScreen
+import com.chuahws.mayalanguageapp.presentation.auth.AuthViewModel
+import com.chuahws.mayalanguageapp.presentation.common.AppViewModelFactory
+import com.chuahws.mayalanguageapp.presentation.navigation.MayaLanguageApp
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Firebase is intentionally not required for the very first build.
-        // Replace this with FirestoreDictionaryRepository after Firebase setup
-        // and after the validated Yucatec Maya dataset is imported.
-        val repository = InMemoryDictionaryRepository(emptyList())
-        val viewModel = TranslationViewModel(
-            translationService = TranslationService(repository)
-        )
+        val dependencies = AppDependencies.create(this)
+
+        val authViewModel = ViewModelProvider(
+            this,
+            AppViewModelFactory {
+                AuthViewModel(
+                    authRepository = dependencies.authRepository,
+                    userProfileRepository = dependencies.userProfileRepository,
+                )
+            },
+        )[AuthViewModel::class.java]
+
+        val translationViewModel = ViewModelProvider(
+            this,
+            AppViewModelFactory {
+                TranslationViewModel(
+                    translationService = TranslationService(
+                        dependencies.dictionaryRepository
+                    )
+                )
+            },
+        )[TranslationViewModel::class.java]
 
         setContent {
             MaterialTheme {
                 Surface {
-                    TranslationScreen(viewModel = viewModel)
+                    MayaLanguageApp(
+                        authViewModel = authViewModel,
+                        translationViewModel = translationViewModel,
+                        firebaseConfigured = dependencies.firebaseConfigured,
+                    )
                 }
             }
         }

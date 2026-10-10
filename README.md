@@ -21,6 +21,26 @@ Ancient Maya hieroglyph recognition is **not** part of this implementation scope
 - `main` — clean baseline
 - `fyp-development` — active FYP development
 
+## Progress
+
+### Iteration 1 — Account management and core text translation
+
+- [x] Android Studio project structure
+- [x] MVVM-oriented packages
+- [x] Registration UI and validation
+- [x] Login UI and validation
+- [x] Password-reset UI
+- [x] Firebase authentication repository
+- [x] User-profile repository
+- [x] Development-only fallback authentication
+- [x] Typed-text translation service and UI
+- [x] Initial unit tests
+- [ ] Add local `google-services.json`
+- [ ] Enable Email/Password authentication in Firebase
+- [ ] Import cleaned Yucatec Maya–English dictionary
+- [ ] Test real registration/login against Firebase
+- [ ] Save successful translation history
+
 ## Android Studio setup
 
 1. Clone the repository.
@@ -28,12 +48,9 @@ Ancient Maya hieroglyph recognition is **not** part of this implementation scope
 3. Open the repository root in Android Studio.
 4. Use JDK 17.
 5. Let Android Studio sync Gradle.
-6. Before enabling Firebase, create a Firebase project and register Android package:
-   `com.chuahws.mayalanguageapp`
-7. Download `google-services.json` from Firebase Console and place it in `app/`.
-8. Never commit that file.
+6. Follow [`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md).
 
-The starter currently uses an in-memory dictionary so it can be developed before Firebase is configured.
+The application remains runnable before Firebase is configured. It uses clearly labelled in-memory development repositories and does not claim that temporary development authentication is production authentication.
 
 ## Dataset pipeline
 
