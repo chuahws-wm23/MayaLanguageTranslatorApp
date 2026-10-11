@@ -17,13 +17,24 @@ class AuthViewModel(
     private val userProfileRepository: UserProfileRepository,
 ) : ViewModel() {
 
+    private val existingUser = authRepository.currentUser()
+
     private val _uiState = MutableStateFlow(
-        AuthUiState(currentUser = authRepository.currentUser())
+        AuthUiState(
+            currentUser = existingUser,
+            email = existingUser?.email.orEmpty(),
+            displayName = existingUser?.displayName.orEmpty(),
+        )
     )
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     fun updateDisplayName(value: String) {
-        _uiState.update { it.copy(displayName = value, message = null) }
+        _uiState.update {
+            it.copy(
+                displayName = value,
+                message = null,
+            )
+        }
     }
 
     fun updateEmail(value: String) {
@@ -37,25 +48,39 @@ class AuthViewModel(
     }
 
     fun updatePassword(value: String) {
-        _uiState.update { it.copy(password = value, message = null) }
+        _uiState.update {
+            it.copy(
+                password = value,
+                message = null,
+            )
+        }
     }
 
     fun updateConfirmPassword(value: String) {
-        _uiState.update { it.copy(confirmPassword = value, message = null) }
+        _uiState.update {
+            it.copy(
+                confirmPassword = value,
+                message = null,
+            )
+        }
     }
 
     fun register() {
+        if (_uiState.value.loading) return
+
         val state = _uiState.value
         val validationError = validateRegistration(state)
 
         if (validationError != null) {
-            _uiState.update { it.copy(message = validationError) }
+            _uiState.update {
+                it.copy(message = validationError)
+            }
             return
         }
 
-        viewModelScope.launch {
-            setLoading(true)
+        setLoading(true)
 
+        viewModelScope.launch {
             runCatching {
                 val user = authRepository.register(
                     displayName = state.displayName,
@@ -83,38 +108,51 @@ class AuthViewModel(
     }
 
     fun login() {
+        if (_uiState.value.loading) return
+
         val state = _uiState.value
 
-        if (!isValidEmail(state.email) || state.password.isBlank()) {
+        if (!isValidEmail(state.email) ||
+            state.password.isBlank()
+        ) {
             _uiState.update {
-                it.copy(message = "Enter a valid email and password.")
+                it.copy(
+                    message = "Enter a valid email and password."
+                )
             }
             return
         }
 
-        viewModelScope.launch {
-            setLoading(true)
+        setLoading(true)
 
+        viewModelScope.launch {
             runCatching {
-                authRepository.login(state.email, state.password)
+                authRepository.login(
+                    state.email,
+                    state.password,
+                )
             }.onSuccess(::onAuthenticated)
                 .onFailure(::onOperationFailed)
         }
     }
 
     fun sendPasswordReset() {
+        if (_uiState.value.loading) return
+
         val email = _uiState.value.email
 
         if (!isValidEmail(email)) {
             _uiState.update {
-                it.copy(message = "Enter a valid registered email address.")
+                it.copy(
+                    message = "Enter a valid registered email address."
+                )
             }
             return
         }
 
-        viewModelScope.launch {
-            setLoading(true)
+        setLoading(true)
 
+        viewModelScope.launch {
             runCatching {
                 authRepository.sendPasswordReset(email)
             }.onSuccess {
@@ -131,23 +169,29 @@ class AuthViewModel(
 
     fun signOut() {
         authRepository.signOut()
-        _uiState.update {
-            AuthUiState(message = "You have been logged out.")
-        }
+        _uiState.value = AuthUiState(
+            message = "You have been logged out.",
+        )
     }
 
     fun clearMessage() {
-        _uiState.update { it.copy(message = null) }
+        _uiState.update {
+            it.copy(message = null)
+        }
     }
 
     private fun onAuthenticated(user: AuthUser) {
         _uiState.update {
             it.copy(
                 currentUser = user,
+                email = user.email,
+                displayName =
+                    user.displayName ?: it.displayName,
                 loading = false,
                 message = null,
                 password = "",
                 confirmPassword = "",
+                passwordResetSent = false,
             )
         }
     }
@@ -156,16 +200,24 @@ class AuthViewModel(
         _uiState.update {
             it.copy(
                 loading = false,
-                message = error.message ?: "The operation could not be completed.",
+                message = error.message
+                    ?: "The operation could not be completed.",
             )
         }
     }
 
     private fun setLoading(loading: Boolean) {
-        _uiState.update { it.copy(loading = loading, message = null) }
+        _uiState.update {
+            it.copy(
+                loading = loading,
+                message = null,
+            )
+        }
     }
 
-    private fun validateRegistration(state: AuthUiState): String? = when {
+    private fun validateRegistration(
+        state: AuthUiState,
+    ): String? = when {
         state.displayName.trim().length < 2 ->
             "Enter a display name with at least two characters."
 
@@ -181,6 +233,11 @@ class AuthViewModel(
         else -> null
     }
 
-    private fun isValidEmail(value: String): Boolean =
-        value.trim().contains("@") && value.substringAfter("@").contains(".")
+    private fun isValidEmail(value: String): Boolean {
+        val trimmed = value.trim()
+        val atIndex = trimmed.indexOf('@')
+        return atIndex > 0 &&
+            atIndex < trimmed.lastIndex &&
+            trimmed.substring(atIndex + 1).contains('.')
+    }
 }
