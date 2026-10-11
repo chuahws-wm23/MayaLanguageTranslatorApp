@@ -40,28 +40,70 @@ fun TranslationResultCard(
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(9.dp),
         ) {
             Text(
                 text = "Translation Result",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
+
             Text(
                 text = output,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
             )
 
-            entry?.pronunciation
-                ?.takeIf { it.isNotBlank() }
-                ?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            entry?.let { dictionaryEntry ->
+                Text(
+                    text = "English meaning: ${dictionaryEntry.englishText}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+
+                dictionaryEntry.usageLabel
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { usage ->
+                        Text(
+                            text = "Use: $usage",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                dictionaryEntry.acceptedEnglishInputs
+                    .distinct()
+                    .takeIf { it.size > 1 }
+                    ?.let { inputs ->
+                        Text(
+                            text = "Also accepts: ${inputs.joinToString(", ")}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                dictionaryEntry.pronunciation
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { pronunciation ->
+                        Text(
+                            text = "Pronunciation: $pronunciation",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                dictionaryEntry.partOfSpeech
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { partOfSpeech ->
+                        Text(
+                            text = partOfSpeech.replaceFirstChar {
+                                it.uppercase()
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+            }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

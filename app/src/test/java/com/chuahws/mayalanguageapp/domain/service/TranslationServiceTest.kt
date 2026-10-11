@@ -40,7 +40,7 @@ class TranslationServiceTest {
     }
 
     @Test
-    fun translateHi_returnsCoreGreeting() = runTest {
+    fun translateHi_returnsCoreGreetingWithUsageMetadata() = runTest {
         val service = TranslationService(
             InMemoryDictionaryRepository(
                 DevelopmentDictionaryData.entries()
@@ -53,10 +53,13 @@ class TranslationServiceTest {
         )
 
         assertTrue(result is TranslationResult.Success)
-        assertEquals(
-            "Baʼax ka waʼalik?",
-            (result as TranslationResult.Success).output,
-        )
+        result as TranslationResult.Success
+
+        assertEquals("Baʼax ka waʼalik?", result.output)
+        assertEquals("hello", result.entry.englishText)
+        assertEquals("General greeting", result.entry.usageLabel)
+        assertTrue(result.entry.acceptedEnglishInputs.contains("hi"))
+        assertTrue(result.entry.acceptedEnglishInputs.contains("hello"))
     }
 
     @Test
