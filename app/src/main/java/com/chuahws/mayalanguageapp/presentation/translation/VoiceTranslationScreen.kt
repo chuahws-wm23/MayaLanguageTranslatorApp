@@ -24,24 +24,47 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.InputType
 import com.chuahws.mayalanguageapp.domain.model.TranslationDirection
 import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
-import java.util.Locale
 
 @Composable
 fun VoiceTranslationScreen(
     viewModel: TranslationViewModel,
     onSaveEntry: (DictionaryEntry) -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val speechIntent = Intent(
+        RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+    ).apply {
+        putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+        )
+        putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE,
+            "en-US",
+        )
+        putExtra(
+            RecognizerIntent.EXTRA_PROMPT,
+            "Speak in English",
+        )
+    }
+
+    val speechAvailable =
+        speechIntent.resolveActivity(
+            context.packageManager
+        ) != null
 
     LaunchedEffect(Unit) {
         viewModel.setDirection(
@@ -49,72 +72,90 @@ fun VoiceTranslationScreen(
         )
     }
 
-    val speechLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data
-                ?.getStringArrayListExtra(
-                    RecognizerIntent.EXTRA_RESULTS
-                )
-                ?.firstOrNull()
-                ?.takeIf { it.isNotBlank() }
-                ?.let(viewModel::updateInput)
+    val speechLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts
+                .StartActivityForResult()
+        ) { result ->
+            if (result.resultCode ==
+                Activity.RESULT_OK
+            ) {
+                result.data
+                    ?.getStringArrayListExtra(
+                        RecognizerIntent.EXTRA_RESULTS
+                    )
+                    ?.firstOrNull()
+                    ?.takeIf {
+                        it.isNotBlank()
+                    }
+                    ?.let(
+                        viewModel::updateInput
+                    )
+            }
         }
-    }
 
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
             .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment =
+            Alignment.CenterHorizontally,
+        verticalArrangement =
+            Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = "Tap the microphone and speak in English",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text =
+                "Tap the microphone and speak in English.",
+            color =
+                MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Surface(
             onClick = {
-                val intent = Intent(
-                    RecognizerIntent.ACTION_RECOGNIZE_SPEECH
-                ).apply {
-                    putExtra(
-                        RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
-                    )
-                    putExtra(
-                        RecognizerIntent.EXTRA_LANGUAGE,
-                        Locale.getDefault(),
-                    )
-                    putExtra(
-                        RecognizerIntent.EXTRA_PROMPT,
-                        "Speak now",
-                    )
+                if (speechAvailable) {
+                    speechLauncher.launch(speechIntent)
                 }
-                speechLauncher.launch(intent)
             },
+            enabled =
+                speechAvailable &&
+                    !state.loading,
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary,
+            color =
+                MaterialTheme.colorScheme.primary,
             shadowElevation = 8.dp,
         ) {
             Box(
                 modifier = Modifier.size(96.dp),
-                contentAlignment = Alignment.Center,
+                contentAlignment =
+                    Alignment.Center,
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.Mic,
-                    contentDescription = "Start listening",
-                    tint = MaterialTheme.colorScheme.onPrimary,
+                    imageVector =
+                        Icons.Rounded.Mic,
+                    contentDescription =
+                        "Start English speech recognition",
+                    tint =
+                        MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(44.dp),
                 )
             }
         }
 
+        if (!speechAvailable) {
+            Text(
+                text =
+                    "Speech recognition is unavailable on this device. You can type the English transcript below instead.",
+                style =
+                    MaterialTheme.typography.bodySmall,
+                color =
+                    MaterialTheme.colorScheme.error,
+            )
+        }
+
         Text(
             text = "Recognised speech",
-            style = MaterialTheme.typography.titleMedium,
+            style =
+                MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -123,13 +164,20 @@ fun VoiceTranslationScreen(
             value = state.input,
             onValueChange = viewModel::updateInput,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Transcript") },
+            enabled = !state.loading,
+            label = {
+                Text("Transcript")
+            },
             minLines = 3,
         )
 
         Button(
-            onClick = { viewModel.translate(InputType.VOICE) },
-            enabled = !state.loading && state.input.isNotBlank(),
+            onClick = {
+                viewModel.translate(InputType.VOICE)
+            },
+            enabled =
+                !state.loading &&
+                    state.input.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Translate")
@@ -146,9 +194,13 @@ fun VoiceTranslationScreen(
         TranslationResultCard(
             output = state.output,
             entry = state.matchedEntry,
-            onSave = state.matchedEntry?.let { entry ->
-                { onSaveEntry(entry) }
-            },
+            outputLanguageTag = "yua",
+            onSave =
+                state.matchedEntry?.let { entry ->
+                    {
+                        onSaveEntry(entry)
+                    }
+                },
         )
     }
 }

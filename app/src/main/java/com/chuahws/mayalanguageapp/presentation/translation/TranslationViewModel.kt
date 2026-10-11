@@ -22,10 +22,14 @@ class TranslationViewModel(
     private val onDataChanged: () -> Unit = {},
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(TranslationUiState())
-    val uiState: StateFlow<TranslationUiState> = _uiState.asStateFlow()
+    private val _uiState =
+        MutableStateFlow(TranslationUiState())
+    val uiState: StateFlow<TranslationUiState> =
+        _uiState.asStateFlow()
 
     fun updateInput(value: String) {
+        if (_uiState.value.loading) return
+
         _uiState.update {
             it.copy(
                 input = value,
@@ -36,7 +40,11 @@ class TranslationViewModel(
         }
     }
 
-    fun setDirection(direction: TranslationDirection) {
+    fun setDirection(
+        direction: TranslationDirection,
+    ) {
+        if (_uiState.value.loading) return
+
         _uiState.update {
             it.copy(
                 direction = direction,
@@ -48,7 +56,11 @@ class TranslationViewModel(
     }
 
     fun swapDirection() {
-        val next = when (_uiState.value.direction) {
+        if (_uiState.value.loading) return
+
+        val next = when (
+            _uiState.value.direction
+        ) {
             TranslationDirection.MAYA_TO_ENGLISH ->
                 TranslationDirection.ENGLISH_TO_MAYA
 
@@ -60,35 +72,55 @@ class TranslationViewModel(
     }
 
     fun clear() {
+        if (_uiState.value.loading) return
+
         _uiState.update {
-            TranslationUiState(direction = it.direction)
+            TranslationUiState(
+                direction = it.direction
+            )
         }
     }
 
-    fun translate(inputType: InputType = InputType.TEXT) {
+    fun translate(
+        inputType: InputType = InputType.TEXT,
+    ) {
         val state = _uiState.value
 
-        viewModelScope.launch {
+        if (state.loading) return
+
+        if (state.input.isBlank()) {
             _uiState.update {
                 it.copy(
-                    loading = true,
-                    message = null,
-                    inputType = inputType,
+                    message =
+                        "Enter text before translating."
                 )
             }
+            return
+        }
 
+        _uiState.update {
+            it.copy(
+                loading = true,
+                message = null,
+                inputType = inputType,
+            )
+        }
+
+        viewModelScope.launch {
             when (
-                val result = translationService.translate(
-                    state.input,
-                    state.direction,
-                )
+                val result =
+                    translationService.translate(
+                        state.input,
+                        state.direction,
+                    )
             ) {
                 is TranslationResult.Success -> {
                     _uiState.update {
                         it.copy(
                             loading = false,
                             output = result.output,
-                            matchedEntry = result.entry,
+                            matchedEntry =
+                                result.entry,
                             message = null,
                             inputType = inputType,
                         )
@@ -96,9 +128,12 @@ class TranslationViewModel(
 
                     recordSuccess(
                         source = state.input,
-                        translated = result.output,
-                        entryId = result.entry.entryId,
-                        direction = state.direction,
+                        translated =
+                            result.output,
+                        entryId =
+                            result.entry.entryId,
+                        direction =
+                            state.direction,
                         inputType = inputType,
                     )
                 }
@@ -109,7 +144,8 @@ class TranslationViewModel(
                             loading = false,
                             output = "",
                             matchedEntry = null,
-                            message = "This word or phrase is not in the dictionary yet.",
+                            message =
+                                "This word or phrase is not in the dictionary yet.",
                         )
                     }
 
@@ -119,7 +155,8 @@ class TranslationViewModel(
                             loading = false,
                             output = "",
                             matchedEntry = null,
-                            message = result.message,
+                            message =
+                                result.message,
                         )
                     }
             }
@@ -133,37 +170,58 @@ class TranslationViewModel(
         direction: TranslationDirection,
         inputType: InputType,
     ) {
-        val userId = userIdProvider() ?: return
-        val now = System.currentTimeMillis()
+        val userId =
+            userIdProvider() ?: return
+        val now =
+            System.currentTimeMillis()
 
         val sourceLanguage =
-            if (direction == TranslationDirection.MAYA_TO_ENGLISH)
+            if (direction ==
+                TranslationDirection.MAYA_TO_ENGLISH
+            ) {
                 "Yucatec Maya"
-            else
+            } else {
                 "English"
+            }
 
         val targetLanguage =
-            if (direction == TranslationDirection.MAYA_TO_ENGLISH)
+            if (direction ==
+                TranslationDirection.MAYA_TO_ENGLISH
+            ) {
                 "English"
-            else
+            } else {
                 "Yucatec Maya"
+            }
 
         runCatching {
             userDataRepository.recordTranslation(
                 TranslationRecord(
-                    translationId = UUID.randomUUID().toString(),
+                    translationId =
+                        UUID.randomUUID().toString(),
                     userId = userId,
                     entryId = entryId,
-                    sourceText = source.trim(),
-                    translatedText = translated,
-                    sourceLanguage = sourceLanguage,
-                    targetLanguage = targetLanguage,
-                    inputType = inputType.name,
+                    sourceText =
+                        source.trim(),
+                    translatedText =
+                        translated,
+                    sourceLanguage =
+                        sourceLanguage,
+                    targetLanguage =
+                        targetLanguage,
+                    inputType =
+                        inputType.name,
                     createdAtMillis = now,
                 )
             )
         }.onSuccess {
             onDataChanged()
+        }.onFailure {
+            _uiState.update {
+                it.copy(
+                    message =
+                        "Translation completed, but it could not be added to history.",
+                )
+            }
         }
     }
 }

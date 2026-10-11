@@ -1,8 +1,10 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -28,7 +30,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -41,6 +42,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.InputType
 import com.chuahws.mayalanguageapp.domain.model.TranslationDirection
@@ -55,17 +57,34 @@ fun ImageTranslationScreen(
     onSaveEntry: (DictionaryEntry) -> Unit,
 ) {
     val context = LocalContext.current
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    val ocrService = remember { MlKitOcrService() }
+    val ocrService = remember {
+        MlKitOcrService()
+    }
 
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var cameraUri by remember { mutableStateOf<Uri?>(null) }
-    var readingImage by remember { mutableStateOf(false) }
-    var imageMessage by remember { mutableStateOf<String?>(null) }
+    var imageUri by remember {
+        mutableStateOf<Uri?>(null)
+    }
+    var cameraUri by remember {
+        mutableStateOf<Uri?>(null)
+    }
+    var readingImage by remember {
+        mutableStateOf(false)
+    }
+    var imageMessage by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    val cameraAvailable = remember(context) {
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            .resolveActivity(context.packageManager) != null
+    }
 
     LaunchedEffect(Unit) {
-        viewModel.setDirection(TranslationDirection.MAYA_TO_ENGLISH)
+        viewModel.setDirection(
+            TranslationDirection.MAYA_TO_ENGLISH
+        )
     }
 
     fun readImage(uri: Uri) {
@@ -78,31 +97,38 @@ fun ImageTranslationScreen(
                 ocrService.readText(context, uri)
             }.onSuccess { text ->
                 readingImage = false
+
                 if (text.isBlank()) {
-                    imageMessage = "No text was found in this image."
+                    imageMessage =
+                        "No text was found. Try a clearer image."
                 } else {
                     viewModel.updateInput(text)
                 }
             }.onFailure {
                 readingImage = false
-                imageMessage = "Could not read this image."
+                imageMessage =
+                    "Could not read this image. Try another image."
             }
         }
     }
 
-    val galleryLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        if (uri != null) readImage(uri)
-    }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            cameraUri?.let(::readImage)
+    val galleryLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.GetContent()
+        ) { uri ->
+            if (uri != null) {
+                readImage(uri)
+            }
         }
-    }
+
+    val cameraLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.TakePicture()
+        ) { success ->
+            if (success) {
+                cameraUri?.let(::readImage)
+            }
+        }
 
     val preview by produceState<Bitmap?>(
         initialValue = null,
@@ -112,44 +138,94 @@ fun ImageTranslationScreen(
             runCatching {
                 context.contentResolver
                     .openInputStream(uri)
-                    ?.use(BitmapFactory::decodeStream)
+                    ?.use(
+                        BitmapFactory::decodeStream
+                    )
             }.getOrNull()
         }
     }
 
-    val source = if (
-        state.direction == TranslationDirection.MAYA_TO_ENGLISH
-    ) "Yucatec Maya" else "English"
+    val source =
+        if (state.direction ==
+            TranslationDirection.MAYA_TO_ENGLISH
+        ) {
+            "Yucatec Maya"
+        } else {
+            "English"
+        }
+
+    val outputLanguageTag =
+        if (state.direction ==
+            TranslationDirection.MAYA_TO_ENGLISH
+        ) {
+            "en-US"
+        } else {
+            "yua"
+        }
 
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
             .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement =
+            Arrangement.spacedBy(16.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement =
+                Arrangement.spacedBy(10.dp),
         ) {
             FilledTonalButton(
                 onClick = {
-                    val uri = createTemporaryImageUri(context)
+                    val uri =
+                        createTemporaryImageUri(context)
                     cameraUri = uri
                     cameraLauncher.launch(uri)
                 },
+                enabled =
+                    cameraAvailable &&
+                        !readingImage,
                 modifier = Modifier.weight(1f),
             ) {
-                Icon(Icons.Rounded.CameraAlt, contentDescription = null)
-                Text("Camera", modifier = Modifier.padding(start = 8.dp))
+                Icon(
+                    Icons.Rounded.CameraAlt,
+                    contentDescription = null,
+                )
+                Text(
+                    "Camera",
+                    modifier =
+                        Modifier.padding(start = 8.dp),
+                )
             }
 
             FilledTonalButton(
-                onClick = { galleryLauncher.launch("image/*") },
+                onClick = {
+                    galleryLauncher.launch("image/*")
+                },
+                enabled = !readingImage,
                 modifier = Modifier.weight(1f),
             ) {
-                Icon(Icons.Rounded.PhotoLibrary, contentDescription = null)
-                Text("Gallery", modifier = Modifier.padding(start = 8.dp))
+                Icon(
+                    Icons.Rounded.PhotoLibrary,
+                    contentDescription = null,
+                )
+                Text(
+                    "Gallery",
+                    modifier =
+                        Modifier.padding(start = 8.dp),
+                )
             }
+        }
+
+        if (!cameraAvailable) {
+            Text(
+                text =
+                    "No camera app is available on this device. You can still choose an image from Gallery.",
+                style =
+                    MaterialTheme.typography.bodySmall,
+                color =
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         preview?.let { bitmap ->
@@ -165,7 +241,8 @@ fun ImageTranslationScreen(
 
         if (readingImage) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement =
+                    Arrangement.spacedBy(10.dp),
             ) {
                 CircularProgressIndicator()
                 Text("Reading text…")
@@ -181,19 +258,30 @@ fun ImageTranslationScreen(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement =
+                Arrangement.SpaceBetween,
         ) {
             Text(
-                text = "$source → " +
-                    if (source == "English") "Yucatec Maya" else "English",
-                style = MaterialTheme.typography.titleMedium,
+                text =
+                    "$source → " +
+                        if (source == "English") {
+                            "Yucatec Maya"
+                        } else {
+                            "English"
+                        },
+                style =
+                    MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
 
-            FilledTonalIconButton(onClick = viewModel::swapDirection) {
+            FilledTonalIconButton(
+                onClick = viewModel::swapDirection,
+                enabled = !state.loading,
+            ) {
                 Icon(
                     Icons.Rounded.SwapHoriz,
-                    contentDescription = "Swap languages",
+                    contentDescription =
+                        "Swap languages",
                 )
             }
         }
@@ -202,16 +290,27 @@ fun ImageTranslationScreen(
             value = state.input,
             onValueChange = viewModel::updateInput,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Extracted text") },
+            enabled = !readingImage &&
+                !state.loading,
+            label = {
+                Text("Extracted text")
+            },
             supportingText = {
-                Text("Check and correct the text before translating.")
+                Text(
+                    "Check and correct the text before translating."
+                )
             },
             minLines = 4,
         )
 
         Button(
-            onClick = { viewModel.translate(InputType.IMAGE) },
-            enabled = !state.loading && state.input.isNotBlank(),
+            onClick = {
+                viewModel.translate(InputType.IMAGE)
+            },
+            enabled =
+                !state.loading &&
+                    !readingImage &&
+                    state.input.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Translate")
@@ -227,9 +326,13 @@ fun ImageTranslationScreen(
         TranslationResultCard(
             output = state.output,
             entry = state.matchedEntry,
-            onSave = state.matchedEntry?.let { entry ->
-                { onSaveEntry(entry) }
-            },
+            outputLanguageTag = outputLanguageTag,
+            onSave =
+                state.matchedEntry?.let { entry ->
+                    {
+                        onSaveEntry(entry)
+                    }
+                },
         )
     }
 }

@@ -396,6 +396,8 @@ private fun MainShell(
                 AppPage.FEEDBACK ->
                     FeedbackScreen(
                         email = email,
+                        submissionVersion =
+                            state.feedbackSubmissionVersion,
                         onSubmit = { rating, comment ->
                             appDataViewModel.submitFeedback(
                                 email = email,

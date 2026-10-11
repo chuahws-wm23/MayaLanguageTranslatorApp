@@ -168,7 +168,7 @@ private fun FeatureCard(
 ) {
     Card(
         modifier = modifier
-            .height(if (horizontal) 82.dp else 120.dp)
+            .heightIn(min = if (horizontal) 82.dp else 120.dp)
             .clickable(onClick = feature.onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
