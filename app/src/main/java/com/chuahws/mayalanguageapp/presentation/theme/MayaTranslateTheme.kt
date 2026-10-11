@@ -2,7 +2,6 @@ package com.chuahws.mayalanguageapp.presentation.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -36,8 +35,11 @@ private val DarkColors = darkColorScheme(
     primaryContainer = Color(0xFF56208B),
     onPrimaryContainer = Color(0xFFF0DBFF),
     secondary = Color(0xFFDCC0EA),
+    secondaryContainer = Color(0xFF583D67),
     background = Color(0xFF151218),
     surface = Color(0xFF1D1A20),
+    surfaceVariant = Color(0xFF332F35),
+    error = Color(0xFFFFB4AB),
 )
 
 @Composable
@@ -47,7 +49,8 @@ fun MayaTranslateTheme(
 ) {
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = Typography(),
+        typography = MayaTypography,
+        shapes = MayaShapes,
         content = content,
     )
 }

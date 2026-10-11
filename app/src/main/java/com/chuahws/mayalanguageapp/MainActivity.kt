@@ -3,6 +3,7 @@ package com.chuahws.mayalanguageapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.ViewModelProvider
 import com.chuahws.mayalanguageapp.domain.service.TranslationService
 import com.chuahws.mayalanguageapp.presentation.app.AppDataViewModel
@@ -15,6 +16,7 @@ import com.chuahws.mayalanguageapp.presentation.translation.TranslationViewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         val dependencies = AppDependencies.create(this)
 
