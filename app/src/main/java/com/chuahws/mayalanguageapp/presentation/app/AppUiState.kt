@@ -16,5 +16,6 @@ data class AppUiState(
     val analytics: UsageAnalytics = UsageAnalytics(),
     val loading: Boolean = false,
     val feedbackSubmissionVersion: Long = 0L,
+    val feedbackSubmitting: Boolean = false,
     val message: String? = null,
 )

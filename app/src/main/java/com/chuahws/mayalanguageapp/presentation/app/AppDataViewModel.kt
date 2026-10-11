@@ -21,6 +21,9 @@ class AppDataViewModel(
     private val userProfileRepository: UserProfileRepository,
 ) : ViewModel() {
 
+    private val savingEntryIds = mutableSetOf<String>()
+    private val removingSavedIds = mutableSetOf<String>()
+
     private val _uiState = MutableStateFlow(AppUiState())
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
 
@@ -101,9 +104,14 @@ class AppDataViewModel(
     fun saveEntry(entry: DictionaryEntry) {
         val userId = _uiState.value.userId ?: return
 
+        if (!savingEntryIds.add(entry.entryId)) {
+            return
+        }
+
         if (_uiState.value.savedVocabulary.any {
                 it.entryId == entry.entryId
             }) {
+            savingEntryIds.remove(entry.entryId)
             _uiState.update {
                 it.copy(message = "This word is already saved.")
             }
@@ -130,10 +138,16 @@ class AppDataViewModel(
                 }
                 refresh()
             }.onFailure(::showError)
+
+            savingEntryIds.remove(entry.entryId)
         }
     }
 
     fun removeSaved(item: SavedVocabularyItem) {
+        if (!removingSavedIds.add(item.savedId)) {
+            return
+        }
+
         viewModelScope.launch {
             runCatching {
                 userDataRepository.removeSavedVocabulary(
@@ -145,6 +159,8 @@ class AppDataViewModel(
                 }
                 refresh()
             }.onFailure(::showError)
+
+            removingSavedIds.remove(item.savedId)
         }
     }
 
@@ -185,6 +201,10 @@ class AppDataViewModel(
         rating: Int,
         comment: String,
     ) {
+        if (_uiState.value.feedbackSubmitting) {
+            return
+        }
+
         val userId = _uiState.value.userId ?: return
         val cleanComment = comment.trim()
 
@@ -200,6 +220,10 @@ class AppDataViewModel(
                 it.copy(message = "Tell us a little more.")
             }
             return
+        }
+
+        _uiState.update {
+            it.copy(feedbackSubmitting = true)
         }
 
         viewModelScope.launch {
@@ -221,10 +245,18 @@ class AppDataViewModel(
                         message = "Thanks for the feedback.",
                         feedbackSubmissionVersion =
                             it.feedbackSubmissionVersion + 1,
+                        feedbackSubmitting = false,
                     )
                 }
                 refresh()
-            }.onFailure(::showError)
+            }.onFailure {
+                _uiState.update { state ->
+                    state.copy(
+                        feedbackSubmitting = false,
+                        message = "Could not submit feedback. Please try again.",
+                    )
+                }
+            }
         }
     }
 

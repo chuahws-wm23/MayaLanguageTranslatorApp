@@ -398,6 +398,8 @@ private fun MainShell(
                         email = email,
                         submissionVersion =
                             state.feedbackSubmissionVersion,
+                        submitting =
+                            state.feedbackSubmitting,
                         onSubmit = { rating, comment ->
                             appDataViewModel.submitFeedback(
                                 email = email,

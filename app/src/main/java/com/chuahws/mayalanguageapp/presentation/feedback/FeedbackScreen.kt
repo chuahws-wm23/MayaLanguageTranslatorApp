@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +40,7 @@ private const val MAX_FEEDBACK_LENGTH = 500
 fun FeedbackScreen(
     email: String,
     submissionVersion: Long,
+    submitting: Boolean,
     onSubmit: (Int, String) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
@@ -167,10 +169,17 @@ fun FeedbackScreen(
                 focusManager.clearFocus()
                 onSubmit(rating, comment)
             },
-            enabled = canSubmit,
+            enabled = canSubmit && !submitting,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Submit feedback")
+            if (submitting) {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            } else {
+                Text("Submit feedback")
+            }
         }
     }
 }
