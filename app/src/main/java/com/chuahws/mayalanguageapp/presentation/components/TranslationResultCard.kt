@@ -26,6 +26,7 @@ import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 fun TranslationResultCard(
     output: String,
     entry: DictionaryEntry?,
+    outputLanguageTag: String,
     onSave: (() -> Unit)?,
 ) {
     if (output.isBlank()) return
@@ -35,82 +36,110 @@ fun TranslationResultCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            containerColor =
+                MaterialTheme.colorScheme.primaryContainer,
         ),
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(9.dp),
+            verticalArrangement =
+                Arrangement.spacedBy(9.dp),
         ) {
             Text(
                 text = "Translation Result",
-                style = MaterialTheme.typography.labelLarge,
+                style =
+                    MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
 
             Text(
                 text = output,
-                style = MaterialTheme.typography.headlineSmall,
+                style =
+                    MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
             )
 
             entry?.let { dictionaryEntry ->
                 Text(
-                    text = "English meaning: ${dictionaryEntry.englishText}",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text =
+                        "English meaning: ${dictionaryEntry.englishText}",
+                    style =
+                        MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                 )
 
                 dictionaryEntry.usageLabel
-                    ?.takeIf { it.isNotBlank() }
+                    ?.takeIf {
+                        it.isNotBlank()
+                    }
                     ?.let { usage ->
                         Text(
                             text = "Use: $usage",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style =
+                                MaterialTheme.typography.bodyMedium,
+                            color =
+                                MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
 
                 dictionaryEntry.acceptedEnglishInputs
                     .distinct()
-                    .takeIf { it.size > 1 }
+                    .takeIf {
+                        it.size > 1
+                    }
                     ?.let { inputs ->
                         Text(
-                            text = "Also accepts: ${inputs.joinToString(", ")}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text =
+                                "Also accepts: ${inputs.joinToString(", ")}",
+                            style =
+                                MaterialTheme.typography.bodySmall,
+                            color =
+                                MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
 
                 dictionaryEntry.pronunciation
-                    ?.takeIf { it.isNotBlank() }
+                    ?.takeIf {
+                        it.isNotBlank()
+                    }
                     ?.let { pronunciation ->
                         Text(
-                            text = "Pronunciation: $pronunciation",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text =
+                                "Pronunciation: $pronunciation",
+                            style =
+                                MaterialTheme.typography.bodySmall,
+                            color =
+                                MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
 
                 dictionaryEntry.partOfSpeech
-                    ?.takeIf { it.isNotBlank() }
+                    ?.takeIf {
+                        it.isNotBlank()
+                    }
                     ?.let { partOfSpeech ->
                         Text(
-                            text = partOfSpeech.replaceFirstChar {
-                                it.uppercase()
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text =
+                                partOfSpeech.replaceFirstChar {
+                                    it.uppercase()
+                                },
+                            style =
+                                MaterialTheme.typography.labelMedium,
+                            color =
+                                MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
             }
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement =
+                    Arrangement.spacedBy(8.dp),
             ) {
                 FilledTonalIconButton(
                     onClick = {
-                        clipboard.setText(AnnotatedString(output))
+                        clipboard.setText(
+                            AnnotatedString(output)
+                        )
                     },
                 ) {
                     Icon(
@@ -119,10 +148,17 @@ fun TranslationResultCard(
                     )
                 }
 
-                SpeakButton(text = output)
+                SpeakButton(
+                    text = output,
+                    languageTag = outputLanguageTag,
+                )
 
-                if (onSave != null && entry != null) {
-                    FilledTonalIconButton(onClick = onSave) {
+                if (onSave != null &&
+                    entry != null
+                ) {
+                    FilledTonalIconButton(
+                        onClick = onSave,
+                    ) {
                         Icon(
                             Icons.Rounded.BookmarkAdd,
                             contentDescription = "Save word",

@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -20,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,59 +36,98 @@ import java.util.Locale
 fun HistoryScreen(
     history: List<TranslationRecord>,
 ) {
-    var query by rememberSaveable { mutableStateOf("") }
+    var query by rememberSaveable {
+        mutableStateOf("")
+    }
 
     val filtered = history.filter {
         query.isBlank() ||
-            it.sourceText.contains(query, ignoreCase = true) ||
-            it.translatedText.contains(query, ignoreCase = true)
+            it.sourceText.contains(
+                query,
+                ignoreCase = true,
+            ) ||
+            it.translatedText.contains(
+                query,
+                ignoreCase = true,
+            )
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.padding(
-                start = 20.dp,
-                end = 20.dp,
-                top = 20.dp,
-                bottom = 10.dp,
-            ),
-        ) {
-            Text(
-                text = "History",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
-
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 14.dp),
-                label = { Text("Search translations") },
-                singleLine = true,
-            )
-        }
+    Column(
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = {
+                query = it
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 20.dp,
+                    bottom = 10.dp,
+                ),
+            label = {
+                Text("Search translations")
+            },
+            singleLine = true,
+            leadingIcon = {
+                Icon(
+                    Icons.Rounded.Search,
+                    contentDescription = null,
+                )
+            },
+            trailingIcon = if (query.isNotBlank()) {
+                {
+                    IconButton(
+                        onClick = {
+                            query = ""
+                        },
+                    ) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = "Clear search",
+                        )
+                    }
+                }
+            } else {
+                null
+            },
+        )
 
         if (filtered.isEmpty()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(32.dp),
-                verticalArrangement = Arrangement.Center,
+                horizontalAlignment =
+                    Alignment.CenterHorizontally,
+                verticalArrangement =
+                    Arrangement.Center,
             ) {
                 Icon(
                     Icons.Rounded.History,
                     contentDescription = null,
                 )
                 Text(
-                    text = "No translations yet",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = if (history.isEmpty()) {
+                        "No translations yet"
+                    } else {
+                        "No matching translations"
+                    },
+                    style =
+                        MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(top = 10.dp),
                 )
                 Text(
-                    text = "Completed translations will be listed here.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = if (history.isEmpty()) {
+                        "Successful translations will appear here."
+                    } else {
+                        "Try a different search term."
+                    },
+                    color =
+                        MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
@@ -95,9 +138,15 @@ fun HistoryScreen(
                     end = 20.dp,
                     bottom = 24.dp,
                 ),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement =
+                    Arrangement.spacedBy(10.dp),
             ) {
-                items(filtered, key = { it.translationId }) { item ->
+                items(
+                    items = filtered,
+                    key = {
+                        it.translationId
+                    },
+                ) { item ->
                     HistoryCard(item)
                 }
             }
@@ -106,17 +155,23 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun HistoryCard(item: TranslationRecord) {
-    val date = rememberDate(item.createdAtMillis)
+private fun HistoryCard(
+    item: TranslationRecord,
+) {
+    val date = formatDate(item.createdAtMillis)
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp),
+            verticalArrangement =
+                Arrangement.spacedBy(5.dp),
         ) {
             Text(
                 text = "${item.sourceLanguage} → ${item.targetLanguage}",
-                style = MaterialTheme.typography.labelMedium,
+                style =
+                    MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
@@ -125,20 +180,25 @@ private fun HistoryCard(item: TranslationRecord) {
             )
             Text(
                 text = item.translatedText,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color =
+                    MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "${item.inputType.lowercase().replaceFirstChar { it.uppercase() }} · $date",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text =
+                    "${item.inputType.lowercase().replaceFirstChar { it.uppercase() }} · $date",
+                style =
+                    MaterialTheme.typography.bodySmall,
+                color =
+                    MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
     }
 }
 
-private fun rememberDate(time: Long): String =
-    SimpleDateFormat(
-        "dd MMM, h:mm a",
-        Locale.getDefault(),
-    ).format(Date(time))
+private fun formatDate(
+    time: Long,
+): String = SimpleDateFormat(
+    "dd MMM, h:mm a",
+    Locale.getDefault(),
+).format(Date(time))

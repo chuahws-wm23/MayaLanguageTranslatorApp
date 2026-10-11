@@ -8,6 +8,8 @@ import com.chuahws.mayalanguageapp.domain.model.SavedVocabularyItem
 import com.chuahws.mayalanguageapp.domain.repository.UserDataRepository
 import com.chuahws.mayalanguageapp.domain.repository.UserProfileRepository
 import java.util.UUID
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,7 +25,15 @@ class AppDataViewModel(
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
 
     fun loadForUser(userId: String) {
-        _uiState.update { it.copy(userId = userId) }
+        if (_uiState.value.userId == userId &&
+            _uiState.value.profile != null
+        ) {
+            return
+        }
+
+        _uiState.update {
+            it.copy(userId = userId)
+        }
         refresh()
     }
 
@@ -33,34 +43,55 @@ class AppDataViewModel(
 
     fun refresh() {
         val userId = _uiState.value.userId ?: return
+        if (_uiState.value.loading) return
+
+        _uiState.update {
+            it.copy(loading = true)
+        }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(loading = true) }
-
             runCatching {
-                val profile = userProfileRepository.getProfile(userId)
-                val history = userDataRepository.getHistory(userId)
-                val saved = userDataRepository.getSavedVocabulary(userId)
-                val feedback = userDataRepository.getFeedback(userId)
-                val analytics = userDataRepository.getAnalytics(userId)
+                coroutineScope {
+                    val profile = async {
+                        userProfileRepository.getProfile(userId)
+                    }
+                    val history = async {
+                        userDataRepository.getHistory(userId)
+                    }
+                    val saved = async {
+                        userDataRepository.getSavedVocabulary(userId)
+                    }
+                    val feedback = async {
+                        userDataRepository.getFeedback(userId)
+                    }
+                    val analytics = async {
+                        userDataRepository.getAnalytics(userId)
+                    }
 
-                AppUiState(
-                    userId = userId,
-                    profile = profile,
-                    history = history,
-                    savedVocabulary = saved,
-                    feedback = feedback,
-                    analytics = analytics,
-                    loading = false,
-                )
+                    LoadedUserData(
+                        profile = profile.await(),
+                        history = history.await(),
+                        saved = saved.await(),
+                        feedback = feedback.await(),
+                        analytics = analytics.await(),
+                    )
+                }
             }.onSuccess { loaded ->
-                _uiState.value = loaded
+                _uiState.update {
+                    it.copy(
+                        profile = loaded.profile,
+                        history = loaded.history,
+                        savedVocabulary = loaded.saved,
+                        feedback = loaded.feedback,
+                        analytics = loaded.analytics,
+                        loading = false,
+                    )
+                }
             }.onFailure { error ->
                 _uiState.update {
                     it.copy(
                         loading = false,
-                        message = error.message
-                            ?: "Could not refresh your data.",
+                        message = "Could not refresh your data. Check your connection and try again.",
                     )
                 }
             }
@@ -74,7 +105,7 @@ class AppDataViewModel(
                 it.entryId == entry.entryId
             }) {
             _uiState.update {
-                it.copy(message = "Already saved.")
+                it.copy(message = "This word is already saved.")
             }
             return
         }
@@ -105,8 +136,13 @@ class AppDataViewModel(
     fun removeSaved(item: SavedVocabularyItem) {
         viewModelScope.launch {
             runCatching {
-                userDataRepository.removeSavedVocabulary(item.savedId)
+                userDataRepository.removeSavedVocabulary(
+                    item.savedId
+                )
             }.onSuccess {
+                _uiState.update {
+                    it.copy(message = "Removed from saved vocabulary.")
+                }
                 refresh()
             }.onFailure(::showError)
         }
@@ -118,7 +154,9 @@ class AppDataViewModel(
 
         if (cleanName.length < 2) {
             _uiState.update {
-                it.copy(message = "Enter at least two characters.")
+                it.copy(
+                    message = "Enter at least two characters."
+                )
             }
             return
         }
@@ -179,7 +217,11 @@ class AppDataViewModel(
                 userDataRepository.submitFeedback(item)
             }.onSuccess {
                 _uiState.update {
-                    it.copy(message = "Thanks for the feedback.")
+                    it.copy(
+                        message = "Thanks for the feedback.",
+                        feedbackSubmissionVersion =
+                            it.feedbackSubmissionVersion + 1,
+                    )
                 }
                 refresh()
             }.onFailure(::showError)
@@ -187,7 +229,9 @@ class AppDataViewModel(
     }
 
     fun loadAdminFeedback() {
-        if (_uiState.value.profile?.role != "admin") return
+        if (_uiState.value.profile?.role != "admin") {
+            return
+        }
 
         viewModelScope.launch {
             runCatching {
@@ -201,7 +245,9 @@ class AppDataViewModel(
     }
 
     fun markFeedbackReviewed(item: FeedbackItem) {
-        if (_uiState.value.profile?.role != "admin") return
+        if (_uiState.value.profile?.role != "admin") {
+            return
+        }
 
         viewModelScope.launch {
             runCatching {
@@ -211,21 +257,34 @@ class AppDataViewModel(
                     reviewedAtMillis = System.currentTimeMillis(),
                 )
             }.onSuccess {
+                _uiState.update {
+                    it.copy(message = "Feedback marked as reviewed.")
+                }
                 loadAdminFeedback()
             }.onFailure(::showError)
         }
     }
 
     fun clearMessage() {
-        _uiState.update { it.copy(message = null) }
+        _uiState.update {
+            it.copy(message = null)
+        }
     }
 
     private fun showError(error: Throwable) {
         _uiState.update {
             it.copy(
                 loading = false,
-                message = error.message ?: "Something went wrong.",
+                message = "Something went wrong. Please try again.",
             )
         }
     }
+
+    private data class LoadedUserData(
+        val profile: com.chuahws.mayalanguageapp.domain.model.UserProfile?,
+        val history: List<com.chuahws.mayalanguageapp.domain.model.TranslationRecord>,
+        val saved: List<SavedVocabularyItem>,
+        val feedback: List<FeedbackItem>,
+        val analytics: com.chuahws.mayalanguageapp.domain.model.UsageAnalytics,
+    )
 }

@@ -15,5 +15,6 @@ data class AppUiState(
     val adminFeedback: List<FeedbackItem> = emptyList(),
     val analytics: UsageAnalytics = UsageAnalytics(),
     val loading: Boolean = false,
+    val feedbackSubmissionVersion: Long = 0L,
     val message: String? = null,
 )
