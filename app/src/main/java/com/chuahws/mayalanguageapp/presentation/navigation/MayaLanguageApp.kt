@@ -345,6 +345,9 @@ private fun MainShell(
                     onVoiceTranslation = {
                         page = AppPage.VOICE_TRANSLATION
                     },
+                    onSaved = {
+                        page = AppPage.SAVED
+                    },
                     onHistory = {
                         page = AppPage.HISTORY
                     },
