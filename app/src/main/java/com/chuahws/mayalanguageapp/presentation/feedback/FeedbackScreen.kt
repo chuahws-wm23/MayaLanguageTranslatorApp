@@ -2,18 +2,20 @@ package com.chuahws.mayalanguageapp.presentation.feedback
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,8 +33,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.chuahws.mayalanguageapp.presentation.components.AccentIcon
+import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
+import com.chuahws.mayalanguageapp.presentation.theme.MayaPink
 
 private const val MAX_FEEDBACK_LENGTH = 500
 
@@ -72,113 +76,156 @@ fun FeedbackScreen(
         rating in 1..5 &&
             comment.trim().length >= 4
 
-    Column(
-        modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .imePadding()
-            .padding(24.dp),
-        horizontalAlignment =
-            Alignment.CenterHorizontally,
-        verticalArrangement =
-            Arrangement.spacedBy(18.dp),
-    ) {
-        Text(
-            text =
-                "How was your experience with Maya Language App?",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-        )
-
-        Row(
-            horizontalArrangement =
-                Arrangement.Center,
+    AppGradientBackground {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(
+                    PaddingValues(
+                        start = 18.dp,
+                        top = 18.dp,
+                        end = 18.dp,
+                        bottom = 112.dp,
+                    )
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            (1..5).forEach { value ->
-                IconButton(
-                    onClick = {
-                        rating = value
-                    },
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Icon(
-                        imageVector =
-                            if (value <= rating) {
-                                Icons.Rounded.Star
-                            } else {
-                                Icons.Rounded.StarBorder
-                            },
-                        contentDescription =
-                            "$value star rating",
-                        tint =
-                            MaterialTheme.colorScheme.primary,
+                    AccentIcon(
+                        icon = Icons.Rounded.ChatBubble,
+                        color = MayaPink,
+                    )
+                    Text(
+                        text = "How was your experience?",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = "Your feedback helps improve Maya Translate.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        (1..5).forEach { value ->
+                            IconButton(
+                                onClick = {
+                                    rating = value
+                                },
+                                enabled = !submitting,
+                            ) {
+                                Icon(
+                                    imageVector =
+                                        if (value <= rating) {
+                                            Icons.Rounded.Star
+                                        } else {
+                                            Icons.Rounded.StarBorder
+                                        },
+                                    contentDescription =
+                                        "$value star rating",
+                                    tint =
+                                        if (value <= rating) {
+                                            MayaPink
+                                        } else {
+                                            MaterialTheme.colorScheme.outline
+                                        },
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = ratingText,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
             }
-        }
 
-        Text(
-            text = ratingText,
-            color =
-                MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedTextField(
+                        value = comment,
+                        onValueChange = {
+                            if (it.length <= MAX_FEEDBACK_LENGTH) {
+                                comment = it
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !submitting,
+                        label = {
+                            Text("Write your feedback")
+                        },
+                        placeholder = {
+                            Text(
+                                "Tell us what worked well or what should be improved."
+                            )
+                        },
+                        supportingText = {
+                            Text(
+                                "${comment.length}/$MAX_FEEDBACK_LENGTH"
+                            )
+                        },
+                        minLines = 6,
+                    )
 
-        OutlinedTextField(
-            value = comment,
-            onValueChange = {
-                if (it.length <= MAX_FEEDBACK_LENGTH) {
-                    comment = it
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = {},
+                        readOnly = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = {
+                            Text("Email")
+                        },
+                        singleLine = true,
+                    )
                 }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = {
-                Text("Write your feedback")
-            },
-            placeholder = {
-                Text(
-                    "Tell us what worked well or what should be improved."
-                )
-            },
-            supportingText = {
-                Text(
-                    "${comment.length}/$MAX_FEEDBACK_LENGTH"
-                )
-            },
-            minLines = 5,
-            keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Done,
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
+            }
+
+            Button(
+                onClick = {
                     focusManager.clearFocus()
+                    onSubmit(rating, comment)
                 },
-            ),
-        )
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = {},
-            readOnly = true,
-            modifier = Modifier.fillMaxWidth(),
-            label = {
-                Text("Email")
-            },
-            singleLine = true,
-        )
-
-        Button(
-            onClick = {
-                focusManager.clearFocus()
-                onSubmit(rating, comment)
-            },
-            enabled = canSubmit && !submitting,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            if (submitting) {
-                CircularProgressIndicator(
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
-            } else {
-                Text("Submit feedback")
+                enabled = canSubmit && !submitting,
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(vertical = 15.dp),
+            ) {
+                if (submitting) {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                } else {
+                    Text(
+                        text = "Submit feedback",
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
             }
         }
     }
