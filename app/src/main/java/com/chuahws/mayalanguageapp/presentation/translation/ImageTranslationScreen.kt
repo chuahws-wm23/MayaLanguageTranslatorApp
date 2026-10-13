@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,15 +19,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.ImageSearch
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,7 +53,10 @@ import com.chuahws.mayalanguageapp.domain.model.InputType
 import com.chuahws.mayalanguageapp.domain.model.TranslationDirection
 import com.chuahws.mayalanguageapp.integration.ml_kit_ocr.MlKitOcrService
 import com.chuahws.mayalanguageapp.integration.ml_kit_ocr.createTemporaryImageUri
+import com.chuahws.mayalanguageapp.presentation.components.AccentIcon
+import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
+import com.chuahws.mayalanguageapp.presentation.theme.MayaPink
 import kotlinx.coroutines.launch
 
 @Composable
@@ -148,191 +156,274 @@ fun ImageTranslationScreen(
     val source =
         if (state.direction ==
             TranslationDirection.MAYA_TO_ENGLISH
-        ) {
-            "Yucatec Maya"
-        } else {
-            "English"
-        }
+        ) "Yucatec Maya" else "English"
+
+    val target =
+        if (state.direction ==
+            TranslationDirection.MAYA_TO_ENGLISH
+        ) "English" else "Yucatec Maya"
 
     val outputLanguageTag =
         if (state.direction ==
             TranslationDirection.MAYA_TO_ENGLISH
-        ) {
-            "en-US"
-        } else {
-            "yua"
-        }
+        ) "en-US" else "yua"
 
-    Column(
-        modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement =
-            Arrangement.spacedBy(16.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement =
-                Arrangement.spacedBy(10.dp),
+    AppGradientBackground {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    PaddingValues(
+                        start = 18.dp,
+                        top = 18.dp,
+                        end = 18.dp,
+                        bottom = 112.dp,
+                    )
+                ),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            FilledTonalButton(
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        AccentIcon(
+                            icon = Icons.Rounded.ImageSearch,
+                            color = MayaPink,
+                        )
+                        Column {
+                            Text(
+                                text = "Scan text from an image",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Text(
+                                text = "Choose a clear photo with readable Latin-script text.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        FilledTonalButton(
+                            onClick = {
+                                val uri =
+                                    createTemporaryImageUri(context)
+                                cameraUri = uri
+                                cameraLauncher.launch(uri)
+                            },
+                            enabled =
+                                cameraAvailable &&
+                                    !readingImage,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(
+                                Icons.Rounded.CameraAlt,
+                                contentDescription = null,
+                            )
+                            Text(
+                                "Camera",
+                                modifier =
+                                    Modifier.padding(start = 8.dp),
+                            )
+                        }
+
+                        FilledTonalButton(
+                            onClick = {
+                                galleryLauncher.launch("image/*")
+                            },
+                            enabled = !readingImage,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(
+                                Icons.Rounded.PhotoLibrary,
+                                contentDescription = null,
+                            )
+                            Text(
+                                "Gallery",
+                                modifier =
+                                    Modifier.padding(start = 8.dp),
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (!cameraAvailable) {
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    Text(
+                        text =
+                            "No camera app is available on this device. You can still choose an image from Gallery.",
+                        style =
+                            MaterialTheme.typography.bodySmall,
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(12.dp),
+                    )
+                }
+            }
+
+            preview?.let { bitmap ->
+                Card(
+                    shape = MaterialTheme.shapes.extraLarge,
+                ) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Selected image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 10f),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+            }
+
+            if (readingImage) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(10.dp),
+                    ) {
+                        CircularProgressIndicator()
+                        Column {
+                            Text(
+                                text = "Reading image…",
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = "ML Kit is extracting the text.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+
+            imageMessage?.let {
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.errorContainer,
+                ) {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(12.dp),
+                    )
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.SpaceBetween,
+                    ) {
+                        Column {
+                            Text(
+                                text = "Extracted text",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = "$source → $target",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+
+                        FilledTonalIconButton(
+                            onClick = viewModel::swapDirection,
+                            enabled = !state.loading,
+                        ) {
+                            Icon(
+                                Icons.Rounded.SwapHoriz,
+                                contentDescription =
+                                    "Swap languages",
+                            )
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = state.input,
+                        onValueChange = viewModel::updateInput,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !readingImage &&
+                            !state.loading,
+                        placeholder = {
+                            Text("Detected text will appear here")
+                        },
+                        supportingText = {
+                            Text(
+                                "Check and correct the text before translating."
+                            )
+                        },
+                        minLines = 4,
+                    )
+                }
+            }
+
+            Button(
                 onClick = {
-                    val uri =
-                        createTemporaryImageUri(context)
-                    cameraUri = uri
-                    cameraLauncher.launch(uri)
+                    viewModel.translate(InputType.IMAGE)
                 },
                 enabled =
-                    cameraAvailable &&
-                        !readingImage,
-                modifier = Modifier.weight(1f),
+                    !state.loading &&
+                        !readingImage &&
+                        state.input.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(vertical = 15.dp),
             ) {
-                Icon(
-                    Icons.Rounded.CameraAlt,
-                    contentDescription = null,
-                )
                 Text(
-                    "Camera",
-                    modifier =
-                        Modifier.padding(start = 8.dp),
+                    text = "Translate",
+                    fontWeight = FontWeight.SemiBold,
                 )
             }
 
-            FilledTonalButton(
-                onClick = {
-                    galleryLauncher.launch("image/*")
-                },
-                enabled = !readingImage,
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(
-                    Icons.Rounded.PhotoLibrary,
-                    contentDescription = null,
-                )
+            state.message?.let {
                 Text(
-                    "Gallery",
-                    modifier =
-                        Modifier.padding(start = 8.dp),
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
-        }
 
-        if (!cameraAvailable) {
-            Text(
-                text =
-                    "No camera app is available on this device. You can still choose an image from Gallery.",
-                style =
-                    MaterialTheme.typography.bodySmall,
-                color =
-                    MaterialTheme.colorScheme.onSurfaceVariant,
+            TranslationResultCard(
+                output = state.output,
+                entry = state.matchedEntry,
+                outputLanguageTag = outputLanguageTag,
+                onSave =
+                    state.matchedEntry?.let { entry ->
+                        {
+                            onSaveEntry(entry)
+                        }
+                    },
             )
         }
-
-        preview?.let { bitmap ->
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Selected image",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(16f / 10f),
-                contentScale = ContentScale.Crop,
-            )
-        }
-
-        if (readingImage) {
-            Row(
-                horizontalArrangement =
-                    Arrangement.spacedBy(10.dp),
-            ) {
-                CircularProgressIndicator()
-                Text("Reading text…")
-            }
-        }
-
-        imageMessage?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement =
-                Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text =
-                    "$source → " +
-                        if (source == "English") {
-                            "Yucatec Maya"
-                        } else {
-                            "English"
-                        },
-                style =
-                    MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-
-            FilledTonalIconButton(
-                onClick = viewModel::swapDirection,
-                enabled = !state.loading,
-            ) {
-                Icon(
-                    Icons.Rounded.SwapHoriz,
-                    contentDescription =
-                        "Swap languages",
-                )
-            }
-        }
-
-        OutlinedTextField(
-            value = state.input,
-            onValueChange = viewModel::updateInput,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !readingImage &&
-                !state.loading,
-            label = {
-                Text("Extracted text")
-            },
-            supportingText = {
-                Text(
-                    "Check and correct the text before translating."
-                )
-            },
-            minLines = 4,
-        )
-
-        Button(
-            onClick = {
-                viewModel.translate(InputType.IMAGE)
-            },
-            enabled =
-                !state.loading &&
-                    !readingImage &&
-                    state.input.isNotBlank(),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("Translate")
-        }
-
-        state.message?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-
-        TranslationResultCard(
-            output = state.output,
-            entry = state.matchedEntry,
-            outputLanguageTag = outputLanguageTag,
-            onSave =
-                state.matchedEntry?.let { entry ->
-                    {
-                        onSaveEntry(entry)
-                    }
-                },
-        )
     }
 }
