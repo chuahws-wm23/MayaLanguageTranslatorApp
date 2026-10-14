@@ -6,10 +6,10 @@ import java.util.Locale
  * Conservative post-processing for OCR that is expected to contain
  * Yucatec Maya written in the modern Latin alphabet.
  *
- * ML Kit intentionally recognises every visible text line. This filter removes
+ * ML Kit intentionally recognizes every visible text line. This filter removes
  * obvious numbers, symbols and English lines before the editable OCR result is
  * shown to the user. Ambiguous plain-Latin lines are kept only when the
- * dictionary recognises the complete line or one of its words.
+ * dictionary recognizes the complete line or one of its words.
  *
  * The final OCR field stays editable because language filtering cannot replace
  * user verification.
@@ -62,19 +62,25 @@ object MayaOcrTextFilter {
         rawText: String,
         isKnownMaya: suspend (String) -> Boolean,
     ): String {
-        return rawText
+        val keptLines = mutableListOf<String>()
+
+        val lines = rawText
             .replace("\r\n", "\n")
             .replace("\r", "\n")
             .lineSequence()
             .map(String::trim)
             .filter(String::isNotBlank)
-            .mapNotNull { line ->
-                if (shouldKeep(line, isKnownMaya)) {
-                    line
-                } else {
-                    null
-                }
+
+        // Use an ordinary loop instead of Sequence.mapNotNull. Sequence
+        // transformation lambdas are not suspend lambdas, so they cannot call
+        // shouldKeep(), which performs suspend dictionary lookups.
+        for (line in lines) {
+            if (shouldKeep(line, isKnownMaya)) {
+                keptLines += line
             }
+        }
+
+        return keptLines
             .joinToString("\n")
             .trim()
     }
