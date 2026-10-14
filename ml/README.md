@@ -14,103 +14,105 @@ The intended final architecture is hybrid:
 2. neural translation fallback for unseen text
 3. explicit user review for OCR-derived text
 
-## Research basis
+## Current experiment result
 
-The default baseline is `facebook/m2m100_418M`. Rangel and Kobayashi (AmericasNLP 2024) reported substantially stronger Yucatec Maya–Spanish results with M2M100 than with their T5-based baseline. Their cleaned Yucatec Maya–Spanish corpus contained 13,528 pairs and their best Yucatec system reported ChrF++ above 50.
+The first medium experiment used 5,000 mixed pairs for 2 epochs.
 
-This project does **not** copy their training code or redistribute their data. Their work is used as methodological evidence for choosing a translation-focused multilingual baseline.
+It reached approximately:
+
+- validation ChrF++: 39.70
+- English → Yucatec test ChrF++: 23.38
+- Yucatec → English test ChrF++: 25.93
+
+Manual sanity checks showed several semantically incorrect translations. Therefore this checkpoint is a **proof of concept**, not a final app model.
+
+The next experiment uses two stages:
+
+1. mixed human + synthetic training to learn broader translation patterns
+2. human-direct refinement at a lower learning rate
 
 ## Training data
 
-The pipeline deliberately separates human and synthetic supervision.
+### GATITOS English ↔ Yucatec Maya
 
-### 1. GATITOS English ↔ Yucatec Maya
-
-- direct human translation from English
-- approximately 4,000 short items
-- mostly words and short phrases rather than full sentences
+- 4,062 direct human pairs downloaded in the current experiment
+- mostly words and short phrases
 - CC BY 4.0
-- loaded from `mabsoutwassim/smol` on Hugging Face
+- loaded from `mabsoutwassim/smol`
 
-This gives high-quality direct English ↔ Yucatec supervision.
+### YUA-ES Communicative Contexts Corpus
 
-### 2. YUA-ES Communicative Contexts Corpus
-
-- 14,332 Yucatec Maya ↔ Spanish everyday phrase pairs
+- 14,332 Yucatec Maya ↔ Spanish everyday phrases
 - 31 communicative contexts
 - CC BY 4.0
-- Yucatec side is human-created / curated
 
-To build a larger direct English ↔ Yucatec experimental corpus, the Spanish side is translated to English using `Helsinki-NLP/opus-mt-es-en`.
+The Spanish side is translated to English using `Helsinki-NLP/opus-mt-es-en`. Those rows are labelled `synthetic_english`.
 
-Those English sentences are marked **synthetic_english**. They must not be described as human ground truth.
+## Two-stage training
 
-## Quick start in Google Colab
-
-Use a GPU runtime.
+After the normal corpus has been created:
 
 ```bash
-git clone https://github.com/chuahws-wm23/MayaLanguageTranslatorApp.git
-cd MayaLanguageTranslatorApp
-git checkout fyp-development
-
-pip install -r ml/requirements.txt
-
-python ml/scripts/download_gatitos.py
-python ml/scripts/download_yua_es_ccc.py
-python ml/scripts/synthesize_english.py
-python ml/scripts/build_training_corpus.py
+python ml/scripts/build_human_refinement_corpus.py
 ```
 
-Run a small smoke test first:
+This produces:
 
-```bash
-python ml/train_m2m100.py \
-  --max-train-samples 1000 \
-  --max-eval-samples 200 \
-  --epochs 1 \
-  --output-dir ml/artifacts/m2m100-yua-en-smoke
+```text
+ml/data/processed/human_train.csv
+ml/data/processed/human_validation.csv
+ml/data/processed/human_test.csv
 ```
 
-Then train the main experiment:
+### Stage 1 — mixed data
+
+The current medium checkpoint can be used as the starting point for the next experiment. For a later full run, use the complete mixed training set.
+
+### Stage 2 — human-direct refinement
+
+Starting from the medium checkpoint:
 
 ```bash
 python ml/train_m2m100.py \
-  --epochs 5 \
-  --output-dir ml/artifacts/m2m100-yua-en
+  --train-file ml/data/processed/human_train.csv \
+  --validation-file ml/data/processed/human_validation.csv \
+  --model-name ml/artifacts/m2m100-yua-en-medium/best_model \
+  --epochs 3 \
+  --learning-rate 5e-6 \
+  --output-dir ml/artifacts/m2m100-yua-en-human-refined
 ```
 
-Evaluate:
+Evaluate only on the held-out human-direct test subset:
 
 ```bash
 python ml/evaluate_model.py \
-  --model-dir ml/artifacts/m2m100-yua-en \
-  --test-file ml/data/processed/test.csv
+  --model-dir ml/artifacts/m2m100-yua-en-human-refined/best_model \
+  --test-file ml/data/processed/human_test.csv
 ```
 
-## Metrics
+Then run the same qualitative test sentences:
 
-The evaluator reports:
+```bash
+python ml/manual_sanity_check.py \
+  --model-dir ml/artifacts/m2m100-yua-en-human-refined/best_model
+```
 
-- ChrF++ (ChrF with word order 2)
-- BLEU
-
-It reports the two translation directions separately and also separates human-direct GATITOS examples from synthetic-English examples when both are present.
+The refined checkpoint should only be promoted if both automatic metrics and qualitative correctness improve.
 
 ## Important methodology rule
 
-Do **not** report the synthetic English test subset as a fully human gold-standard English evaluation set.
+The synthetic-English test subset must not be presented as a human gold-standard benchmark.
 
-For the final FYP evaluation, create a manually checked English ↔ Yucatec sentence test set that is never used for training.
+For the final dissertation, create a manually checked sentence-level English ↔ Yucatec Maya test set that is never used for training.
 
 ## Serving the trained model
 
-After training:
+After a checkpoint passes evaluation:
 
 ```bash
 pip install -r ml/api/requirements.txt
-MAYA_MODEL_DIR=ml/artifacts/m2m100-yua-en \
+MAYA_MODEL_DIR=ml/artifacts/m2m100-yua-en-human-refined/best_model \
 uvicorn ml.api.main:app --host 0.0.0.0 --port 8000
 ```
 
-The Android app can later call this API only after the model reaches an acceptable evaluation score.
+The Android app should continue using verified dictionary matches first and call the NMT service only as a fallback for unseen text.

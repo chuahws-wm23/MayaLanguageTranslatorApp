@@ -8,7 +8,7 @@ This is an experimental extension of the existing dictionary-based Translation S
 
 ## Baseline model
 
-The first baseline uses `facebook/m2m100_418M`.
+The baseline uses `facebook/m2m100_418M`.
 
 Rangel and Kobayashi (2024) trained M2M100 on Yucatec Maya–Spanish data and reported materially better results than their T5-based experiments. Their paper reports 13,528 cleaned Yucatec Maya–Spanish pairs and a Yucatec test result around ChrF++ 51.5 for the M2M100 Mayan experiment.
 
@@ -18,47 +18,62 @@ https://aclanthology.org/2024.americasnlp-1.16/
 Research code:
 https://github.com/RIKEN-DKO/iikim_translator
 
-## Direct English data
+## Current experimental results
 
-SMOL/GATITOS provides approximately 4,000 direct professional/human-translated English ↔ Yucatec Maya items under CC BY 4.0.
+A 5,000-pair, 2-epoch mixed-data experiment reached:
 
-GATITOS is primarily lexical and short-phrase data. It is useful for vocabulary coverage but cannot by itself justify claims of strong sentence-level translation.
+- validation ChrF++ ≈ 39.70
+- English → Yucatec overall test ChrF++ ≈ 23.38
+- Yucatec → English overall test ChrF++ ≈ 25.93
+- English → Yucatec human-direct ChrF++ ≈ 13.58
+- Yucatec → English human-direct ChrF++ ≈ 19.13
 
-Source:
-https://huggingface.co/datasets/mabsoutwassim/smol
+Manual sentence testing revealed semantic errors on several common phrases. This means the model is learning Yucatec-like generation patterns, but the mixed-data checkpoint is not sufficiently reliable for production translation.
 
-## Everyday phrase data
+## Why the next experiment changes
 
-YUA-ES-CCC provides 14,332 aligned Yucatec Maya ↔ Spanish everyday phrases across 31 communicative contexts under CC BY 4.0.
+The prepared training set is dominated by synthetic-English rows. In the current split:
 
-Source repository:
-https://github.com/alemol/yua-es-ccc
+- human-direct training pairs: 3,249
+- synthetic-English training pairs: 11,145
 
-DOI:
-https://doi.org/10.5281/zenodo.20631792
+The model performs better on the synthetic subset than on human-direct examples. The next experiment therefore uses **human-direct refinement** rather than immediately spending several hours on a larger mixed-data run.
 
-For this FYP experiment, its Spanish translations are converted to English using a Spanish→English NMT model. The resulting English targets are **synthetic** and are labelled as such in every processed row.
+## Two-stage training design
 
-## Evaluation design
+### Stage 1 — broad mixed-data training
+
+Use human-direct and synthetic-English pairs together so the model learns broader Yucatec Maya ↔ English generation patterns.
+
+### Stage 2 — human-direct refinement
+
+Continue fine-tuning from the Stage 1 checkpoint using only the human-direct subset and a smaller learning rate.
+
+Current refinement settings:
+
+- training pairs: 3,249 human-direct
+- validation pairs: 425 human-direct
+- held-out test pairs: 388 human-direct
+- epochs: 3
+- learning rate: 5e-6
+
+The held-out human test set remains excluded from refinement training.
+
+## Evaluation
 
 The pipeline reports BLEU and ChrF++.
 
-Two subsets must be distinguished:
+Automatic metrics must be complemented with manual sentence checks because an NMT model can obtain a non-trivial corpus score while still producing semantically incorrect translations for individual phrases.
 
-1. **human_direct** — direct English ↔ Yucatec GATITOS pairs
-2. **synthetic_english** — Yucatec phrases paired with machine-translated English derived from the Spanish side of YUA-ES-CCC
-
-The final dissertation should not present the synthetic-English subset as a human gold-standard English benchmark.
-
-A manually verified sentence-level English ↔ Yucatec test set should be created before the final evaluation.
+The final dissertation should additionally use a manually verified sentence-level English ↔ Yucatec test set that is never used during training.
 
 ## Proposed final app architecture
 
 1. User supplies typed text, OCR text, or speech-recognized text.
 2. Text is normalized.
 3. Translation Service checks a verified dictionary/phrase table first.
-4. If there is no reliable exact match, the Translation Service calls the neural translation model.
-5. The neural result is shown as a generated translation and can be reviewed before saving.
-6. History and analytics record which engine produced the output.
+4. If there is no reliable exact match, the Translation Service calls the evaluated neural translation model.
+5. The neural result is clearly treated as generated output.
+6. History and analytics record which engine produced the translation.
 
-This keeps deterministic translations for verified phrases while allowing generalization to unseen sentences.
+This keeps deterministic translations for verified phrases while allowing model-based fallback for unseen sentences.
