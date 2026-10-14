@@ -126,10 +126,6 @@ def main(args) -> None:
     )
     base_model.config.use_cache = False
 
-    if args.gradient_checkpointing:
-        base_model.gradient_checkpointing_enable()
-        base_model.enable_input_require_grads()
-
     lora_config = LoraConfig(
         task_type=TaskType.SEQ_2_SEQ_LM,
         r=args.lora_r,
@@ -140,6 +136,20 @@ def main(args) -> None:
     )
 
     model = get_peft_model(base_model, lora_config)
+
+    if args.gradient_checkpointing:
+        # Non-reentrant checkpointing is important for PEFT/LoRA because the
+        # frozen base model's input tensors do not require gradients. The
+        # reentrant PyTorch checkpoint path would otherwise warn that no
+        # inputs require gradients and can fail with "tensor does not require
+        # grad" during the first backward pass.
+        model.gradient_checkpointing_enable(
+            gradient_checkpointing_kwargs={
+                "use_reentrant": False,
+            }
+        )
+        model.config.use_cache = False
+
     model.print_trainable_parameters()
 
     def preprocess(batch):
