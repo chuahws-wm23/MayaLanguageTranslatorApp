@@ -104,13 +104,34 @@ fun ImageTranslationScreen(
             runCatching {
                 ocrService.readText(context, uri)
             }.onSuccess { text ->
+                val extractedText =
+                    if (
+                        state.direction ==
+                            TranslationDirection.MAYA_TO_ENGLISH
+                    ) {
+                        viewModel.filterMayaOcrText(text)
+                    } else {
+                        text
+                            .lineSequence()
+                            .map(String::trim)
+                            .filter(String::isNotBlank)
+                            .filter { line ->
+                                line.any(Char::isLetter)
+                            }
+                            .joinToString("\n")
+                    }
+
                 readingImage = false
 
                 if (text.isBlank()) {
                     imageMessage =
                         "No text was found. Try a clearer image."
+                } else if (extractedText.isBlank()) {
+                    viewModel.updateInput("")
+                    imageMessage =
+                        "No likely Yucatec Maya text was found. Try a clearer image or enter the Maya text manually."
                 } else {
-                    viewModel.updateInput(text)
+                    viewModel.updateInput(extractedText)
                 }
             }.onFailure {
                 readingImage = false
@@ -381,7 +402,14 @@ fun ImageTranslationScreen(
                         },
                         supportingText = {
                             Text(
-                                "Check and correct the text before translating."
+                                if (
+                                    state.direction ==
+                                        TranslationDirection.MAYA_TO_ENGLISH
+                                ) {
+                                    "Only likely Yucatec Maya text is shown. English, numbers and OCR noise are removed automatically. Check and correct the text before translating."
+                                } else {
+                                    "Check and correct the text before translating."
+                                }
                             )
                         },
                         minLines = 4,

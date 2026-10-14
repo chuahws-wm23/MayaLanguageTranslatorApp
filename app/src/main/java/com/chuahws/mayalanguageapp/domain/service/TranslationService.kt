@@ -38,4 +38,15 @@ class TranslationService(
             entry = entry,
         )
     }
+
+    suspend fun filterMayaOcrText(
+        rawText: String,
+    ): String = MayaOcrTextFilter.filter(
+        rawText = rawText,
+        isKnownMaya = { candidate ->
+            dictionaryRepository.findByMaya(
+                TextNormalizer.normalize(candidate)
+            ) != null
+        },
+    )
 }
