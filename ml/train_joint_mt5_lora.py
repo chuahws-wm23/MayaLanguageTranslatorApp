@@ -112,7 +112,7 @@ def main(args) -> None:
     train_ds = Dataset.from_list(train_examples).shuffle(seed=args.seed)
     eval_ds = Dataset.from_list(eval_examples).shuffle(seed=args.seed)
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=False)
     dtype = torch.float16 if torch.cuda.is_available() else torch.float32
     base_model = AutoModelForSeq2SeqLM.from_pretrained(
         args.model_name,

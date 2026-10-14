@@ -29,7 +29,7 @@ PREFIXES = {
 def main(adapter_dir: str) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     config = PeftConfig.from_pretrained(adapter_dir)
-    tokenizer = AutoTokenizer.from_pretrained(adapter_dir)
+    tokenizer = AutoTokenizer.from_pretrained(adapter_dir, use_fast=False)
 
     dtype = torch.float16 if torch.cuda.is_available() else torch.float32
     base = AutoModelForSeq2SeqLM.from_pretrained(
