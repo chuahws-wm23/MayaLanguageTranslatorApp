@@ -42,14 +42,14 @@ python ml\scripts\build_yua_es_corpus.py
 ## First local smoke test
 
 ```powershell
-python ml\train_joint_lora.py ^
-  --max-english-train-samples 100 ^
-  --max-spanish-train-samples 200 ^
-  --max-english-eval-samples 30 ^
-  --max-spanish-eval-samples 50 ^
-  --english-repeat 1 ^
-  --validation-english-repeat 1 ^
-  --epochs 1 ^
+python ml\train_joint_lora.py `
+  --max-english-train-samples 100 `
+  --max-spanish-train-samples 200 `
+  --max-english-eval-samples 30 `
+  --max-spanish-eval-samples 50 `
+  --english-repeat 1 `
+  --validation-english-repeat 1 `
+  --epochs 1 `
   --output-dir ml\artifacts\m2m100-yua-joint-lora-smoke
 ```
 
