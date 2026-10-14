@@ -24,11 +24,16 @@ Default adapter settings:
 
 ## Install
 
-Use the existing ML environment and add PEFT:
+Use the existing ML environment and add the pinned PEFT version:
 
 ```powershell
-python -m pip install -r ml\requirements-lora.txt
+python -m pip uninstall peft -y
+python -m pip install --no-deps -r ml\requirements-lora.txt
 ```
+
+The explicit pin avoids a Windows compatibility issue in newer PEFT releases
+that may try to access `torch.distributed.tensor` even when that namespace is
+not exposed by the installed Windows PyTorch build.
 
 ## Rebuild the two human datasets
 

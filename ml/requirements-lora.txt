@@ -1,1 +1,4 @@
-peft>=0.13,<1
+# PEFT 0.18.x currently hits a torch.distributed.tensor compatibility bug
+# on some Windows PyTorch builds. 0.13.2 is compatible with this project's
+# Transformers 4.45.x stack and avoids that DTensor code path.
+peft==0.13.2
