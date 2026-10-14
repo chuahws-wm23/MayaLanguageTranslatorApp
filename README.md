@@ -4,12 +4,13 @@ Android Final Year Project application for Yucatec Maya ↔ English translation.
 
 ## Application
 
-The fyp-development branch contains the complete application flow:
+The fyp-development branch contains the application flow:
 
 - account registration, login, logout and password reset
 - typed Yucatec Maya ↔ English translation
 - camera and gallery image input
 - Google ML Kit Latin-script OCR
+- Yucatec Maya OCR post-filtering
 - English speech recognition
 - device text-to-speech playback
 - translation history
@@ -45,6 +46,19 @@ Ancient Maya hieroglyph recognition is outside the current application scope.
 5. Before Firebase is configured, create a temporary development account.
 6. Use the sample dictionary to test translation.
 7. For persistent data, follow docs/FIREBASE_SETUP.md.
+
+## Translation engines
+
+The current Android implementation uses verified dictionary / phrase lookup.
+
+An experimental direct **Yucatec Maya ↔ English neural machine translation** pipeline has now been added under `ml/`.
+
+It is designed as a future fallback for text that is not found in the verified dictionary. The model is not connected to the Android app until it has been trained and evaluated.
+
+See:
+
+- `ml/README.md`
+- `docs/NMT_EXPERIMENT.md`
 
 ## Development sample dictionary
 
@@ -85,7 +99,7 @@ Security rules are included in firestore.rules.
 
 Firebase configuration files and Admin service-account credentials must not be committed to Git.
 
-## Dataset
+## Dictionary dataset
 
 The full dictionary is prepared through the dataset scripts:
 
