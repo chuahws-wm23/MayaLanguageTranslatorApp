@@ -215,8 +215,8 @@ def main(args) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--english-train-file", default="ml/data/processed/human_train.csv")
-    parser.add_argument("--english-validation-file", default="ml/data/processed/human_validation.csv")
+    parser.add_argument("--english-train-file", default="ml/data/processed/gatitos_train.csv")
+    parser.add_argument("--english-validation-file", default="ml/data/processed/gatitos_validation.csv")
     parser.add_argument("--spanish-train-file", default="ml/data/processed/yua_es_train.csv")
     parser.add_argument("--spanish-validation-file", default="ml/data/processed/yua_es_validation.csv")
     parser.add_argument("--model-name", default=DEFAULT_MODEL)

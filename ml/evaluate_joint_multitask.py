@@ -73,7 +73,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-dir", required=True)
-    parser.add_argument("--english-test-file", default="ml/data/processed/human_test.csv")
+    parser.add_argument("--english-test-file", default="ml/data/processed/gatitos_test.csv")
     parser.add_argument("--spanish-test-file", default="ml/data/processed/yua_es_test.csv")
     parser.add_argument("--batch-size", type=int, default=16)
     main(parser.parse_args())

@@ -27,6 +27,21 @@ Joint training tries to learn more Yucatec Maya structure from the 14k
 human Maya-Spanish pairs without forcing English input through Spanish at
 runtime.
 
+## Recovery / fresh Colab runtime
+
+If a Colab runtime is reset, the joint experiment can be rebuilt without
+rerunning the synthetic-English pipeline:
+
+```bash
+python ml/scripts/download_gatitos.py
+python ml/scripts/build_gatitos_human_corpus.py
+python ml/scripts/download_yua_es_ccc.py
+python ml/scripts/build_yua_es_corpus.py
+```
+
+This recreates the direct-human English splits and the original human
+Yucatec Maya-Spanish splits needed by the joint model.
+
 ## First controlled run
 
 ```bash
