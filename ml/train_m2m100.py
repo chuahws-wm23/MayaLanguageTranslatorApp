@@ -93,7 +93,37 @@ def read_pairs(
     return examples
 
 
+def print_runtime_info(
+    allow_cpu: bool,
+) -> None:
+    cuda_available = torch.cuda.is_available()
+
+    print(
+        "PyTorch CUDA available:",
+        cuda_available,
+    )
+
+    if cuda_available:
+        print(
+            "GPU:",
+            torch.cuda.get_device_name(0),
+        )
+        return
+
+    print("Training device: CPU")
+
+    if not allow_cpu:
+        raise SystemExit(
+            "No CUDA GPU is available to PyTorch. "
+            "M2M100-418M training on CPU is impractically slow. "
+            "In Google Colab choose Runtime → Change runtime type → "
+            "T4 GPU, reconnect the runtime, then run the notebook again. "
+            "Use --allow-cpu only for debugging."
+        )
+
+
 def main(args) -> None:
+    print_runtime_info(args.allow_cpu)
     set_seed(args.seed)
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -128,8 +158,17 @@ def main(args) -> None:
             truncation=True,
         )
 
+        # Important for M2M100 in this experiment:
+        # do not use tokenizer(text_target=...). The stock M2M100 tokenizer
+        # expects one of its built-in language codes when it switches to
+        # target mode, but Yucatec Maya is not one of those built-in codes.
+        #
+        # We train M2M100 as a prompt-conditioned seq2seq model, following the
+        # prompt-based treatment used in the AmericasNLP Yucatec Maya work.
+        # Tokenizing target strings normally avoids an invalid tgt_lang lookup
+        # while still producing correct label token IDs.
         labels = tokenizer(
-            text_target=batch["target_text"],
+            batch["target_text"],
             max_length=MAX_LENGTH,
             truncation=True,
         )
@@ -309,6 +348,14 @@ if __name__ == "__main__":
         "--seed",
         type=int,
         default=42,
+    )
+    parser.add_argument(
+        "--allow-cpu",
+        action="store_true",
+        help=(
+            "Allow CPU-only training for debugging. "
+            "Not recommended for the 418M model."
+        ),
     )
     parser.add_argument(
         "--no-gradient-checkpointing",
