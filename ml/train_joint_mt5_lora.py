@@ -113,12 +113,27 @@ def main(args) -> None:
     eval_ds = Dataset.from_list(eval_examples).shuffle(seed=args.seed)
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=False)
-    dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+    # mT5 is numerically unstable in FP16 on this local Windows setup.
+    # Keep the frozen base model in FP32; LoRA still keeps trainable state tiny
+    # enough for the 6 GB RTX 4050 smoke/medium experiments.
     base_model = AutoModelForSeq2SeqLM.from_pretrained(
         args.model_name,
-        torch_dtype=dtype,
+        torch_dtype=torch.float32,
         low_cpu_mem_usage=True,
     )
+
+    # mT5 checkpoints pad the output vocabulary beyond SentencePiece's actual
+    # token count. Shrinking to the tokenizer length prevents generation from
+    # producing padded IDs that SentencePiece cannot decode.
+    if base_model.config.vocab_size != len(tokenizer):
+        print(
+            "Resizing vocabulary:",
+            base_model.config.vocab_size,
+            "->",
+            len(tokenizer),
+        )
+        base_model.resize_token_embeddings(len(tokenizer))
+
     base_model.config.use_cache = False
 
     lora_config = LoraConfig(
@@ -175,6 +190,14 @@ def main(args) -> None:
         predictions, labels = eval_pred
         if isinstance(predictions, tuple):
             predictions = predictions[0]
+
+        # Defensive guard for padded/invalid vocabulary IDs.
+        predictions = np.where(
+            (predictions >= 0) & (predictions < len(tokenizer)),
+            predictions,
+            tokenizer.pad_token_id,
+        )
+
         labels = np.where(
             labels != -100,
             labels,
@@ -211,7 +234,9 @@ def main(args) -> None:
         save_total_limit=2,
         logging_steps=25,
         report_to="none",
-        fp16=torch.cuda.is_available(),
+        fp16=False,
+        bf16=False,
+        max_grad_norm=1.0,
         dataloader_num_workers=0,
         optim="adamw_torch",
     )
@@ -244,7 +269,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-name", default=DEFAULT_MODEL)
     parser.add_argument("--output-dir", default="ml/artifacts/mt5-yua-joint-lora")
     parser.add_argument("--epochs", type=float, default=1.0)
-    parser.add_argument("--learning-rate", type=float, default=1e-4)
+    parser.add_argument("--learning-rate", type=float, default=5e-5)
     parser.add_argument("--gradient-accumulation-steps", type=int, default=16)
     parser.add_argument("--english-repeat", type=int, default=2)
     parser.add_argument("--validation-english-repeat", type=int, default=2)

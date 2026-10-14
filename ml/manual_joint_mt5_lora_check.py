@@ -31,12 +31,14 @@ def main(adapter_dir: str) -> None:
     config = PeftConfig.from_pretrained(adapter_dir)
     tokenizer = AutoTokenizer.from_pretrained(adapter_dir, use_fast=False)
 
-    dtype = torch.float16 if torch.cuda.is_available() else torch.float32
     base = AutoModelForSeq2SeqLM.from_pretrained(
         config.base_model_name_or_path,
-        torch_dtype=dtype,
+        torch_dtype=torch.float32,
         low_cpu_mem_usage=True,
     )
+
+    if base.config.vocab_size != len(tokenizer):
+        base.resize_token_embeddings(len(tokenizer))
     model = PeftModel.from_pretrained(base, adapter_dir)
     model.to(device)
     model.eval()
