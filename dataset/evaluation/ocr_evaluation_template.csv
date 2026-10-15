@@ -1,0 +1,9 @@
+case_id,condition,image_file,ground_truth_text,ocr_output,corrected_text,final_translation,ocr_rating,translation_rating,notes
+OCR-001,clean_digital,,,,,,,,
+OCR-002,printed_text,,,,,,,,
+OCR-003,small_font,,,,,,,,
+OCR-004,angled,,,,,,,,
+OCR-005,low_light,,,,,,,,
+OCR-006,blurred,,,,,,,,
+OCR-007,mixed_maya_english,,,,,,,,
+OCR-008,multiline,,,,,,,,
