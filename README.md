@@ -108,3 +108,29 @@ The full dictionary is prepared through the dataset scripts:
 - dataset/scripts/import_firestore.py
 
 See docs/DATA_SOURCES.md for the source and attribution notes.
+
+
+## Dataset quality workflow
+
+The repository now separates three concepts:
+
+1. **Source data** — machine-readable Yucatec Maya data downloaded from Kaikki / English Wiktionary.
+2. **Application dictionary** — cleaned CSV imported to Firestore. Automatically imported rows remain `verified=false`.
+3. **Evaluation set** — a manually reviewed subset used to report translation accuracy/coverage. Only rows explicitly marked `verified=true` are scored.
+
+Build the dataset locally with:
+
+```bash
+python dataset/scripts/download_kaikki.py
+python dataset/scripts/convert_kaikki.py dataset/raw/kaikki-yucatec-maya.jsonl dataset/processed/maya_english_dictionary.csv
+python dataset/scripts/validate_dictionary.py dataset/processed/maya_english_dictionary.csv --report dataset/processed/validation_report.json
+python dataset/scripts/prepare_evaluation_sample.py dataset/processed/maya_english_dictionary.csv dataset/evaluation/manual_evaluation.csv --size 200
+```
+
+After manually checking the evaluation CSV, score only the approved rows:
+
+```bash
+python dataset/scripts/evaluate_dictionary.py dataset/processed/maya_english_dictionary.csv dataset/evaluation/manual_evaluation.csv
+```
+
+A GitHub Actions workflow also builds and validates the current public Kaikki dataset and publishes the processed CSV as a workflow artifact.

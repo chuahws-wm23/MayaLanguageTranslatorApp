@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
-"""Convert Kaikki/Wiktextract Yucatec Maya JSONL into FYP dictionary CSV."""
+"""Convert Kaikki/Wiktextract Yucatec Maya JSONL into the FYP dictionary CSV."""
+
+from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import sys
 import unicodedata
 from pathlib import Path
 
+
+SOURCE_NAME = "Kaikki / English Wiktionary"
+SOURCE_PAGE = "https://kaikki.org/dictionary/Yucatec%20Maya/index.html"
+SOURCE_LICENSE = "CC BY-SA / GFDL (Wiktionary-derived data)"
 
 FIELDS = [
     "entry_id",
@@ -19,6 +26,9 @@ FIELDS = [
     "example_sentence",
     "category",
     "source",
+    "source_url",
+    "source_license",
+    "source_record_id",
     "verified",
     "active",
 ]
@@ -33,9 +43,33 @@ def normalize(text: str) -> str:
 def first_ipa(record: dict) -> str:
     for sound in record.get("sounds", []) or []:
         ipa = sound.get("ipa")
-        if ipa:
-            return ipa
+        if isinstance(ipa, str) and ipa.strip():
+            return ipa.strip()
     return ""
+
+
+def first_category(sense: dict) -> str:
+    categories = sense.get("categories", []) or []
+    for category in categories:
+        if isinstance(category, str) and category.strip():
+            return category.strip()
+        if isinstance(category, dict):
+            name = category.get("name")
+            if isinstance(name, str) and name.strip():
+                return name.strip()
+    return ""
+
+
+def stable_entry_id(
+    maya_normalized: str,
+    english_normalized: str,
+    part_of_speech: str,
+) -> str:
+    material = "\u241f".join(
+        [maya_normalized, english_normalized, part_of_speech.strip().lower()]
+    )
+    digest = hashlib.sha1(material.encode("utf-8")).hexdigest()[:16]
+    return f"kaikki-{digest}"
 
 
 def main(source_path: str, output_path: str) -> None:
@@ -43,69 +77,97 @@ def main(source_path: str, output_path: str) -> None:
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    records = []
-    seen = set()
+    records: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
 
     with source.open("r", encoding="utf-8") as source_file:
-        for line in source_file:
+        for line_number, line in enumerate(source_file, start=1):
             if not line.strip():
                 continue
 
-            record = json.loads(line)
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError as error:
+                raise SystemExit(
+                    f"Invalid JSON on line {line_number}: {error}"
+                ) from error
 
-            if record.get("lang_code") != "yua":
+            language_code = record.get("lang_code")
+            if language_code not in (None, "yua"):
                 continue
 
             maya_text = (record.get("word") or "").strip()
-            part_of_speech = record.get("pos") or ""
+            part_of_speech = (record.get("pos") or "").strip()
 
             if not maya_text:
                 continue
 
+            maya_normalized = normalize(maya_text)
+            pronunciation = first_ipa(record)
+
             for sense in record.get("senses", []) or []:
                 tags = set(sense.get("tags", []) or [])
-
                 if "form-of" in tags:
                     continue
 
-                for gloss in sense.get("glosses", []) or []:
-                    english_text = gloss.strip()
+                source_record_id = str(sense.get("id") or "")
+                category = first_category(sense)
 
+                glosses = sense.get("glosses", []) or []
+                for gloss in glosses:
+                    if not isinstance(gloss, str):
+                        continue
+
+                    english_text = gloss.strip()
                     if not english_text:
                         continue
 
+                    english_normalized = normalize(english_text)
                     key = (
-                        normalize(maya_text),
-                        normalize(english_text),
-                        part_of_speech,
+                        maya_normalized,
+                        english_normalized,
+                        part_of_speech.lower(),
                     )
 
                     if key in seen:
                         continue
-
                     seen.add(key)
 
-                    records.append({
-                        "entry_id": f"YM{len(records) + 1:06d}",
-                        "maya_text": maya_text,
-                        "maya_normalized": normalize(maya_text),
-                        "english_text": english_text,
-                        "english_normalized": normalize(english_text),
-                        "part_of_speech": part_of_speech,
-                        "pronunciation": first_ipa(record),
-                        "example_sentence": "",
-                        "category": "",
-                        "source": "Kaikki/Wiktionary",
-                        "verified": "false",
-                        "active": "true",
-                    })
+                    records.append(
+                        {
+                            "entry_id": stable_entry_id(*key),
+                            "maya_text": maya_text,
+                            "maya_normalized": maya_normalized,
+                            "english_text": english_text,
+                            "english_normalized": english_normalized,
+                            "part_of_speech": part_of_speech,
+                            "pronunciation": pronunciation,
+                            "example_sentence": "",
+                            "category": category,
+                            "source": SOURCE_NAME,
+                            "source_url": SOURCE_PAGE,
+                            "source_license": SOURCE_LICENSE,
+                            "source_record_id": source_record_id,
+                            # Machine extraction is not treated as manual verification.
+                            "verified": "false",
+                            "active": "true",
+                        }
+                    )
+
+    records.sort(
+        key=lambda row: (
+            row["maya_normalized"],
+            row["english_normalized"],
+            row["part_of_speech"],
+        )
+    )
 
     with output.open("w", encoding="utf-8", newline="") as output_file:
         writer = csv.DictWriter(output_file, fieldnames=FIELDS)
         writer.writeheader()
         writer.writerows(records)
 
-    print(f"Wrote {len(records)} rows to {output}")
+    print(f"Wrote {len(records):,} rows to {output}")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 # Yucatec Maya Data Sources
 
-The translation design is dictionary-based. Do not add invented Yucatec Maya words to the application.
+The production translation path is dictionary-based. Do not add invented
+Yucatec Maya words to the application.
 
 ## Primary machine-readable source
 
@@ -8,22 +9,44 @@ Kaikki / English Wiktionary — Yucatec Maya machine-readable dictionary:
 
 https://kaikki.org/dictionary/Yucatec%20Maya/index.html
 
-The development build contains only a small set of source-checked entries so the application can be demonstrated before Firebase is configured.
+The source currently exposes several hundred distinct Yucatec Maya word forms
+and machine-readable English glosses. The exact count changes as Wiktionary is
+updated, so the FYP pipeline records the downloaded file hash rather than
+hard-coding a permanent row count.
 
-For the full dictionary:
+Kaikki says its Wiktionary-derived data is available under the same licenses as
+Wiktionary: CC BY-SA and GFDL.
 
-1. Download the Yucatec Maya JSONL data from the Kaikki page.
-2. Run dataset/scripts/convert_kaikki.py.
-3. Run dataset/scripts/validate_dictionary.py.
-4. Review the evaluation subset manually.
-5. Import the processed CSV with dataset/scripts/import_firestore.py.
+Academic citation requested by Kaikki:
 
-Automatically imported entries remain marked verified=false until they are checked.
+Tatu Ylonen. "Wiktextract: Wiktionary as Machine-Readable Structured Data."
+Proceedings of the 13th Conference on Language Resources and Evaluation
+(LREC 2022), pages 1317–1325.
 
-## Academic attribution
+## Independent cross-check source
 
-For research use, Kaikki asks users to cite:
+ASJP Yucatec Maya / Maya Yucatan wordlist:
 
-Tatu Ylonen. Wiktextract: Wiktionary as Machine-Readable Structured Data. Proceedings of the 13th Conference on Language Resources and Evaluation (LREC 2022), pages 1317–1325.
+https://asjp.clld.org/languages/MAYA_YUCATAN
 
-Retain the source page and applicable Wiktionary licensing information with any distributed dataset.
+The ASJP page identifies ISO 639-3 `yua`, lists published dictionary sources,
+and states that the ASJP Database is licensed under CC BY 4.0.
+
+Use ASJP as an independent cross-check/reference source, not as a replacement
+for manual verification of the evaluation cases.
+
+## Data-quality policy
+
+The repository separates:
+
+1. machine-extracted source rows
+2. application dictionary rows
+3. manually verified evaluation rows
+
+Kaikki rows are imported with `verified=false`. The evaluation tool scores
+only cases that a reviewer explicitly marks `verified=true`.
+
+This prevents the project from using its own machine-extracted source as
+unquestioned ground truth when reporting translation quality.
+
+See `dataset/README.md` for the reproducible workflow.
