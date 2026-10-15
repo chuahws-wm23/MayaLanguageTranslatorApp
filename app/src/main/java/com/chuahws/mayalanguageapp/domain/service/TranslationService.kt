@@ -187,7 +187,7 @@ class TranslationService(
         if (
             punctuation != null &&
             output.isNotBlank() &&
-            output.lastOrNull() !in ".!?;:"
+            output.last() !in ".!?;:"
         ) {
             output += punctuation
         }
