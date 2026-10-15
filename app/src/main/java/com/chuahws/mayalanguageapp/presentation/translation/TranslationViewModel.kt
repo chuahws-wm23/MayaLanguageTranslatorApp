@@ -143,6 +143,43 @@ class TranslationViewModel(
                     )
                 }
 
+                is TranslationResult.Composed -> {
+                    val warning =
+                        if (result.unknownTerms.isEmpty()) {
+                            null
+                        } else {
+                            val preview = result.unknownTerms
+                                .distinct()
+                                .take(3)
+                                .joinToString(", ")
+
+                            "Partial translation. Unknown terms are shown in brackets" +
+                                if (preview.isBlank()) {
+                                    "."
+                                } else {
+                                    ": $preview."
+                                }
+                        }
+
+                    _uiState.update {
+                        it.copy(
+                            loading = false,
+                            output = result.output,
+                            matchedEntry = null,
+                            message = warning,
+                            inputType = inputType,
+                        )
+                    }
+
+                    recordSuccess(
+                        source = state.input,
+                        translated = result.output,
+                        entryId = null,
+                        direction = state.direction,
+                        inputType = inputType,
+                    )
+                }
+
                 is TranslationResult.NoMatch ->
                     _uiState.update {
                         it.copy(

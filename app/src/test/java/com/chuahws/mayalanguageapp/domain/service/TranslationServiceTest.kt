@@ -83,6 +83,122 @@ class TranslationServiceTest {
     }
 
     @Test
+    fun multipleKnownLines_areTranslatedIndependently() = runTest {
+        val service = TranslationService(
+            InMemoryDictionaryRepository(
+                DevelopmentDictionaryData.entries()
+            )
+        )
+
+        val result = service.translate(
+            rawInput = "hello\nthank you",
+            direction = TranslationDirection.ENGLISH_TO_MAYA,
+        )
+
+        assertTrue(result is TranslationResult.Composed)
+        result as TranslationResult.Composed
+
+        assertEquals(
+            "Baʼax ka waʼalik?\nDios boʼotik",
+            result.output,
+        )
+        assertTrue(result.unknownTerms.isEmpty())
+        assertEquals(2, result.matchedEntryCount)
+    }
+
+    @Test
+    fun partialSentence_keepsKnownWordsAndMarksUnknownTerms() = runTest {
+        val service = TranslationService(
+            InMemoryDictionaryRepository(
+                DevelopmentDictionaryData.entries()
+            )
+        )
+
+        val result = service.translate(
+            rawInput = "water mystery",
+            direction = TranslationDirection.ENGLISH_TO_MAYA,
+        )
+
+        assertTrue(result is TranslationResult.Composed)
+        result as TranslationResult.Composed
+
+        assertEquals(
+            "jaʼ [unknown: mystery]",
+            result.output,
+        )
+        assertEquals(
+            listOf("mystery"),
+            result.unknownTerms,
+        )
+        assertEquals(1, result.matchedEntryCount)
+    }
+
+    @Test
+    fun fallbackUsesLongestKnownPhraseFirst() = runTest {
+        val entries = listOf(
+            DictionaryEntry(
+                entryId = "phrase",
+                mayaText = "PHRASE",
+                mayaNormalized = "phrase",
+                englishText = "good morning",
+                englishNormalized = "good morning",
+                active = true,
+            ),
+            DictionaryEntry(
+                entryId = "good",
+                mayaText = "GOOD",
+                mayaNormalized = "good",
+                englishText = "good",
+                englishNormalized = "good",
+                active = true,
+            ),
+            DictionaryEntry(
+                entryId = "water",
+                mayaText = "WATER",
+                mayaNormalized = "water",
+                englishText = "water",
+                englishNormalized = "water",
+                active = true,
+            ),
+        )
+
+        val service = TranslationService(
+            InMemoryDictionaryRepository(entries)
+        )
+
+        val result = service.translate(
+            rawInput = "good morning water",
+            direction = TranslationDirection.ENGLISH_TO_MAYA,
+        )
+
+        assertTrue(result is TranslationResult.Composed)
+        assertEquals(
+            "PHRASE WATER",
+            (result as TranslationResult.Composed).output,
+        )
+    }
+
+    @Test
+    fun mayaWordsCanFallbackToEnglishLineByLine() = runTest {
+        val service = TranslationService(
+            InMemoryDictionaryRepository(
+                DevelopmentDictionaryData.entries()
+            )
+        )
+
+        val result = service.translate(
+            rawInput = "jaʼ\nnaaj",
+            direction = TranslationDirection.MAYA_TO_ENGLISH,
+        )
+
+        assertTrue(result is TranslationResult.Composed)
+        assertEquals(
+            "water\nhouse",
+            (result as TranslationResult.Composed).output,
+        )
+    }
+
+    @Test
     fun translateUnknownInput_returnsNoMatch() = runTest {
         val service = TranslationService(
             InMemoryDictionaryRepository(listOf(testEntry))
