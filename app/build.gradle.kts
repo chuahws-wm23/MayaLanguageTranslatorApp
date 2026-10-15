@@ -65,6 +65,10 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraXVersion")
     implementation("androidx.camera:camera-view:$cameraXVersion")
 
+    // ProcessCameraProvider.getInstance() exposes Guava's ListenableFuture.
+    // Keep the interface on the app compile classpath for CameraX setup.
+    implementation("com.google.guava:listenablefuture:1.0")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 }
