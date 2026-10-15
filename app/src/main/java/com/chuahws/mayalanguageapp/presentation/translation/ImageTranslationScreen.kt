@@ -1,10 +1,10 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -47,12 +47,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.InputType
 import com.chuahws.mayalanguageapp.domain.model.TranslationDirection
 import com.chuahws.mayalanguageapp.integration.ml_kit_ocr.MlKitOcrService
-import com.chuahws.mayalanguageapp.integration.ml_kit_ocr.createTemporaryImageUri
 import com.chuahws.mayalanguageapp.presentation.components.AccentIcon
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
@@ -74,8 +74,8 @@ fun ImageTranslationScreen(
     var imageUri by remember {
         mutableStateOf<Uri?>(null)
     }
-    var cameraUri by remember {
-        mutableStateOf<Uri?>(null)
+    var showCamera by remember {
+        mutableStateOf(false)
     }
     var readingImage by remember {
         mutableStateOf(false)
@@ -85,8 +85,9 @@ fun ImageTranslationScreen(
     }
 
     val cameraAvailable = remember(context) {
-        Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-            .resolveActivity(context.packageManager) != null
+        context.packageManager.hasSystemFeature(
+            PackageManager.FEATURE_CAMERA_ANY
+        )
     }
 
     LaunchedEffect(Unit) {
@@ -154,14 +155,58 @@ fun ImageTranslationScreen(
             }
         }
 
-    val cameraLauncher =
+    val cameraPermissionLauncher =
         rememberLauncherForActivityResult(
-            ActivityResultContracts.TakePicture()
-        ) { success ->
-            if (success) {
-                cameraUri?.let(::readImage)
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            if (granted) {
+                showCamera = true
+                imageMessage = null
+            } else {
+                imageMessage =
+                    "Camera permission is required to take a photo. You can still use Gallery."
             }
         }
+
+    fun openCamera() {
+        if (!cameraAvailable) {
+            imageMessage =
+                "No usable camera hardware is available on this device. You can still use Gallery."
+            return
+        }
+
+        val permissionGranted =
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA,
+            ) == PackageManager.PERMISSION_GRANTED
+
+        if (permissionGranted) {
+            showCamera = true
+            imageMessage = null
+        } else {
+            cameraPermissionLauncher.launch(
+                Manifest.permission.CAMERA
+            )
+        }
+    }
+
+    if (showCamera) {
+        CameraCaptureScreen(
+            onCancel = {
+                showCamera = false
+            },
+            onImageCaptured = { uri ->
+                showCamera = false
+                readImage(uri)
+            },
+            onError = { message ->
+                showCamera = false
+                imageMessage = message
+            },
+        )
+        return
+    }
 
     val preview by produceState<Bitmap?>(
         initialValue = null,
@@ -249,12 +294,7 @@ fun ImageTranslationScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         FilledTonalButton(
-                            onClick = {
-                                val uri =
-                                    createTemporaryImageUri(context)
-                                cameraUri = uri
-                                cameraLauncher.launch(uri)
-                            },
+                            onClick = ::openCamera,
                             enabled =
                                 cameraAvailable &&
                                     !readingImage &&
@@ -310,7 +350,7 @@ fun ImageTranslationScreen(
                 ) {
                     Text(
                         text =
-                            "No camera app is available on this device. You can still choose an image from Gallery.",
+                            "No usable camera hardware is available on this device. You can still choose an image from Gallery.",
                         style =
                             MaterialTheme.typography.bodySmall,
                         color =
