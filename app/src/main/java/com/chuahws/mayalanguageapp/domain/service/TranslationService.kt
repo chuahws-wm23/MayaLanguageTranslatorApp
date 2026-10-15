@@ -69,7 +69,18 @@ class TranslationService(
                 direction = direction,
             )
 
-            translatedSegments += fallback.output
+            val segmentOutput =
+                if (
+                    fallback.totalWordCount > 1 &&
+                    fallback.coverage < MIN_SEGMENT_COVERAGE
+                ) {
+                    segment.trim() +
+                        " → [No reliable phrase translation available]"
+                } else {
+                    fallback.output
+                }
+
+            translatedSegments += segmentOutput
             unknownTerms += fallback.unknownTerms
             matchedEntryCount += fallback.matchedEntryCount
         }
@@ -118,6 +129,7 @@ class TranslationService(
         val outputParts = mutableListOf<String>()
         val unknownTerms = mutableListOf<String>()
         var matches = 0
+        var matchedWords = 0
         var index = 0
 
         while (index < words.size) {
@@ -161,6 +173,7 @@ class TranslationService(
                     direction,
                 )
                 matches += 1
+                matchedWords += matchedLength
                 index += matchedLength
             } else {
                 val unknown = cleanDisplayToken(
@@ -196,6 +209,8 @@ class TranslationService(
             output = output,
             unknownTerms = unknownTerms,
             matchedEntryCount = matches,
+            matchedWordCount = matchedWords,
+            totalWordCount = words.size,
         )
     }
 
@@ -246,11 +261,27 @@ class TranslationService(
         val output: String,
         val unknownTerms: List<String> = emptyList(),
         val matchedEntryCount: Int = 0,
-    )
+        val matchedWordCount: Int = 0,
+        val totalWordCount: Int = 0,
+    ) {
+        val coverage: Double
+            get() =
+                if (totalWordCount == 0) {
+                    0.0
+                } else {
+                    matchedWordCount.toDouble() /
+                        totalWordCount.toDouble()
+                }
+    }
 
     private companion object {
         // Keeps fallback lookup bounded when the backing repository is
         // Firestore while still supporting common multi-word phrases.
         const val MAX_PHRASE_WORDS = 4
+
+        // Below this threshold, word-by-word glosses are too likely to look
+        // like a sentence translation even though most of the phrase is
+        // unknown. Show a clear unavailable message instead.
+        const val MIN_SEGMENT_COVERAGE = 0.5
     }
 }

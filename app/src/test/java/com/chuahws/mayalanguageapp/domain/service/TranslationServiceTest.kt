@@ -179,6 +179,33 @@ class TranslationServiceTest {
     }
 
     @Test
+    fun lowCoverageSentence_doesNotPretendWordGlossesAreSentenceTranslation() = runTest {
+        val entry = DictionaryEntry(
+            entryId = "pronoun-a",
+            mayaText = "a",
+            mayaNormalized = "a",
+            englishText = "you (second-person singular pronoun)",
+            englishNormalized = "you",
+            active = true,
+        )
+
+        val service = TranslationService(
+            InMemoryDictionaryRepository(listOf(entry))
+        )
+
+        val result = service.translate(
+            rawInput = "Bix a k'aaba' in wiinik?",
+            direction = TranslationDirection.MAYA_TO_ENGLISH,
+        )
+
+        assertTrue(result is TranslationResult.Composed)
+        assertEquals(
+            "Bix a k'aaba' in wiinik? → [No reliable phrase translation available]",
+            (result as TranslationResult.Composed).output,
+        )
+    }
+
+    @Test
     fun mayaWordsCanFallbackToEnglishLineByLine() = runTest {
         val service = TranslationService(
             InMemoryDictionaryRepository(

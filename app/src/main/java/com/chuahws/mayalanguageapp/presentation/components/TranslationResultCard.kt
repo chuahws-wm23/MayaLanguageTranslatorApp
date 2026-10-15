@@ -57,7 +57,7 @@ fun TranslationResultCard(
                 )
                 Column {
                     Text(
-                        text = "Maya Translation",
+                        text = "Translation result",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                     )
