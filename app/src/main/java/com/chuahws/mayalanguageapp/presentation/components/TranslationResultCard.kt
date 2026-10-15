@@ -22,6 +22,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
+import com.chuahws.mayalanguageapp.presentation.theme.MayaGreen
 
 @Composable
 fun TranslationResultCard(
@@ -122,6 +123,48 @@ fun TranslationResultCard(
                             }
                         }
                     }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    SoftBadge(
+                        text = if (dictionaryEntry.verified) {
+                            "Verified entry"
+                        } else {
+                            "Source-derived entry"
+                        },
+                        color = if (dictionaryEntry.verified) {
+                            MayaGreen
+                        } else {
+                            MaterialTheme.colorScheme.secondary
+                        },
+                    )
+                }
+
+                dictionaryEntry.source
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { source ->
+                        Text(
+                            text = "Source: $source",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                if (outputLanguageTag == "yua") {
+                    Text(
+                        text = if (
+                            dictionaryEntry.pronunciation
+                                ?.isNotBlank() == true
+                        ) {
+                            "If device audio is unavailable, use the pronunciation shown above."
+                        } else {
+                            "Yucatec Maya speech audio depends on the text-to-speech voices installed on this device."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             Row(

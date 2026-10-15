@@ -394,7 +394,10 @@ private fun MainShell(
                     HistoryScreen(state.history)
 
                 AppPage.ANALYTICS ->
-                    AnalyticsScreen(state.analytics)
+                    AnalyticsScreen(
+                        analytics = state.analytics,
+                        history = state.history,
+                    )
 
                 AppPage.FEEDBACK ->
                     FeedbackScreen(

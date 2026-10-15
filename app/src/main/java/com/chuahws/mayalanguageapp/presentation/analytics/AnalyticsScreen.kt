@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.domain.model.UsageAnalytics
 import com.chuahws.mayalanguageapp.presentation.components.AccentIcon
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
@@ -40,11 +42,27 @@ import com.chuahws.mayalanguageapp.presentation.theme.MayaBlue
 import com.chuahws.mayalanguageapp.presentation.theme.MayaGreen
 import com.chuahws.mayalanguageapp.presentation.theme.MayaOrange
 import com.chuahws.mayalanguageapp.presentation.theme.MayaPurple
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun AnalyticsScreen(
     analytics: UsageAnalytics,
+    history: List<TranslationRecord>,
 ) {
+    val weeklyActivity = rememberWeeklyActivity(history)
+    val translationsThisWeek =
+        weeklyActivity.sumOf { it.count }
+    val mostUsedType = listOf(
+        "Text" to analytics.textTranslations,
+        "Image" to analytics.imageTranslations,
+        "Voice" to analytics.voiceTranslations,
+    ).maxByOrNull { it.second }
+        ?.takeIf { it.second > 0 }
+        ?.first
+        ?: "None yet"
     AppGradientBackground {
         Column(
             modifier = Modifier
@@ -109,6 +127,26 @@ fun AnalyticsScreen(
                     modifier = Modifier.weight(1f),
                 )
             }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                MetricCard(
+                    value = translationsThisWeek.toString(),
+                    label = "Last 7 days",
+                    modifier = Modifier.weight(1f),
+                )
+                MetricCard(
+                    value = mostUsedType,
+                    label = "Most used method",
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            WeeklyActivityCard(
+                days = weeklyActivity,
+            )
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -293,5 +331,136 @@ private fun LegendRow(
             text = value.toString(),
             fontWeight = FontWeight.SemiBold,
         )
+    }
+}
+
+
+private data class DailyActivity(
+    val label: String,
+    val count: Int,
+)
+
+@Composable
+private fun rememberWeeklyActivity(
+    history: List<TranslationRecord>,
+): List<DailyActivity> {
+    val calendar = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    val todayStart = calendar.timeInMillis
+    val dayMillis = 24L * 60L * 60L * 1000L
+    val formatter = SimpleDateFormat(
+        "EEE",
+        Locale.getDefault(),
+    )
+
+    return (6 downTo 0).map { daysAgo ->
+        val start = todayStart - daysAgo * dayMillis
+        val end = start + dayMillis
+        DailyActivity(
+            label = formatter.format(Date(start)),
+            count = history.count {
+                it.createdAtMillis in start until end
+            },
+        )
+    }
+}
+
+@Composable
+private fun MetricCard(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeeklyActivityCard(
+    days: List<DailyActivity>,
+) {
+    val maximum = days.maxOfOrNull { it.count }
+        ?.coerceAtLeast(1)
+        ?: 1
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Last 7 days",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "Successful translations recorded in your history.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            days.forEach { day ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = day.label,
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.size(
+                            width = 38.dp,
+                            height = 20.dp,
+                        ),
+                    )
+                    LinearProgressIndicator(
+                        progress = {
+                            day.count.toFloat() /
+                                maximum.toFloat()
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        text = day.count.toString(),
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+        }
     }
 }
