@@ -301,6 +301,7 @@ fun VoiceTranslationScreen(
                             onSaveEntry(entry)
                         }
                     },
+                onSaveAlternative = onSaveEntry,
             )
         }
     }

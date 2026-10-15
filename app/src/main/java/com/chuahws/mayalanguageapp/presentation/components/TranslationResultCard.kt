@@ -31,6 +31,7 @@ fun TranslationResultCard(
     alternatives: List<DictionaryEntry> = emptyList(),
     outputLanguageTag: String,
     onSave: (() -> Unit)?,
+    onSaveAlternative: ((DictionaryEntry) -> Unit)? = null,
 ) {
     if (output.isBlank()) return
 
@@ -147,6 +148,24 @@ fun TranslationResultCard(
                                             MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
+
+                            if (onSaveAlternative != null) {
+                                FilledTonalButton(
+                                    onClick = {
+                                        onSaveAlternative(alternative)
+                                    },
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.BookmarkAdd,
+                                        contentDescription = null,
+                                    )
+                                    Text(
+                                        text = "Save this meaning",
+                                        modifier =
+                                            Modifier.padding(start = 6.dp),
+                                    )
+                                }
+                            }
                         }
                     }
                 }

@@ -520,6 +520,7 @@ fun ImageTranslationScreen(
                             onSaveEntry(entry)
                         }
                     },
+                onSaveAlternative = onSaveEntry,
             )
         }
     }

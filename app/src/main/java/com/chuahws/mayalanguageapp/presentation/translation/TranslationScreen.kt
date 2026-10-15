@@ -261,6 +261,7 @@ fun TranslationScreen(
                     state.matchedEntry?.let { entry ->
                         { onSaveEntry(entry) }
                     },
+                onSaveAlternative = onSaveEntry,
             )
         }
     }

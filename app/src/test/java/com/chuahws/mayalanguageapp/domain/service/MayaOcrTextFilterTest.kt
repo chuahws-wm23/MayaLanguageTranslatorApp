@@ -54,4 +54,43 @@ class MayaOcrTextFilterTest {
 
         assertEquals("", filtered)
     }
+
+    @Test
+    fun asciiAndCurlyApostrophes_arePreservedAsMayaSignals() = runTest {
+        val filtered = MayaOcrTextFilter.filter(
+            rawText = "k'aaba'\nMa’alo’ob",
+            isKnownMaya = { false },
+        )
+
+        assertEquals(
+            "k'aaba'\nMa’alo’ob",
+            filtered,
+        )
+    }
+
+    @Test
+    fun mixedLettersAndSmallNumber_keepsKnownMayaText() = runTest {
+        val filtered = MayaOcrTextFilter.filter(
+            rawText = "jaʼ 2",
+            isKnownMaya = {
+                TextNormalizer.normalize(it) == "jaʼ 2"
+            },
+        )
+
+        assertEquals("jaʼ 2", filtered)
+    }
+
+    @Test
+    fun plainLatinLine_withKnownMayaToken_isKept() = runTest {
+        val filtered = MayaOcrTextFilter.filter(
+            rawText = "tuunich bej",
+            isKnownMaya = {
+                TextNormalizer.normalize(it) in
+                    setOf("tuunich", "bej")
+            },
+        )
+
+        assertEquals("tuunich bej", filtered)
+    }
+
 }
