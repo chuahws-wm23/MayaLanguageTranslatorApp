@@ -96,6 +96,10 @@ fun ImageTranslationScreen(
     }
 
     fun readImage(uri: Uri) {
+        // A newly selected image starts a fresh OCR/translation attempt.
+        // This removes the previous extracted text and translation result
+        // only after the user actually chooses or captures a new image.
+        viewModel.clear()
         imageUri = uri
         readingImage = true
         imageMessage = null
@@ -248,7 +252,8 @@ fun ImageTranslationScreen(
                             },
                             enabled =
                                 cameraAvailable &&
-                                    !readingImage,
+                                    !readingImage &&
+                                    !state.loading,
                             modifier = Modifier.weight(1f),
                         ) {
                             Icon(
@@ -266,7 +271,9 @@ fun ImageTranslationScreen(
                             onClick = {
                                 galleryLauncher.launch("image/*")
                             },
-                            enabled = !readingImage,
+                            enabled =
+                                !readingImage &&
+                                    !state.loading,
                             modifier = Modifier.weight(1f),
                         ) {
                             Icon(
@@ -311,6 +318,30 @@ fun ImageTranslationScreen(
                             .fillMaxWidth()
                             .aspectRatio(16f / 10f),
                         contentScale = ContentScale.Crop,
+                    )
+                }
+            }
+
+            if (imageUri != null) {
+                FilledTonalButton(
+                    onClick = {
+                        galleryLauncher.launch("image/*")
+                    },
+                    enabled =
+                        !readingImage &&
+                            !state.loading,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding =
+                        PaddingValues(vertical = 14.dp),
+                ) {
+                    Icon(
+                        Icons.Rounded.PhotoLibrary,
+                        contentDescription = null,
+                    )
+                    Text(
+                        text = "Choose Another Image",
+                        modifier = Modifier.padding(start = 8.dp),
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
             }
