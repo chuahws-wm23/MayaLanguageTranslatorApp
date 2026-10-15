@@ -29,6 +29,7 @@ FIELDS = [
     "source_url",
     "source_license",
     "source_record_id",
+    "accepted_english_inputs_json",
     "verified",
     "active",
 ]
@@ -58,6 +59,56 @@ def first_category(sense: dict) -> str:
             if isinstance(name, str) and name.strip():
                 return name.strip()
     return ""
+
+
+def english_aliases(gloss: str) -> list[str]:
+    """Return conservative lookup aliases for a dictionary gloss.
+
+    Examples:
+    - "hand, arm" -> ["hand", "arm"]
+    - "back (of the body)" -> ["back"]
+
+    Explanatory comma clauses such as "land, as opposed to sea" are not
+    promoted to aliases.
+    """
+    candidates: list[str] = []
+
+    head = gloss.split("(", 1)[0].strip()
+    if head and head != gloss.strip():
+        candidates.append(head)
+
+    parts = [part.strip() for part in gloss.split(",")]
+    blocked_prefixes = (
+        "as ",
+        "especially ",
+        "usually ",
+        "when ",
+        "with ",
+        "without ",
+        "of ",
+        "in ",
+        "on ",
+        "for ",
+        "by ",
+    )
+
+    if len(parts) > 1:
+        for part in parts:
+            lowered = part.lower()
+            if (
+                part
+                and len(part.split()) <= 4
+                and not lowered.startswith(blocked_prefixes)
+            ):
+                candidates.append(part)
+
+    normalized_gloss = normalize(gloss)
+    return sorted({
+        normalize(candidate)
+        for candidate in candidates
+        if normalize(candidate)
+        and normalize(candidate) != normalized_gloss
+    })
 
 
 def stable_entry_id(
@@ -148,6 +199,10 @@ def main(source_path: str, output_path: str) -> None:
                             "source_url": SOURCE_PAGE,
                             "source_license": SOURCE_LICENSE,
                             "source_record_id": source_record_id,
+                            "accepted_english_inputs_json": json.dumps(
+                                english_aliases(english_text),
+                                ensure_ascii=False,
+                            ),
                             # Machine extraction is not treated as manual verification.
                             "verified": "false",
                             "active": "true",

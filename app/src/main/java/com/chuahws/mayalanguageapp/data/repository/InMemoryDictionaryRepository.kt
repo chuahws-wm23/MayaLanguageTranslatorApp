@@ -33,7 +33,13 @@ class InMemoryDictionaryRepository(
         normalizedText: String,
     ): List<DictionaryEntry> =
         entries
-            .filter { it.englishNormalized == normalizedText }
+            .filter {
+                it.englishNormalized == normalizedText ||
+                    it.acceptedEnglishInputs.any { alias ->
+                        com.chuahws.mayalanguageapp.domain.service.TextNormalizer
+                            .normalize(alias) == normalizedText
+                    }
+            }
             .sortedWith(
                 compareByDescending<DictionaryEntry> { it.verified }
                     .thenBy { it.mayaText }

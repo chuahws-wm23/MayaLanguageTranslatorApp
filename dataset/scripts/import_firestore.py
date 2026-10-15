@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import os
 from pathlib import Path
 
@@ -19,6 +20,30 @@ def as_bool(value: str) -> bool:
 def optional(row: dict[str, str], key: str):
     value = row.get(key)
     return value if value not in (None, "") else None
+
+
+def parse_aliases(row: dict[str, str]) -> list[str]:
+    raw = row.get("accepted_english_inputs_json", "").strip()
+    if not raw:
+        return []
+
+    try:
+        values = json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            f"Invalid accepted_english_inputs_json for {row.get('entry_id')}"
+        ) from error
+
+    if not isinstance(values, list):
+        raise ValueError(
+            f"accepted_english_inputs_json must be a list for {row.get('entry_id')}"
+        )
+
+    return sorted({
+        str(value).strip()
+        for value in values
+        if str(value).strip()
+    })
 
 
 def build_document(row: dict[str, str]) -> dict:
@@ -36,6 +61,7 @@ def build_document(row: dict[str, str]) -> dict:
         "sourceUrl": optional(row, "source_url"),
         "sourceLicense": optional(row, "source_license"),
         "sourceRecordId": optional(row, "source_record_id"),
+        "acceptedEnglishInputs": parse_aliases(row),
         "verified": as_bool(row.get("verified", "false")),
         "active": as_bool(row.get("active", "true")),
         "updatedAt": firestore.SERVER_TIMESTAMP,

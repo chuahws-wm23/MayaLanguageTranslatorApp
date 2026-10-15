@@ -40,8 +40,8 @@ class FirestoreDictionaryRepository(
 
     override suspend fun findAllByEnglish(
         normalizedText: String,
-    ): List<DictionaryEntry> =
-        collection
+    ): List<DictionaryEntry> {
+        val exact = collection
             .whereEqualTo("englishNormalized", normalizedText)
             .whereEqualTo("active", true)
             .get()
@@ -50,8 +50,29 @@ class FirestoreDictionaryRepository(
             .mapNotNull {
                 it.toObject(DictionaryEntry::class.java)
             }
+
+        val aliases = if (exact.isEmpty()) {
+            collection
+                .whereArrayContains(
+                    "acceptedEnglishInputs",
+                    normalizedText,
+                )
+                .get()
+                .await()
+                .documents
+                .mapNotNull {
+                    it.toObject(DictionaryEntry::class.java)
+                }
+                .filter { it.active }
+        } else {
+            emptyList()
+        }
+
+        return (exact + aliases)
+            .distinctBy { it.entryId }
             .sortedWith(
                 compareByDescending<DictionaryEntry> { it.verified }
                     .thenBy { it.mayaText }
             )
+    }
 }

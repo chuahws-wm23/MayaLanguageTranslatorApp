@@ -313,6 +313,34 @@ class TranslationServiceTest {
     }
 
     @Test
+    fun englishAlias_canFindQualifiedDictionaryGloss() = runTest {
+        val entry = DictionaryEntry(
+            entryId = "hand-entry",
+            mayaText = "kʼab",
+            mayaNormalized = "kʼab",
+            englishText = "hand, arm",
+            englishNormalized = "hand, arm",
+            acceptedEnglishInputs = listOf("hand", "arm"),
+            active = true,
+        )
+
+        val service = TranslationService(
+            InMemoryDictionaryRepository(listOf(entry))
+        )
+
+        val result = service.translate(
+            rawInput = "hand",
+            direction = TranslationDirection.ENGLISH_TO_MAYA,
+        )
+
+        assertTrue(result is TranslationResult.Success)
+        assertEquals(
+            "kʼab",
+            (result as TranslationResult.Success).output,
+        )
+    }
+
+    @Test
     fun translateUnknownInput_returnsNoMatch() = runTest {
         val service = TranslationService(
             InMemoryDictionaryRepository(listOf(testEntry))
