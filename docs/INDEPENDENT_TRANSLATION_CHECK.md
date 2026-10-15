@@ -27,3 +27,23 @@ accuracy, a human reviewer should:
 Why this matters: several Yucatec Maya words have multiple senses and several
 English concepts have multiple valid Yucatec Maya forms. The app now displays
 multiple valid dictionary matches instead of silently selecting one.
+
+
+## Automated coverage diagnostic
+
+The dataset workflow also runs:
+
+```bash
+python dataset/scripts/score_reference_candidates.py \
+  dataset/processed/maya_english_dictionary.csv \
+  dataset/evaluation/independent_reference_candidates.csv \
+  --report dataset/evaluation/independent_reference_coverage.json
+```
+
+This accepts the canonical English gloss **or a conservative English lookup
+alias** derived from the gloss. It reports whether each independently sourced
+candidate is currently supported by the app dictionary.
+
+Do not label this number as "translation accuracy". It is a coverage diagnostic
+until the candidate cases have been manually approved and sense ambiguity has
+been reviewed.
