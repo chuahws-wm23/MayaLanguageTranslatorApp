@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -232,7 +232,12 @@ fun ImageTranslationScreen(
                                 fontWeight = FontWeight.Bold,
                             )
                             Text(
-                                text = "Choose a clear photo with readable Latin-script text.",
+                                text =
+                                    if (imageUri == null) {
+                                        "Choose a clear photo with readable Latin-script text."
+                                    } else {
+                                        "Replace the current image using Camera or Gallery."
+                                    },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -261,7 +266,11 @@ fun ImageTranslationScreen(
                                 contentDescription = null,
                             )
                             Text(
-                                "Camera",
+                                if (imageUri == null) {
+                                    "Camera"
+                                } else {
+                                    "Use Camera"
+                                },
                                 modifier =
                                     Modifier.padding(start = 8.dp),
                             )
@@ -281,7 +290,11 @@ fun ImageTranslationScreen(
                                 contentDescription = null,
                             )
                             Text(
-                                "Gallery",
+                                if (imageUri == null) {
+                                    "Gallery"
+                                } else {
+                                    "Replace from Gallery"
+                                },
                                 modifier =
                                     Modifier.padding(start = 8.dp),
                             )
@@ -309,39 +322,23 @@ fun ImageTranslationScreen(
 
             preview?.let { bitmap ->
                 Card(
+                    modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(
+                        containerColor =
+                            MaterialTheme.colorScheme.surface,
+                    ),
                 ) {
                     Image(
                         bitmap = bitmap.asImageBitmap(),
                         contentDescription = "Selected image",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .aspectRatio(16f / 10f),
-                        contentScale = ContentScale.Crop,
-                    )
-                }
-            }
-
-            if (imageUri != null) {
-                FilledTonalButton(
-                    onClick = {
-                        galleryLauncher.launch("image/*")
-                    },
-                    enabled =
-                        !readingImage &&
-                            !state.loading,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding =
-                        PaddingValues(vertical = 14.dp),
-                ) {
-                    Icon(
-                        Icons.Rounded.PhotoLibrary,
-                        contentDescription = null,
-                    )
-                    Text(
-                        text = "Choose Another Image",
-                        modifier = Modifier.padding(start = 8.dp),
-                        fontWeight = FontWeight.SemiBold,
+                            .heightIn(
+                                min = 180.dp,
+                                max = 420.dp,
+                            ),
+                        contentScale = ContentScale.Fit,
                     )
                 }
             }
