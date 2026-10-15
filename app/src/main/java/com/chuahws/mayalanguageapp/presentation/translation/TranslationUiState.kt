@@ -10,6 +10,7 @@ data class TranslationUiState(
         TranslationDirection.ENGLISH_TO_MAYA,
     val output: String = "",
     val matchedEntry: DictionaryEntry? = null,
+    val alternativeEntries: List<DictionaryEntry> = emptyList(),
     val inputType: InputType = InputType.TEXT,
     val message: String? = null,
     val loading: Boolean = false,

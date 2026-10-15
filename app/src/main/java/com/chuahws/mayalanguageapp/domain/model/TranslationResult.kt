@@ -8,6 +8,17 @@ sealed interface TranslationResult {
     ) : TranslationResult
 
     /**
+     * Exact input with more than one distinct dictionary translation.
+     *
+     * Natural-language ambiguity is presented instead of silently selecting
+     * whichever Firestore document happens to be returned first.
+     */
+    data class Alternatives(
+        val input: String,
+        val entries: List<DictionaryEntry>,
+    ) : TranslationResult
+
+    /**
      * Translation assembled from more than one dictionary match.
      *
      * Unknown terms are kept explicitly in the output rather than causing the

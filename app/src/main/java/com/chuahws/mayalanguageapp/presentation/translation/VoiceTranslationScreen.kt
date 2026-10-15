@@ -293,6 +293,7 @@ fun VoiceTranslationScreen(
             TranslationResultCard(
                 output = state.output,
                 entry = state.matchedEntry,
+                alternatives = state.alternativeEntries,
                 outputLanguageTag = "yua",
                 onSave =
                     state.matchedEntry?.let { entry ->

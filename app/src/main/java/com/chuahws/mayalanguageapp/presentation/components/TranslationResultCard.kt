@@ -28,6 +28,7 @@ import com.chuahws.mayalanguageapp.presentation.theme.MayaGreen
 fun TranslationResultCard(
     output: String,
     entry: DictionaryEntry?,
+    alternatives: List<DictionaryEntry> = emptyList(),
     outputLanguageTag: String,
     onSave: (() -> Unit)?,
 ) {
@@ -58,14 +59,107 @@ fun TranslationResultCard(
                 )
                 Column {
                     Text(
-                        text = "Translation result",
+                        text = if (alternatives.isEmpty()) {
+                            "Translation result"
+                        } else {
+                            "Possible translations"
+                        },
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                     )
+                    if (alternatives.isEmpty()) {
+                        Text(
+                            text = output,
+                            style =
+                                MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    } else {
+                        Text(
+                            text =
+                                "This input has more than one valid dictionary match.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color =
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            if (alternatives.isNotEmpty()) {
+                val visibleAlternatives =
+                    alternatives.take(8)
+
+                visibleAlternatives.forEach { alternative ->
+                    val translatedText =
+                        if (outputLanguageTag == "en-US") {
+                            alternative.englishText
+                        } else {
+                            alternative.mayaText
+                        }
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme.colorScheme.surfaceVariant,
+                        ),
+                        shape = MaterialTheme.shapes.large,
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement =
+                                Arrangement.spacedBy(7.dp),
+                        ) {
+                            Text(
+                                text = translatedText,
+                                style =
+                                    MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                            )
+
+                            alternative.partOfSpeech
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let {
+                                    SoftBadge(text = it)
+                                }
+
+                            alternative.pronunciation
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let {
+                                    Text(
+                                        text = "Pronunciation: $it",
+                                        style =
+                                            MaterialTheme.typography.bodySmall,
+                                        color =
+                                            MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+
+                            alternative.source
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let {
+                                    Text(
+                                        text = "Source: $it",
+                                        style =
+                                            MaterialTheme.typography.bodySmall,
+                                        color =
+                                            MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                        }
+                    }
+                }
+
+                if (alternatives.size > visibleAlternatives.size) {
                     Text(
-                        text = output,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        text = "+" +
+                            (alternatives.size -
+                                visibleAlternatives.size) +
+                            " more dictionary senses",
+                        style = MaterialTheme.typography.bodySmall,
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -187,12 +281,18 @@ fun TranslationResultCard(
                     )
                 }
 
-                SpeakButton(
-                    text = output,
-                    languageTag = outputLanguageTag,
-                )
+                if (alternatives.isEmpty()) {
+                    SpeakButton(
+                        text = output,
+                        languageTag = outputLanguageTag,
+                    )
+                }
 
-                if (onSave != null && entry != null) {
+                if (
+                    alternatives.isEmpty() &&
+                    onSave != null &&
+                    entry != null
+                ) {
                     FilledTonalButton(
                         onClick = onSave,
                         modifier = Modifier.weight(1f),

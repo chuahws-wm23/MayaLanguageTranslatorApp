@@ -35,6 +35,7 @@ class TranslationViewModel(
                 input = value,
                 output = "",
                 matchedEntry = null,
+                alternativeEntries = emptyList(),
                 message = null,
             )
         }
@@ -126,6 +127,8 @@ class TranslationViewModel(
                             output = result.output,
                             matchedEntry =
                                 result.entry,
+                            alternativeEntries =
+                                emptyList(),
                             message = null,
                             inputType = inputType,
                         )
@@ -137,6 +140,44 @@ class TranslationViewModel(
                             result.output,
                         entryId =
                             result.entry.entryId,
+                        direction =
+                            state.direction,
+                        inputType = inputType,
+                    )
+                }
+
+                is TranslationResult.Alternatives -> {
+                    val outputs = result.entries
+                        .map { entry ->
+                            if (
+                                state.direction ==
+                                    TranslationDirection.MAYA_TO_ENGLISH
+                            ) {
+                                entry.englishText
+                            } else {
+                                entry.mayaText
+                            }
+                        }
+                        .distinct()
+
+                    _uiState.update {
+                        it.copy(
+                            loading = false,
+                            output =
+                                outputs.joinToString("\n"),
+                            matchedEntry = null,
+                            alternativeEntries =
+                                result.entries,
+                            message = null,
+                            inputType = inputType,
+                        )
+                    }
+
+                    recordSuccess(
+                        source = state.input,
+                        translated =
+                            outputs.joinToString(" / "),
+                        entryId = null,
                         direction =
                             state.direction,
                         inputType = inputType,
@@ -166,6 +207,7 @@ class TranslationViewModel(
                             loading = false,
                             output = result.output,
                             matchedEntry = null,
+                            alternativeEntries = emptyList(),
                             message = warning,
                             inputType = inputType,
                         )
@@ -186,6 +228,7 @@ class TranslationViewModel(
                             loading = false,
                             output = "",
                             matchedEntry = null,
+                            alternativeEntries = emptyList(),
                             message =
                                 "This word or phrase is not in the dictionary yet.",
                         )
@@ -197,6 +240,7 @@ class TranslationViewModel(
                             loading = false,
                             output = "",
                             matchedEntry = null,
+                            alternativeEntries = emptyList(),
                             message =
                                 result.message,
                         )

@@ -255,6 +255,7 @@ fun TranslationScreen(
             TranslationResultCard(
                 output = state.output,
                 entry = state.matchedEntry,
+                alternatives = state.alternativeEntries,
                 outputLanguageTag = outputLanguageTag,
                 onSave =
                     state.matchedEntry?.let { entry ->

@@ -226,6 +226,93 @@ class TranslationServiceTest {
     }
 
     @Test
+    fun ambiguousMayaInput_returnsAllDistinctEnglishMeanings() = runTest {
+        val entries = listOf(
+            DictionaryEntry(
+                entryId = "sense-1",
+                mayaText = "iit",
+                mayaNormalized = "iit",
+                englishText = "base",
+                englishNormalized = "base",
+                active = true,
+            ),
+            DictionaryEntry(
+                entryId = "sense-2",
+                mayaText = "iit",
+                mayaNormalized = "iit",
+                englishText = "bottom",
+                englishNormalized = "bottom",
+                active = true,
+            ),
+            DictionaryEntry(
+                entryId = "sense-3",
+                mayaText = "iit",
+                mayaNormalized = "iit",
+                englishText = "base",
+                englishNormalized = "base",
+                active = true,
+            ),
+        )
+
+        val service = TranslationService(
+            InMemoryDictionaryRepository(entries)
+        )
+
+        val result = service.translate(
+            rawInput = "iit",
+            direction = TranslationDirection.MAYA_TO_ENGLISH,
+        )
+
+        assertTrue(result is TranslationResult.Alternatives)
+        result as TranslationResult.Alternatives
+
+        assertEquals(2, result.entries.size)
+        assertEquals(
+            setOf("base", "bottom"),
+            result.entries.map { it.englishText }.toSet(),
+        )
+    }
+
+    @Test
+    fun ambiguousEnglishInput_returnsAllDistinctMayaForms() = runTest {
+        val entries = listOf(
+            DictionaryEntry(
+                entryId = "form-1",
+                mayaText = "míis",
+                mayaNormalized = "míis",
+                englishText = "broom",
+                englishNormalized = "broom",
+                active = true,
+            ),
+            DictionaryEntry(
+                entryId = "form-2",
+                mayaText = "míisib",
+                mayaNormalized = "míisib",
+                englishText = "broom",
+                englishNormalized = "broom",
+                active = true,
+            ),
+        )
+
+        val service = TranslationService(
+            InMemoryDictionaryRepository(entries)
+        )
+
+        val result = service.translate(
+            rawInput = "broom",
+            direction = TranslationDirection.ENGLISH_TO_MAYA,
+        )
+
+        assertTrue(result is TranslationResult.Alternatives)
+        result as TranslationResult.Alternatives
+
+        assertEquals(
+            setOf("míis", "míisib"),
+            result.entries.map { it.mayaText }.toSet(),
+        )
+    }
+
+    @Test
     fun translateUnknownInput_returnsNoMatch() = runTest {
         val service = TranslationService(
             InMemoryDictionaryRepository(listOf(testEntry))

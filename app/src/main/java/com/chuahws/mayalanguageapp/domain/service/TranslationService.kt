@@ -20,13 +20,27 @@ class TranslationService(
             )
         }
 
-        // Keep the existing deterministic behaviour for a verified/known
-        // complete word or phrase.
-        findEntry(normalized, direction)?.let { entry ->
+        // Exact dictionary matches can legitimately have several senses or
+        // several target-language forms. Never hide that ambiguity by taking
+        // an arbitrary first Firestore document.
+        val exactEntries = distinctTranslations(
+            findEntries(normalized, direction),
+            direction,
+        )
+
+        if (exactEntries.size == 1) {
+            val entry = exactEntries.first()
             return TranslationResult.Success(
                 input = rawInput,
                 output = translatedText(entry, direction),
                 entry = entry,
+            )
+        }
+
+        if (exactEntries.size > 1) {
+            return TranslationResult.Alternatives(
+                input = rawInput,
+                entries = exactEntries,
             )
         }
 
@@ -217,13 +231,38 @@ class TranslationService(
     private suspend fun findEntry(
         normalizedText: String,
         direction: TranslationDirection,
-    ): DictionaryEntry? = when (direction) {
+    ): DictionaryEntry? =
+        findEntries(normalizedText, direction)
+            .firstOrNull()
+
+    private suspend fun findEntries(
+        normalizedText: String,
+        direction: TranslationDirection,
+    ): List<DictionaryEntry> = when (direction) {
         TranslationDirection.MAYA_TO_ENGLISH ->
-            dictionaryRepository.findByMaya(normalizedText)
+            dictionaryRepository.findAllByMaya(normalizedText)
 
         TranslationDirection.ENGLISH_TO_MAYA ->
-            dictionaryRepository.findByEnglish(normalizedText)
+            dictionaryRepository.findAllByEnglish(normalizedText)
     }
+
+    private fun distinctTranslations(
+        entries: List<DictionaryEntry>,
+        direction: TranslationDirection,
+    ): List<DictionaryEntry> =
+        entries
+            .distinctBy {
+                TextNormalizer.normalize(
+                    translatedText(it, direction)
+                )
+            }
+            .sortedWith(
+                compareByDescending<DictionaryEntry> {
+                    it.verified
+                }.thenBy {
+                    translatedText(it, direction)
+                }
+            )
 
     private fun translatedText(
         entry: DictionaryEntry,
