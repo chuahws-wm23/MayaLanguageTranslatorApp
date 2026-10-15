@@ -43,9 +43,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.chuahws.mayalanguageapp.integration.ml_kit_ocr.createTemporaryImageFile
 import com.chuahws.mayalanguageapp.integration.ml_kit_ocr.temporaryImageUri
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.guava.await
 
 @Composable
 fun CameraCaptureScreen(
@@ -309,32 +307,6 @@ fun CameraCaptureScreen(
 private suspend fun getCameraProvider(
     context: Context,
 ): ProcessCameraProvider =
-    suspendCancellableCoroutine { continuation ->
-        val future =
-            ProcessCameraProvider.getInstance(context)
-        val executor =
-            ContextCompat.getMainExecutor(context)
-
-        future.addListener(
-            {
-                runCatching {
-                    future.get()
-                }.onSuccess { provider ->
-                    if (continuation.isActive) {
-                        continuation.resume(provider)
-                    }
-                }.onFailure { error ->
-                    if (continuation.isActive) {
-                        continuation.resumeWithException(
-                            error
-                        )
-                    }
-                }
-            },
-            executor,
-        )
-
-        continuation.invokeOnCancellation {
-            future.cancel(true)
-        }
-    }
+    ProcessCameraProvider
+        .getInstance(context)
+        .await()
