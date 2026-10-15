@@ -52,6 +52,12 @@ jobs:
             dataset/evaluation/manual_evaluation_candidates.csv \
             --size 200
 
+      - name: Audit dictionary ambiguity
+        run: |
+          python dataset/scripts/audit_dictionary.py \
+            dataset/processed/maya_english_dictionary.csv \
+            --report dataset/processed/dictionary_audit.json
+
       - name: Upload processed dataset artifact
         uses: actions/upload-artifact@v4
         with:
@@ -61,5 +67,6 @@ jobs:
           path: |
             dataset/processed/maya_english_dictionary.csv
             dataset/processed/validation_report.json
+            dataset/processed/dictionary_audit.json
             dataset/raw/kaikki-yucatec-maya.metadata.json
             dataset/evaluation/manual_evaluation_candidates.csv
