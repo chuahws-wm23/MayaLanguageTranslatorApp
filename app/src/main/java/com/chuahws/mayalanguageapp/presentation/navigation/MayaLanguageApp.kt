@@ -3,6 +3,7 @@ package com.chuahws.mayalanguageapp.presentation.navigation
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
@@ -11,6 +12,7 @@ import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
@@ -62,7 +65,6 @@ private enum class AppPage {
     ANALYTICS,
     FEEDBACK,
     PROFILE,
-    ADMIN,
 }
 
 private enum class BottomItem(
@@ -183,6 +185,7 @@ private fun MainShell(
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var page by rememberSaveable { mutableStateOf(AppPage.HOME) }
+    var adminUserView by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -198,26 +201,47 @@ private fun MainShell(
         }
     }
 
-    BackHandler(enabled = page != AppPage.HOME) {
-        page = if (page == AppPage.ADMIN) {
-            AppPage.PROFILE
-        } else {
-            AppPage.HOME
+    if (state.profile == null && state.loading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    LaunchedEffect(
+        state.profile?.role,
+        adminUserView,
+    ) {
+        if (state.profile?.role == "admin" && !adminUserView) {
+            appDataViewModel.loadAdminFeedback()
         }
     }
 
-    if (page == AppPage.ADMIN) {
-        LaunchedEffect(Unit) {
-            appDataViewModel.loadAdminFeedback()
-        }
-
+    if (state.profile?.role == "admin" && !adminUserView) {
         AdminScreen(
+            displayName = state.profile?.displayName.orEmpty(),
+            email = email,
             feedback = state.adminFeedback,
-            onBack = { page = AppPage.PROFILE },
+            snackbarHostState = snackbarHostState,
             onMarkReviewed =
                 appDataViewModel::markFeedbackReviewed,
+            onSwitchToUserView = {
+                adminUserView = true
+                page = AppPage.HOME
+            },
+            onSignOut = {
+                appDataViewModel.clearUser()
+                authViewModel.signOut()
+            },
         )
         return
+    }
+
+    BackHandler(enabled = page != AppPage.HOME) {
+        page = AppPage.HOME
     }
 
     val pageTitle = when (page) {
@@ -230,7 +254,6 @@ private fun MainShell(
         AppPage.ANALYTICS -> "Analytics"
         AppPage.FEEDBACK -> "Feedback"
         AppPage.PROFILE -> "Profile"
-        AppPage.ADMIN -> "Admin Dashboard"
     }
 
     val isDetailPage = page in setOf(
@@ -424,15 +447,13 @@ private fun MainShell(
                         onResetPassword =
                             authViewModel::sendPasswordReset,
                         onOpenAdmin = {
-                            page = AppPage.ADMIN
+                            adminUserView = false
                         },
                         onSignOut = {
                             appDataViewModel.clearUser()
                             authViewModel.signOut()
                         },
                     )
-
-                AppPage.ADMIN -> Unit
             }
         }
     }
