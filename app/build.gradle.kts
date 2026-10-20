@@ -15,7 +15,7 @@ android {
         minSdk = 23
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
     }
 
     buildFeatures {
@@ -46,6 +46,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     val firebaseBom = platform("com.google.firebase:firebase-bom:33.15.0")
@@ -55,6 +56,19 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 
-    // Latin-script OCR for modern Yucatec Maya orthography.
     implementation("com.google.mlkit:text-recognition:16.0.1")
+
+    // CameraX powers the in-app camera used by Image Translation.
+    val cameraXVersion = "1.4.2"
+    implementation("androidx.camera:camera-core:$cameraXVersion")
+    implementation("androidx.camera:camera-camera2:$cameraXVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraXVersion")
+    implementation("androidx.camera:camera-view:$cameraXVersion")
+
+    // Provides a coroutine await() bridge for CameraX's ListenableFuture API
+    // and supplies the required Guava types on the compile classpath.
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.10.2")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 }
