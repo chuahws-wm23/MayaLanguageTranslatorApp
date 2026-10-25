@@ -24,7 +24,8 @@ class MainActivity : ComponentActivity() {
             this,
             AppViewModelFactory {
                 AuthViewModel(
-                    authRepository = dependencies.authRepository,
+                    authRepository =
+                        dependencies.authRepository,
                     userProfileRepository =
                         dependencies.userProfileRepository,
                 )
@@ -39,6 +40,8 @@ class MainActivity : ComponentActivity() {
                         dependencies.userDataRepository,
                     userProfileRepository =
                         dependencies.userProfileRepository,
+                    dictionaryRepository =
+                        dependencies.dictionaryRepository,
                 )
             },
         )[AppDataViewModel::class.java]
@@ -47,9 +50,10 @@ class MainActivity : ComponentActivity() {
             this,
             AppViewModelFactory {
                 TranslationViewModel(
-                    translationService = TranslationService(
-                        dependencies.dictionaryRepository
-                    ),
+                    translationService =
+                        TranslationService(
+                            dependencies.dictionaryRepository
+                        ),
                     userDataRepository =
                         dependencies.userDataRepository,
                     userIdProvider = {
@@ -67,8 +71,10 @@ class MainActivity : ComponentActivity() {
             MayaTranslateTheme {
                 MayaLanguageApp(
                     authViewModel = authViewModel,
-                    appDataViewModel = appDataViewModel,
-                    translationViewModel = translationViewModel,
+                    appDataViewModel =
+                        appDataViewModel,
+                    translationViewModel =
+                        translationViewModel,
                     firebaseConfigured =
                         dependencies.firebaseConfigured,
                 )
