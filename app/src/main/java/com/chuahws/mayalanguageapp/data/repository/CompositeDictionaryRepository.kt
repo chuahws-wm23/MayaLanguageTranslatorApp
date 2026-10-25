@@ -53,7 +53,7 @@ class CompositeDictionaryRepository(
             entries += repository.browseEntries(limit)
         }
         return entries
-            .distinctBy(::entryIdentity)
+            .distinctBy { it.entryId }
             .sortedBy { it.mayaNormalized }
             .take(limit)
     }
@@ -67,7 +67,7 @@ class CompositeDictionaryRepository(
             entries += repository.searchEntries(query, limit)
         }
         return entries
-            .distinctBy(::entryIdentity)
+            .distinctBy { it.entryId }
             .sortedWith(
                 compareByDescending<DictionaryEntry> { it.verified }
                     .thenBy { it.mayaText }
