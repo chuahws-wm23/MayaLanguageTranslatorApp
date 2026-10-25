@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.Card
@@ -59,6 +60,7 @@ fun HomeScreen(
     onHistory: () -> Unit,
     onAnalytics: () -> Unit,
     onFeedback: () -> Unit,
+    onDictionary: () -> Unit,
     onProfile: () -> Unit,
 ) {
     AppGradientBackground {
@@ -158,11 +160,11 @@ fun HomeScreen(
                         onClick = onFeedback,
                     ),
                     right = Feature(
-                        title = "Profile",
-                        subtitle = "Account & preferences",
-                        icon = Icons.Rounded.Person,
+                        title = "Dictionary",
+                        subtitle = "Browse Maya vocabulary",
+                        icon = Icons.Rounded.MenuBook,
                         color = MayaPurple,
-                        onClick = onProfile,
+                        onClick = onDictionary,
                     ),
                 )
             }
