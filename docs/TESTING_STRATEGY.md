@@ -13,6 +13,10 @@ Current automated coverage includes:
 - exact dictionary lookup
 - no-match behaviour
 - OCR Maya-text filtering
+- owner-scoped history deletion in the in-memory repository
+- dictionary add/edit/search/delete repository behaviour
+- administrator account-status updates
+- system analytics aggregation
 - Android compilation / unit-test execution
 
 A passing software test proves that the implementation behaves as specified. It
@@ -133,8 +137,15 @@ Verify:
 - successful translation creates history
 - Text/Image/Voice analytics counters
 - save/remove vocabulary
+- dictionary browse and search
+- translation-history deletion by the owning user
 - feedback submission
+- admin user search and suspend/reactivate workflow
+- suspended-user login/session behaviour
+- admin dictionary add/edit/delete workflow
 - admin feedback review
+- admin system reports for users, translations and feedback
 - one user cannot read another user's private records
+- non-admin users cannot perform administrator writes
 
 Do not use Firebase Admin credentials inside the Android app or repository.
