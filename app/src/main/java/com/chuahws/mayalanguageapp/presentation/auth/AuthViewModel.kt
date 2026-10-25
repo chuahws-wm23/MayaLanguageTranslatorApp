@@ -23,10 +23,12 @@ class AuthViewModel(
         AuthUiState(
             currentUser = existingUser,
             email = existingUser?.email.orEmpty(),
-            displayName = existingUser?.displayName.orEmpty(),
+            displayName =
+                existingUser?.displayName.orEmpty(),
         )
     )
-    val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<AuthUiState> =
+        _uiState.asStateFlow()
 
     fun updateDisplayName(value: String) {
         _uiState.update {
@@ -69,11 +71,14 @@ class AuthViewModel(
         if (_uiState.value.loading) return
 
         val state = _uiState.value
-        val validationError = validateRegistration(state)
+        val validationError =
+            validateRegistration(state)
 
         if (validationError != null) {
             _uiState.update {
-                it.copy(message = validationError)
+                it.copy(
+                    message = validationError
+                )
             }
             return
         }
@@ -88,11 +93,13 @@ class AuthViewModel(
                     password = state.password,
                 )
 
-                val now = System.currentTimeMillis()
+                val now =
+                    System.currentTimeMillis()
                 userProfileRepository.createProfile(
                     UserProfile(
                         userId = user.userId,
-                        displayName = state.displayName.trim(),
+                        displayName =
+                            state.displayName.trim(),
                         email = user.email,
                         role = "user",
                         accountStatus = "active",
@@ -112,12 +119,14 @@ class AuthViewModel(
 
         val state = _uiState.value
 
-        if (!isValidEmail(state.email) ||
+        if (
+            !isValidEmail(state.email) ||
             state.password.isBlank()
         ) {
             _uiState.update {
                 it.copy(
-                    message = "Enter a valid email and password."
+                    message =
+                        "Enter a valid email and password."
                 )
             }
             return
@@ -127,10 +136,27 @@ class AuthViewModel(
 
         viewModelScope.launch {
             runCatching {
-                authRepository.login(
+                val user = authRepository.login(
                     state.email,
                     state.password,
                 )
+
+                val profile =
+                    userProfileRepository.getProfile(
+                        user.userId
+                    )
+
+                if (
+                    profile?.accountStatus ==
+                        "suspended"
+                ) {
+                    authRepository.signOut()
+                    throw IllegalStateException(
+                        "This account has been suspended. Contact an administrator."
+                    )
+                }
+
+                user
             }.onSuccess(::onAuthenticated)
                 .onFailure(::onOperationFailed)
         }
@@ -144,7 +170,8 @@ class AuthViewModel(
         if (!isValidEmail(email)) {
             _uiState.update {
                 it.copy(
-                    message = "Enter a valid registered email address."
+                    message =
+                        "Enter a valid registered email address."
                 )
             }
             return
@@ -159,7 +186,8 @@ class AuthViewModel(
                 _uiState.update {
                     it.copy(
                         loading = false,
-                        message = "If the email is registered, a reset email has been sent.",
+                        message =
+                            "If the email is registered, a reset email has been sent.",
                         passwordResetSent = true,
                     )
                 }
@@ -186,7 +214,8 @@ class AuthViewModel(
                 currentUser = user,
                 email = user.email,
                 displayName =
-                    user.displayName ?: it.displayName,
+                    user.displayName
+                        ?: it.displayName,
                 loading = false,
                 message = null,
                 password = "",
@@ -200,8 +229,9 @@ class AuthViewModel(
         _uiState.update {
             it.copy(
                 loading = false,
-                message = error.message
-                    ?: "The operation could not be completed.",
+                message =
+                    error.message
+                        ?: "The operation could not be completed.",
             )
         }
     }
@@ -238,6 +268,7 @@ class AuthViewModel(
         val atIndex = trimmed.indexOf('@')
         return atIndex > 0 &&
             atIndex < trimmed.lastIndex &&
-            trimmed.substring(atIndex + 1).contains('.')
+            trimmed.substring(atIndex + 1)
+                .contains('.')
     }
 }
