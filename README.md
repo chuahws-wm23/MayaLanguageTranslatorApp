@@ -13,12 +13,17 @@ The fyp-development branch contains the application flow:
 - Yucatec Maya OCR post-filtering
 - English speech recognition
 - device text-to-speech playback
-- translation history
+- translation history with search/filter/delete
+- searchable dictionary browsing
 - saved vocabulary
 - usage analytics
 - profile editing
 - feedback submission
+- role-specific administrator console
+- administrator user management
+- administrator dictionary management
 - administrator feedback review
+- administrator system reports
 - Firebase Authentication and Cloud Firestore repositories
 - development-mode repositories for testing before Firebase setup
 
