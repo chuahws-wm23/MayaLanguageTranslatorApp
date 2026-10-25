@@ -12,35 +12,43 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Analytics
-import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Feedback
-import androidx.compose.material.icons.rounded.Group
-import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,7 +56,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.FeedbackItem
+import com.chuahws.mayalanguageapp.domain.model.UsageAnalytics
+import com.chuahws.mayalanguageapp.domain.model.UserProfile
 
 private enum class AdminSection(
     val label: String,
@@ -66,9 +77,19 @@ private enum class AdminSection(
 fun AdminScreen(
     displayName: String,
     email: String,
+    currentUserId: String,
+    users: List<UserProfile>,
     feedback: List<FeedbackItem>,
+    analytics: List<UsageAnalytics>,
+    dictionaryEntries: List<DictionaryEntry>,
+    loading: Boolean,
     snackbarHostState: SnackbarHostState,
+    onToggleUserStatus: (String, String) -> Unit,
     onMarkReviewed: (FeedbackItem) -> Unit,
+    onSearchDictionary: (String) -> Unit,
+    onSaveDictionaryEntry:
+        (DictionaryEntry?, String, String, String, String) -> Unit,
+    onDeleteDictionaryEntry: (DictionaryEntry) -> Unit,
     onSwitchToUserView: () -> Unit,
     onSignOut: () -> Unit,
 ) {
@@ -98,26 +119,23 @@ fun AdminScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = onSwitchToUserView,
-                    ) {
+                    IconButton(onClick = onSwitchToUserView) {
                         Icon(
                             Icons.Rounded.SwapHoriz,
                             contentDescription = "Switch to user view",
                         )
                     }
-                    IconButton(
-                        onClick = onSignOut,
-                    ) {
+                    IconButton(onClick = onSignOut) {
                         Icon(
                             Icons.Rounded.Logout,
                             contentDescription = "Logout",
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                colors =
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             )
         },
         bottomBar = {
@@ -125,9 +143,7 @@ fun AdminScreen(
                 AdminSection.entries.forEach { item ->
                     NavigationBarItem(
                         selected = section == item,
-                        onClick = {
-                            section = item
-                        },
+                        onClick = { section = item },
                         icon = {
                             Icon(
                                 item.icon,
@@ -136,11 +152,11 @@ fun AdminScreen(
                         },
                         label = {
                             Text(
-                                text = when (item) {
+                                when (item) {
                                     AdminSection.DICTIONARY -> "Words"
                                     AdminSection.ANALYTICS -> "Stats"
                                     else -> item.label
-                                },
+                                }
                             )
                         },
                     )
@@ -153,50 +169,54 @@ fun AdminScreen(
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
+            if (loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 12.dp),
+                )
+            }
+
             when (section) {
-                AdminSection.DASHBOARD -> DashboardContent(
-                    displayName = displayName,
-                    email = email,
-                    feedback = feedback,
-                    onOpenFeedback = {
-                        section = AdminSection.FEEDBACK
-                    },
-                )
+                AdminSection.DASHBOARD ->
+                    DashboardContent(
+                        displayName = displayName,
+                        email = email,
+                        users = users,
+                        feedback = feedback,
+                        analytics = analytics,
+                        onOpenFeedback = {
+                            section = AdminSection.FEEDBACK
+                        },
+                    )
 
-                AdminSection.USERS -> PlaceholderManagementSection(
-                    icon = Icons.Rounded.Group,
-                    title = "User management",
-                    description =
-                        "Manage registered accounts, roles and account status from one place.",
-                    plannedActions = listOf(
-                        "View registered users",
-                        "Search and filter accounts",
-                        "Activate or suspend accounts",
-                        "View basic user activity",
-                    ),
-                )
+                AdminSection.USERS ->
+                    UserManagementContent(
+                        currentUserId = currentUserId,
+                        users = users,
+                        onToggleStatus = onToggleUserStatus,
+                    )
 
-                AdminSection.DICTIONARY -> PlaceholderManagementSection(
-                    icon = Icons.Rounded.Language,
-                    title = "Dictionary management",
-                    description =
-                        "Maintain the Yucatec Maya-English dictionary used by the translator.",
-                    plannedActions = listOf(
-                        "View dictionary entries",
-                        "Add new words and meanings",
-                        "Edit existing entries",
-                        "Remove invalid entries",
-                    ),
-                )
+                AdminSection.DICTIONARY ->
+                    DictionaryManagementContent(
+                        entries = dictionaryEntries,
+                        onSearch = onSearchDictionary,
+                        onSave = onSaveDictionaryEntry,
+                        onDelete = onDeleteDictionaryEntry,
+                    )
 
-                AdminSection.FEEDBACK -> FeedbackContent(
-                    feedback = feedback,
-                    onMarkReviewed = onMarkReviewed,
-                )
+                AdminSection.FEEDBACK ->
+                    FeedbackContent(
+                        feedback = feedback,
+                        onMarkReviewed = onMarkReviewed,
+                    )
 
-                AdminSection.ANALYTICS -> AnalyticsContent(
-                    feedback = feedback,
-                )
+                AdminSection.ANALYTICS ->
+                    AnalyticsContent(
+                        users = users,
+                        feedback = feedback,
+                        analytics = analytics,
+                    )
             }
         }
     }
@@ -206,18 +226,17 @@ fun AdminScreen(
 private fun DashboardContent(
     displayName: String,
     email: String,
+    users: List<UserProfile>,
     feedback: List<FeedbackItem>,
+    analytics: List<UsageAnalytics>,
     onOpenFeedback: () -> Unit,
 ) {
-    val pendingFeedback = feedback.count {
-        it.status != "reviewed"
-    }
-    val reviewedFeedback = feedback.size - pendingFeedback
-    val averageRating = if (feedback.isEmpty()) {
-        0.0
-    } else {
-        feedback.map { it.rating }.average()
-    }
+    val pendingFeedback =
+        feedback.count { it.status != "reviewed" }
+    val totalTranslations =
+        analytics.sumOf { it.totalTranslations }
+    val activeUsers =
+        users.count { it.accountStatus != "suspended" }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -233,7 +252,8 @@ private fun DashboardContent(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    containerColor =
+                        MaterialTheme.colorScheme.primaryContainer,
                 ),
             ) {
                 Column(
@@ -256,8 +276,8 @@ private fun DashboardContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = "Manage the application, content and user feedback from this console.",
-                        modifier = Modifier.padding(top = 4.dp),
+                        text =
+                            "Manage users, vocabulary, feedback and system activity.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -266,7 +286,7 @@ private fun DashboardContent(
 
         item {
             Text(
-                text = "Overview",
+                text = "System overview",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
             )
@@ -278,13 +298,13 @@ private fun DashboardContent(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 MetricCard(
-                    title = "Feedback",
-                    value = feedback.size.toString(),
+                    title = "Users",
+                    value = users.size.toString(),
                     modifier = Modifier.weight(1f),
                 )
                 MetricCard(
-                    title = "Pending",
-                    value = pendingFeedback.toString(),
+                    title = "Active",
+                    value = activeUsers.toString(),
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -296,17 +316,13 @@ private fun DashboardContent(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 MetricCard(
-                    title = "Reviewed",
-                    value = reviewedFeedback.toString(),
+                    title = "Translations",
+                    value = totalTranslations.toString(),
                     modifier = Modifier.weight(1f),
                 )
                 MetricCard(
-                    title = "Avg. rating",
-                    value = if (feedback.isEmpty()) {
-                        "-"
-                    } else {
-                        "%.1f / 5".format(averageRating)
-                    },
+                    title = "Feedback",
+                    value = feedback.size.toString(),
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -317,7 +333,8 @@ private fun DashboardContent(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        containerColor =
+                            MaterialTheme.colorScheme.secondaryContainer,
                     ),
                 ) {
                     Column(
@@ -325,12 +342,10 @@ private fun DashboardContent(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Text(
-                            text = "$pendingFeedback feedback item(s) need review",
+                            text =
+                                pendingFeedback.toString() +
+                                    " feedback item(s) need review",
                             fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = "Open Feedback to review new submissions.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Button(onClick = onOpenFeedback) {
                             Text("Review feedback")
@@ -339,34 +354,84 @@ private fun DashboardContent(
                 }
             }
         }
+    }
+}
 
-        item {
-            Text(
-                text = "Administration modules",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+@Composable
+private fun UserManagementContent(
+    currentUserId: String,
+    users: List<UserProfile>,
+    onToggleStatus: (String, String) -> Unit,
+) {
+    var query by rememberSaveable {
+        mutableStateOf("")
+    }
 
-        item {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                ModuleStatusCard(
-                    title = "User management",
-                    status = "Shell ready",
+    val filtered = users.filter { user ->
+        query.isBlank() ||
+            user.displayName.contains(query, ignoreCase = true) ||
+            user.email.contains(query, ignoreCase = true)
+    }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            label = { Text("Search users") },
+            leadingIcon = {
+                Icon(
+                    Icons.Rounded.Search,
+                    contentDescription = null,
                 )
-                ModuleStatusCard(
-                    title = "Dictionary management",
-                    status = "Shell ready",
+            },
+            trailingIcon =
+                if (query.isNotBlank()) {
+                    {
+                        IconButton(
+                            onClick = { query = "" },
+                        ) {
+                            Icon(
+                                Icons.Rounded.Clear,
+                                contentDescription = "Clear search",
+                            )
+                        }
+                    }
+                } else {
+                    null
+                },
+            singleLine = true,
+        )
+
+        LazyColumn(
+            contentPadding = PaddingValues(
+                start = 18.dp,
+                end = 18.dp,
+                bottom = 28.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            item {
+                Text(
+                    text = "Registered users: " + users.size,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                 )
-                ModuleStatusCard(
-                    title = "Feedback management",
-                    status = "Connected",
-                )
-                ModuleStatusCard(
-                    title = "System analytics",
-                    status = "Shell ready",
+            }
+
+            items(
+                items = filtered,
+                key = { it.userId },
+            ) { user ->
+                UserCard(
+                    user = user,
+                    isCurrentAdmin =
+                        user.userId == currentUserId,
+                    onToggleStatus = onToggleStatus,
                 )
             }
         }
@@ -374,160 +439,432 @@ private fun DashboardContent(
 }
 
 @Composable
-private fun MetricCard(
-    title: String,
-    value: String,
-    modifier: Modifier = Modifier,
+private fun UserCard(
+    user: UserProfile,
+    isCurrentAdmin: Boolean,
+    onToggleStatus: (String, String) -> Unit,
 ) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp),
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
+    val suspended =
+        user.accountStatus == "suspended"
 
-@Composable
-private fun ModuleStatusCard(
-    title: String,
-    status: String,
-) {
     Card(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp),
         ) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primaryContainer,
-            ) {
-                Box(
-                    modifier = Modifier.size(40.dp),
-                    contentAlignment = Alignment.Center,
+            Text(
+                text = user.displayName.ifBlank { user.email },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = user.email,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text =
+                    "Role: " +
+                        user.role.replaceFirstChar { it.uppercase() },
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                text =
+                    "Status: " +
+                        user.accountStatus.replaceFirstChar {
+                            it.uppercase()
+                        },
+                style = MaterialTheme.typography.bodySmall,
+                color =
+                    if (suspended) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+            )
+
+            if (isCurrentAdmin) {
+                Text(
+                    text = "Current administrator account",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        onToggleStatus(
+                            user.userId,
+                            if (suspended) {
+                                "active"
+                            } else {
+                                "suspended"
+                            },
+                        )
+                    },
                 ) {
-                    Icon(
-                        Icons.Rounded.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                    Text(
+                        if (suspended) {
+                            "Reactivate account"
+                        } else {
+                            "Suspend account"
+                        }
                     )
                 }
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = status,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
         }
     }
 }
 
 @Composable
-private fun PlaceholderManagementSection(
-    icon: ImageVector,
-    title: String,
-    description: String,
-    plannedActions: List<String>,
+private fun DictionaryManagementContent(
+    entries: List<DictionaryEntry>,
+    onSearch: (String) -> Unit,
+    onSave:
+        (DictionaryEntry?, String, String, String, String) -> Unit,
+    onDelete: (DictionaryEntry) -> Unit,
 ) {
-    LazyColumn(
+    var query by rememberSaveable {
+        mutableStateOf("")
+    }
+    var editorOpen by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var editingEntry by remember {
+        mutableStateOf<DictionaryEntry?>(null)
+    }
+    var pendingDelete by remember {
+        mutableStateOf<DictionaryEntry?>(null)
+    }
+
+    if (editorOpen) {
+        DictionaryEditorDialog(
+            entry = editingEntry,
+            onDismiss = {
+                editorOpen = false
+                editingEntry = null
+            },
+            onSave = {
+                    entry,
+                    maya,
+                    english,
+                    partOfSpeech,
+                    pronunciation,
+                ->
+                onSave(
+                    entry,
+                    maya,
+                    english,
+                    partOfSpeech,
+                    pronunciation,
+                )
+                editorOpen = false
+                editingEntry = null
+            },
+        )
+    }
+
+    pendingDelete?.let { entry ->
+        AlertDialog(
+            onDismissRequest = {
+                pendingDelete = null
+            },
+            title = {
+                Text("Delete dictionary entry?")
+            },
+            text = {
+                Text(
+                    "Remove “" +
+                        entry.mayaText +
+                        " — " +
+                        entry.englishText +
+                        "” from the editable dictionary?"
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete(entry)
+                        pendingDelete = null
+                    },
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        pendingDelete = null
+                    },
+                ) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
+
+    Column(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item {
-            Surface(
-                shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.primaryContainer,
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = 18.dp,
+                    top = 18.dp,
+                    end = 18.dp,
+                ),
+            label = { Text("Search dictionary") },
+            leadingIcon = {
+                Icon(
+                    Icons.Rounded.Search,
+                    contentDescription = null,
+                )
+            },
+            trailingIcon =
+                if (query.isNotBlank()) {
+                    {
+                        IconButton(
+                            onClick = {
+                                query = ""
+                                onSearch("")
+                            },
+                        ) {
+                            Icon(
+                                Icons.Rounded.Clear,
+                                contentDescription = "Clear search",
+                            )
+                        }
+                    }
+                } else {
+                    null
+                },
+            singleLine = true,
+        )
+
+        Row(
+            modifier = Modifier.padding(
+                start = 18.dp,
+                top = 10.dp,
+                end = 18.dp,
+                bottom = 10.dp,
+            ),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilledTonalButton(
+                onClick = { onSearch(query) },
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(22.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(42.dp),
-                    )
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = description,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Icon(
+                    Icons.Rounded.Search,
+                    contentDescription = null,
+                )
+                Text(
+                    text = "Search",
+                    modifier = Modifier.padding(start = 6.dp),
+                )
+            }
+
+            Button(
+                onClick = {
+                    editingEntry = null
+                    editorOpen = true
+                },
+            ) {
+                Icon(
+                    Icons.Rounded.Add,
+                    contentDescription = null,
+                )
+                Text(
+                    text = "Add entry",
+                    modifier = Modifier.padding(start = 6.dp),
+                )
             }
         }
 
-        item {
-            Text(
-                text = "Planned controls",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+        LazyColumn(
+            contentPadding = PaddingValues(
+                start = 18.dp,
+                end = 18.dp,
+                bottom = 28.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            item {
+                Text(
+                    text = "Loaded entries: " + entries.size,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
 
-        items(plannedActions) { action ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+            items(
+                items = entries,
+                key = { it.entryId },
+            ) { entry ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Icon(
-                        Icons.Rounded.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(action)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement =
+                            Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = entry.mayaText,
+                            style =
+                                MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(entry.englishText)
+
+                        entry.partOfSpeech
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let {
+                                Text(
+                                    text = "Part of speech: " + it,
+                                    style =
+                                        MaterialTheme.typography.bodySmall,
+                                )
+                            }
+
+                        Row(
+                            horizontalArrangement =
+                                Arrangement.spacedBy(8.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    editingEntry = entry
+                                    editorOpen = true
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Edit,
+                                    contentDescription = null,
+                                )
+                                Text(
+                                    text = "Edit",
+                                    modifier =
+                                        Modifier.padding(start = 5.dp),
+                                )
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    pendingDelete = entry
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Rounded.DeleteOutline,
+                                    contentDescription = null,
+                                    tint =
+                                        MaterialTheme.colorScheme.error,
+                                )
+                                Text(
+                                    text = "Delete",
+                                    color =
+                                        MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
                 }
             }
-        }
-
-        item {
-            Text(
-                text = "The admin interface is ready. The data operations for this module will be connected next.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
-            )
         }
     }
+}
+
+@Composable
+private fun DictionaryEditorDialog(
+    entry: DictionaryEntry?,
+    onDismiss: () -> Unit,
+    onSave:
+        (DictionaryEntry?, String, String, String, String) -> Unit,
+) {
+    var maya by remember(entry?.entryId) {
+        mutableStateOf(entry?.mayaText.orEmpty())
+    }
+    var english by remember(entry?.entryId) {
+        mutableStateOf(entry?.englishText.orEmpty())
+    }
+    var partOfSpeech by remember(entry?.entryId) {
+        mutableStateOf(entry?.partOfSpeech.orEmpty())
+    }
+    var pronunciation by remember(entry?.entryId) {
+        mutableStateOf(entry?.pronunciation.orEmpty())
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (entry == null) {
+                    "Add dictionary entry"
+                } else {
+                    "Edit dictionary entry"
+                }
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(9.dp),
+            ) {
+                OutlinedTextField(
+                    value = maya,
+                    onValueChange = { maya = it },
+                    label = { Text("Yucatec Maya") },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = english,
+                    onValueChange = { english = it },
+                    label = { Text("English") },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = partOfSpeech,
+                    onValueChange = { partOfSpeech = it },
+                    label = {
+                        Text("Part of speech (optional)")
+                    },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = pronunciation,
+                    onValueChange = { pronunciation = it },
+                    label = {
+                        Text("Pronunciation (optional)")
+                    },
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onSave(
+                        entry,
+                        maya,
+                        english,
+                        partOfSpeech,
+                        pronunciation,
+                    )
+                },
+                enabled =
+                    maya.isNotBlank() &&
+                        english.isNotBlank(),
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
 }
 
 @Composable
@@ -587,22 +924,30 @@ private fun FeedbackContent(
             items = feedback,
             key = { it.feedbackId },
         ) { item ->
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(7.dp),
+                    verticalArrangement =
+                        Arrangement.spacedBy(7.dp),
                 ) {
                     Text(
-                        text = "${item.rating}/5 · ${item.userEmail}",
+                        text =
+                            item.rating.toString() +
+                                "/5 · " +
+                                item.userEmail,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(item.comment)
                     Text(
-                        text = item.status.replaceFirstChar {
-                            it.uppercase()
-                        },
+                        text =
+                            item.status.replaceFirstChar {
+                                it.uppercase()
+                            },
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
                     if (item.status != "reviewed") {
@@ -622,16 +967,20 @@ private fun FeedbackContent(
 
 @Composable
 private fun AnalyticsContent(
+    users: List<UserProfile>,
     feedback: List<FeedbackItem>,
+    analytics: List<UsageAnalytics>,
 ) {
-    val pending = feedback.count {
-        it.status != "reviewed"
-    }
-    val averageRating = if (feedback.isEmpty()) {
-        0.0
-    } else {
-        feedback.map { it.rating }.average()
-    }
+    val total =
+        analytics.sumOf { it.totalTranslations }
+    val textTranslations =
+        analytics.sumOf { it.textTranslations }
+    val imageTranslations =
+        analytics.sumOf { it.imageTranslations }
+    val voiceTranslations =
+        analytics.sumOf { it.voiceTranslations }
+    val pending =
+        feedback.count { it.status != "reviewed" }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -640,14 +989,33 @@ private fun AnalyticsContent(
     ) {
         item {
             Text(
-                text = "System analytics",
+                text = "System reports",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Current admin-level indicators and future system-wide usage metrics.",
+                text =
+                    "Summary statistics across registered users, translations and feedback.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                MetricCard(
+                    title = "Users",
+                    value = users.size.toString(),
+                    modifier = Modifier.weight(1f),
+                )
+                MetricCard(
+                    title = "Translations",
+                    value = total.toString(),
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
 
         item {
@@ -669,35 +1037,65 @@ private fun AnalyticsContent(
         }
 
         item {
-            MetricCard(
-                title = "Average user rating",
-                value = if (feedback.isEmpty()) {
-                    "No data"
-                } else {
-                    "%.1f / 5".format(averageRating)
-                },
-                modifier = Modifier.fillMaxWidth(),
+            Text(
+                text = "Translation channels",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
             )
         }
 
         item {
-            Card(
+            MetricCard(
+                title = "Text translations",
+                value = textTranslations.toString(),
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = "Next analytics connection",
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = "System-wide users, total translations, text/image/voice usage and dictionary statistics will be connected to this page next.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+            )
+        }
+        item {
+            MetricCard(
+                title = "Image translations",
+                value = imageTranslations.toString(),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            MetricCard(
+                title = "Voice translations",
+                value = voiceTranslations.toString(),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun MetricCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor =
+                MaterialTheme.colorScheme.surfaceVariant,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
