@@ -12,7 +12,8 @@ import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
 class FirebaseUserDataRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val firestore: FirebaseFirestore =
+        FirebaseFirestore.getInstance(),
 ) : UserDataRepository {
 
     override suspend fun recordTranslation(record: TranslationRecord) {
@@ -29,13 +30,16 @@ class FirebaseUserDataRepository(
 
         when (record.inputType) {
             InputType.IMAGE.name ->
-                analytics["imageTranslations"] = FieldValue.increment(1)
+                analytics["imageTranslations"] =
+                    FieldValue.increment(1)
 
             InputType.VOICE.name ->
-                analytics["voiceTranslations"] = FieldValue.increment(1)
+                analytics["voiceTranslations"] =
+                    FieldValue.increment(1)
 
             else ->
-                analytics["textTranslations"] = FieldValue.increment(1)
+                analytics["textTranslations"] =
+                    FieldValue.increment(1)
         }
 
         firestore.collection("analytics")
@@ -53,9 +57,29 @@ class FirebaseUserDataRepository(
             .get()
             .await()
             .documents
-            .mapNotNull { it.toObject(TranslationRecord::class.java) }
+            .mapNotNull {
+                it.toObject(TranslationRecord::class.java)
+            }
             .sortedByDescending { it.createdAtMillis }
             .take(limit)
+
+    override suspend fun deleteTranslation(
+        translationId: String,
+        userId: String,
+    ) {
+        val ref = firestore.collection("translations")
+            .document(translationId)
+
+        val record = ref.get()
+            .await()
+            .toObject(TranslationRecord::class.java)
+
+        require(record?.userId == userId) {
+            "This translation does not belong to the current user."
+        }
+
+        ref.delete().await()
+    }
 
     override suspend fun saveVocabulary(item: SavedVocabularyItem) {
         firestore.collection("savedVocabulary")
@@ -80,7 +104,8 @@ class FirebaseUserDataRepository(
         val ref = firestore.collection("savedVocabulary")
             .document(savedId)
 
-        val item = ref.get().await()
+        val item = ref.get()
+            .await()
             .toObject(SavedVocabularyItem::class.java)
 
         ref.delete().await()
@@ -92,7 +117,8 @@ class FirebaseUserDataRepository(
                     mapOf(
                         "userId" to item.userId,
                         "savedWords" to FieldValue.increment(-1),
-                        "lastUpdatedMillis" to System.currentTimeMillis(),
+                        "lastUpdatedMillis" to
+                            System.currentTimeMillis(),
                     ),
                     SetOptions.merge(),
                 )
@@ -120,16 +146,22 @@ class FirebaseUserDataRepository(
             .await()
     }
 
-    override suspend fun getFeedback(userId: String): List<FeedbackItem> =
+    override suspend fun getFeedback(
+        userId: String,
+    ): List<FeedbackItem> =
         firestore.collection("feedback")
             .whereEqualTo("userId", userId)
             .get()
             .await()
             .documents
-            .mapNotNull { it.toObject(FeedbackItem::class.java) }
+            .mapNotNull {
+                it.toObject(FeedbackItem::class.java)
+            }
             .sortedByDescending { it.submittedAtMillis }
 
-    override suspend fun getAnalytics(userId: String): UsageAnalytics =
+    override suspend fun getAnalytics(
+        userId: String,
+    ): UsageAnalytics =
         firestore.collection("analytics")
             .document(userId)
             .get()
@@ -137,12 +169,23 @@ class FirebaseUserDataRepository(
             .toObject(UsageAnalytics::class.java)
             ?: UsageAnalytics(userId = userId)
 
+    override suspend fun getAllAnalytics(): List<UsageAnalytics> =
+        firestore.collection("analytics")
+            .get()
+            .await()
+            .documents
+            .mapNotNull {
+                it.toObject(UsageAnalytics::class.java)
+            }
+
     override suspend fun getAllFeedback(): List<FeedbackItem> =
         firestore.collection("feedback")
             .get()
             .await()
             .documents
-            .mapNotNull { it.toObject(FeedbackItem::class.java) }
+            .mapNotNull {
+                it.toObject(FeedbackItem::class.java)
+            }
             .sortedByDescending { it.submittedAtMillis }
 
     override suspend fun updateFeedbackStatus(
