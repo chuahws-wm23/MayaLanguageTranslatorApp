@@ -34,7 +34,8 @@
 
 ## Personal data
 
-- Translation history
+- Translation history with search, input-type filtering and user-controlled deletion
+- Browseable/searchable Maya-English dictionary
 - Saved vocabulary
 - Usage totals for text, image and voice translation
 - Feedback form
@@ -42,7 +43,19 @@
 
 ## Administration
 
-When a Firestore user profile has the admin role, the Profile screen exposes feedback review tools. An administrator can view submitted feedback and mark items as reviewed.
+When a Firestore user profile has the admin role, the application opens a role-specific administrator console.
+
+Administrators can:
+
+- view registered user profiles and search accounts
+- suspend and reactivate permitted user accounts
+- browse and search dictionary entries
+- add, edit and delete Firestore dictionary entries
+- review submitted feedback and mark items as reviewed
+- view system-wide user, translation-channel and feedback summary statistics
+- switch to the normal user view for translator testing
+
+Built-in fallback dictionary entries are displayed as read-only. Persistent dictionary management applies to Firestore entries.
 
 ## Development mode
 
