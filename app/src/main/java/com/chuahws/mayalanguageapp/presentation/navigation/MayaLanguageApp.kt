@@ -45,6 +45,7 @@ import com.chuahws.mayalanguageapp.presentation.auth.AuthViewModel
 import com.chuahws.mayalanguageapp.presentation.auth.LoginScreen
 import com.chuahws.mayalanguageapp.presentation.auth.RegisterScreen
 import com.chuahws.mayalanguageapp.presentation.auth.ResetPasswordScreen
+import com.chuahws.mayalanguageapp.presentation.dictionary.DictionaryScreen
 import com.chuahws.mayalanguageapp.presentation.feedback.FeedbackScreen
 import com.chuahws.mayalanguageapp.presentation.history.HistoryScreen
 import com.chuahws.mayalanguageapp.presentation.home.HomeScreen
@@ -60,6 +61,7 @@ private enum class AppPage {
     TEXT_TRANSLATION,
     IMAGE_TRANSLATION,
     VOICE_TRANSLATION,
+    DICTIONARY,
     SAVED,
     HISTORY,
     ANALYTICS,
@@ -215,19 +217,51 @@ private fun MainShell(
         state.profile?.role,
         adminUserView,
     ) {
-        if (state.profile?.role == "admin" && !adminUserView) {
-            appDataViewModel.loadAdminFeedback()
+        if (
+            state.profile?.role == "admin" &&
+            !adminUserView
+        ) {
+            appDataViewModel.loadAdminData()
         }
     }
 
-    if (state.profile?.role == "admin" && !adminUserView) {
+    LaunchedEffect(page) {
+        if (
+            page == AppPage.DICTIONARY &&
+            state.dictionaryEntries.isEmpty()
+        ) {
+            appDataViewModel.loadDictionary()
+        }
+    }
+
+    if (
+        state.profile?.role == "admin" &&
+        !adminUserView
+    ) {
         AdminScreen(
-            displayName = state.profile?.displayName.orEmpty(),
+            displayName =
+                state.profile?.displayName.orEmpty(),
             email = email,
+            currentUserId =
+                state.userId.orEmpty(),
+            users = state.adminUsers,
             feedback = state.adminFeedback,
-            snackbarHostState = snackbarHostState,
+            analytics = state.adminAnalytics,
+            dictionaryEntries =
+                state.adminDictionaryEntries,
+            loading = state.adminLoading,
+            snackbarHostState =
+                snackbarHostState,
+            onToggleUserStatus =
+                appDataViewModel::setUserAccountStatus,
             onMarkReviewed =
                 appDataViewModel::markFeedbackReviewed,
+            onSearchDictionary =
+                appDataViewModel::searchAdminDictionary,
+            onSaveDictionaryEntry =
+                appDataViewModel::saveAdminDictionaryEntry,
+            onDeleteDictionaryEntry =
+                appDataViewModel::deleteAdminDictionaryEntry,
             onSwitchToUserView = {
                 adminUserView = true
                 page = AppPage.HOME
@@ -249,6 +283,7 @@ private fun MainShell(
         AppPage.TEXT_TRANSLATION -> "Text Translation"
         AppPage.IMAGE_TRANSLATION -> "Image Translation"
         AppPage.VOICE_TRANSLATION -> "Voice Translation"
+        AppPage.DICTIONARY -> "Dictionary"
         AppPage.SAVED -> "Saved vocabulary"
         AppPage.HISTORY -> "History"
         AppPage.ANALYTICS -> "Analytics"
@@ -260,6 +295,7 @@ private fun MainShell(
         AppPage.TEXT_TRANSLATION,
         AppPage.IMAGE_TRANSLATION,
         AppPage.VOICE_TRANSLATION,
+        AppPage.DICTIONARY,
         AppPage.ANALYTICS,
         AppPage.FEEDBACK,
     )
@@ -309,7 +345,7 @@ private fun MainShell(
                             ),
                 )
 
-                if (state.loading) {
+                if (state.loading || state.dictionaryLoading) {
                     LinearProgressIndicator()
                 }
             }
@@ -380,6 +416,9 @@ private fun MainShell(
                     onFeedback = {
                         page = AppPage.FEEDBACK
                     },
+                    onDictionary = {
+                        page = AppPage.DICTIONARY
+                    },
                     onProfile = {
                         page = AppPage.PROFILE
                     },
@@ -406,6 +445,18 @@ private fun MainShell(
                             appDataViewModel::saveEntry,
                     )
 
+                AppPage.DICTIONARY ->
+                    DictionaryScreen(
+                        entries =
+                            state.dictionaryEntries,
+                        loading =
+                            state.dictionaryLoading,
+                        onSearch =
+                            appDataViewModel::loadDictionary,
+                        onSaveEntry =
+                            appDataViewModel::saveEntry,
+                    )
+
                 AppPage.SAVED ->
                     SavedScreen(
                         items = state.savedVocabulary,
@@ -414,7 +465,11 @@ private fun MainShell(
                     )
 
                 AppPage.HISTORY ->
-                    HistoryScreen(state.history)
+                    HistoryScreen(
+                        history = state.history,
+                        onDelete =
+                            appDataViewModel::deleteHistory,
+                    )
 
                 AppPage.ANALYTICS ->
                     AnalyticsScreen(
