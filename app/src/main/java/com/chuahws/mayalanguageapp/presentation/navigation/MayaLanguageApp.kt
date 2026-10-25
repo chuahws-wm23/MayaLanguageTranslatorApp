@@ -214,6 +214,18 @@ private fun MainShell(
     }
 
     LaunchedEffect(
+        state.profile?.accountStatus,
+    ) {
+        if (
+            state.profile?.accountStatus ==
+                "suspended"
+        ) {
+            appDataViewModel.clearUser()
+            authViewModel.signOut()
+        }
+    }
+
+    LaunchedEffect(
         state.profile?.role,
         adminUserView,
     ) {
