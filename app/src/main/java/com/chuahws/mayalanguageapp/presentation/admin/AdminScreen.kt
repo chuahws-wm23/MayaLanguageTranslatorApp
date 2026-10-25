@@ -703,6 +703,10 @@ private fun DictionaryManagementContent(
                 items = entries,
                 key = { it.entryId },
             ) { entry ->
+                val builtIn =
+                    entry.entryId.startsWith("core-") ||
+                        entry.entryId.startsWith("dev-")
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -730,43 +734,59 @@ private fun DictionaryManagementContent(
                                 )
                             }
 
-                        Row(
-                            horizontalArrangement =
-                                Arrangement.spacedBy(8.dp),
-                        ) {
-                            OutlinedButton(
-                                onClick = {
-                                    editingEntry = entry
-                                    editorOpen = true
-                                },
+                        if (builtIn) {
+                            Text(
+                                text =
+                                    "Built-in fallback entry · read only",
+                                style =
+                                    MaterialTheme.typography.labelSmall,
+                                color =
+                                    MaterialTheme.colorScheme
+                                        .onSurfaceVariant,
+                            )
+                        } else {
+                            Row(
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(8.dp),
                             ) {
-                                Icon(
-                                    Icons.Rounded.Edit,
-                                    contentDescription = null,
-                                )
-                                Text(
-                                    text = "Edit",
-                                    modifier =
-                                        Modifier.padding(start = 5.dp),
-                                )
-                            }
+                                OutlinedButton(
+                                    onClick = {
+                                        editingEntry = entry
+                                        editorOpen = true
+                                    },
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.Edit,
+                                        contentDescription = null,
+                                    )
+                                    Text(
+                                        text = "Edit",
+                                        modifier =
+                                            Modifier.padding(
+                                                start = 5.dp
+                                            ),
+                                    )
+                                }
 
-                            TextButton(
-                                onClick = {
-                                    pendingDelete = entry
-                                },
-                            ) {
-                                Icon(
-                                    Icons.Rounded.DeleteOutline,
-                                    contentDescription = null,
-                                    tint =
-                                        MaterialTheme.colorScheme.error,
-                                )
-                                Text(
-                                    text = "Delete",
-                                    color =
-                                        MaterialTheme.colorScheme.error,
-                                )
+                                TextButton(
+                                    onClick = {
+                                        pendingDelete = entry
+                                    },
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.DeleteOutline,
+                                        contentDescription = null,
+                                        tint =
+                                            MaterialTheme
+                                                .colorScheme.error,
+                                    )
+                                    Text(
+                                        text = "Delete",
+                                        color =
+                                            MaterialTheme
+                                                .colorScheme.error,
+                                    )
+                                }
                             }
                         }
                     }
