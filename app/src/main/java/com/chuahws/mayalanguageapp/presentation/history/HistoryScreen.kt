@@ -12,10 +12,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -24,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +51,7 @@ import java.util.Locale
 @Composable
 fun HistoryScreen(
     history: List<TranslationRecord>,
+    onDelete: (TranslationRecord) -> Unit,
 ) {
     var query by rememberSaveable {
         mutableStateOf("")
@@ -55,16 +59,68 @@ fun HistoryScreen(
     var typeFilter by rememberSaveable {
         mutableStateOf("All")
     }
+    var pendingDeleteId by rememberSaveable {
+        mutableStateOf<String?>(null)
+    }
+
+    val pendingDelete = history.firstOrNull {
+        it.translationId == pendingDeleteId
+    }
+
+    if (pendingDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                pendingDeleteId = null
+            },
+            title = {
+                Text("Delete translation?")
+            },
+            text = {
+                Text(
+                    "This history record will be removed from your account. " +
+                        "Your lifetime usage counter is not reduced."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete(pendingDelete)
+                        pendingDeleteId = null
+                    },
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        pendingDeleteId = null
+                    },
+                ) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
 
     val filtered = history.filter { item ->
         val matchesQuery =
             query.isBlank() ||
-                item.sourceText.contains(query, ignoreCase = true) ||
-                item.translatedText.contains(query, ignoreCase = true)
+                item.sourceText.contains(
+                    query,
+                    ignoreCase = true,
+                ) ||
+                item.translatedText.contains(
+                    query,
+                    ignoreCase = true,
+                )
 
         val matchesType =
             typeFilter == "All" ||
-                item.inputType.equals(typeFilter, ignoreCase = true)
+                item.inputType.equals(
+                    typeFilter,
+                    ignoreCase = true,
+                )
 
         matchesQuery && matchesType
     }
@@ -95,22 +151,24 @@ fun HistoryScreen(
                         contentDescription = null,
                     )
                 },
-                trailingIcon = if (query.isNotBlank()) {
-                    {
-                        IconButton(
-                            onClick = {
-                                query = ""
-                            },
-                        ) {
-                            Icon(
-                                Icons.Rounded.Close,
-                                contentDescription = "Clear search",
-                            )
+                trailingIcon =
+                    if (query.isNotBlank()) {
+                        {
+                            IconButton(
+                                onClick = {
+                                    query = ""
+                                },
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Close,
+                                    contentDescription =
+                                        "Clear search",
+                                )
+                            }
                         }
-                    }
-                } else {
-                    null
-                },
+                    } else {
+                        null
+                    },
             )
 
             Row(
@@ -118,11 +176,18 @@ fun HistoryScreen(
                     horizontal = 18.dp,
                     vertical = 10.dp,
                 ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement =
+                    Arrangement.spacedBy(8.dp),
             ) {
-                listOf("All", "TEXT", "IMAGE", "VOICE").forEach { filter ->
+                listOf(
+                    "All",
+                    "TEXT",
+                    "IMAGE",
+                    "VOICE",
+                ).forEach { filter ->
                     FilterChip(
-                        selected = typeFilter == filter,
+                        selected =
+                            typeFilter == filter,
                         onClick = {
                             typeFilter = filter
                         },
@@ -145,31 +210,43 @@ fun HistoryScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment =
+                        Alignment.CenterHorizontally,
+                    verticalArrangement =
+                        Arrangement.Center,
                 ) {
                     Icon(
                         Icons.Rounded.History,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint =
+                            MaterialTheme
+                                .colorScheme.primary,
                     )
                     Text(
-                        text = if (history.isEmpty()) {
-                            "No translations yet"
-                        } else {
-                            "No matching translations"
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 10.dp),
+                        text =
+                            if (history.isEmpty()) {
+                                "No translations yet"
+                            } else {
+                                "No matching translations"
+                            },
+                        style =
+                            MaterialTheme
+                                .typography.titleMedium,
+                        modifier =
+                            Modifier.padding(top = 10.dp),
                     )
                     Text(
-                        text = if (history.isEmpty()) {
-                            "Successful translations will appear here."
-                        } else {
-                            "Try another search or filter."
-                        },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
+                        text =
+                            if (history.isEmpty()) {
+                                "Successful translations will appear here."
+                            } else {
+                                "Try another search or filter."
+                            },
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
+                        modifier =
+                            Modifier.padding(top = 4.dp),
                     )
                 }
             } else {
@@ -179,7 +256,8 @@ fun HistoryScreen(
                         end = 18.dp,
                         bottom = 112.dp,
                     ),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement =
+                        Arrangement.spacedBy(10.dp),
                 ) {
                     items(
                         items = filtered,
@@ -187,7 +265,13 @@ fun HistoryScreen(
                             it.translationId
                         },
                     ) { item ->
-                        HistoryCard(item)
+                        HistoryCard(
+                            item = item,
+                            onDelete = {
+                                pendingDeleteId =
+                                    item.translationId
+                            },
+                        )
                     }
                 }
             }
@@ -198,30 +282,36 @@ fun HistoryScreen(
 @Composable
 private fun HistoryCard(
     item: TranslationRecord,
+    onDelete: () -> Unit,
 ) {
-    val date = formatDate(item.createdAtMillis)
+    val date =
+        formatDate(item.createdAtMillis)
 
     val typeColor: Color
-    val icon = when (item.inputType.uppercase()) {
-        "IMAGE" -> {
-            typeColor = MayaGreen
-            Icons.Rounded.CameraAlt
+    val icon =
+        when (item.inputType.uppercase()) {
+            "IMAGE" -> {
+                typeColor = MayaGreen
+                Icons.Rounded.CameraAlt
+            }
+
+            "VOICE" -> {
+                typeColor = MayaOrange
+                Icons.Rounded.Mic
+            }
+
+            else -> {
+                typeColor = MayaBlue
+                Icons.Rounded.Keyboard
+            }
         }
-        "VOICE" -> {
-            typeColor = MayaOrange
-            Icons.Rounded.Mic
-        }
-        else -> {
-            typeColor = MayaBlue
-            Icons.Rounded.Keyboard
-        }
-    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor =
+                MaterialTheme.colorScheme.surface,
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 2.dp,
@@ -230,7 +320,8 @@ private fun HistoryCard(
         Row(
             modifier = Modifier.padding(15.dp),
             verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement =
+                Arrangement.spacedBy(12.dp),
         ) {
             AccentIcon(
                 icon = icon,
@@ -239,33 +330,63 @@ private fun HistoryCard(
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(5.dp),
+                verticalArrangement =
+                    Arrangement.spacedBy(5.dp),
             ) {
                 Text(
-                    text = "${item.sourceText} → ${item.translatedText}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    text =
+                        "${item.sourceText} → ${item.translatedText}",
+                    style =
+                        MaterialTheme
+                            .typography.titleMedium,
+                    fontWeight =
+                        FontWeight.SemiBold,
                 )
                 Text(
-                    text = "${item.sourceLanguage} → ${item.targetLanguage}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text =
+                        "${item.sourceLanguage} → ${item.targetLanguage}",
+                    style =
+                        MaterialTheme
+                            .typography.bodySmall,
+                    color =
+                        MaterialTheme.colorScheme
+                            .onSurfaceVariant,
                 )
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment =
+                        Alignment.CenterVertically,
+                    horizontalArrangement =
+                        Arrangement.spacedBy(8.dp),
                 ) {
                     SoftBadge(
-                        text = item.inputType.lowercase()
-                            .replaceFirstChar { it.uppercase() },
+                        text = item.inputType
+                            .lowercase()
+                            .replaceFirstChar {
+                                it.uppercase()
+                            },
                         color = typeColor,
                     )
                     Text(
                         text = date,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style =
+                            MaterialTheme
+                                .typography.bodySmall,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
                     )
                 }
+            }
+
+            IconButton(onClick = onDelete) {
+                Icon(
+                    Icons.Rounded.DeleteOutline,
+                    contentDescription =
+                        "Delete history record",
+                    tint =
+                        MaterialTheme
+                            .colorScheme.error,
+                )
             }
         }
     }
