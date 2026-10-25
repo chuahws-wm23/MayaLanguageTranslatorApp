@@ -58,6 +58,7 @@ class InMemoryDictionaryRepository(
     ): List<DictionaryEntry> =
         entries
             .filter { it.active }
+            .distinctBy { it.entryId }
             .sortedBy { it.mayaNormalized }
             .take(limit)
 
@@ -81,6 +82,7 @@ class InMemoryDictionaryRepository(
                             .contains(normalized)
                     }
             }
+            .distinctBy { it.entryId }
             .sortedWith(
                 compareByDescending<DictionaryEntry> { it.verified }
                     .thenBy { it.mayaText }
