@@ -55,7 +55,7 @@ service cloud.firestore {
 
       allow update: if false;
 
-      allow delete: if signedIn()
+      allow delete: if isActiveUser()
         && resource.data.userId == request.auth.uid;
     }
 
