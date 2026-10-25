@@ -11,8 +11,13 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
+    function isActiveUser() {
       return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountStatus != "suspended";
+    }
+
+    function isAdmin() {
+      return isActiveUser()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
 
@@ -24,6 +29,7 @@ service cloud.firestore {
       allow read: if owns(userId) || isAdmin();
 
       allow update: if owns(userId)
+        && isActiveUser()
         && request.resource.data.userId == resource.data.userId
         && request.resource.data.role == resource.data.role
         && request.resource.data.accountStatus == resource.data.accountStatus;
@@ -33,16 +39,19 @@ service cloud.firestore {
     }
 
     match /dictionary/{entryId} {
-      allow read: if signedIn();
+      allow read: if isActiveUser() || isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
     match /translations/{translationId} {
-      allow create: if signedIn()
+      allow create: if isActiveUser()
         && request.resource.data.userId == request.auth.uid;
 
       allow read: if signedIn()
-        && (resource.data.userId == request.auth.uid || isAdmin());
+        && (
+          (isActiveUser() && resource.data.userId == request.auth.uid)
+          || isAdmin()
+        );
 
       allow update: if false;
 
@@ -51,29 +60,32 @@ service cloud.firestore {
     }
 
     match /savedVocabulary/{savedId} {
-      allow create: if signedIn()
+      allow create: if isActiveUser()
         && request.resource.data.userId == request.auth.uid;
 
-      allow read, delete: if signedIn()
+      allow read, delete: if isActiveUser()
         && resource.data.userId == request.auth.uid;
 
-      allow update: if signedIn()
+      allow update: if isActiveUser()
         && resource.data.userId == request.auth.uid
         && request.resource.data.userId == request.auth.uid;
     }
 
     match /analytics/{userId} {
-      allow read: if owns(userId) || isAdmin();
-      allow create, update: if owns(userId);
+      allow read: if (owns(userId) && isActiveUser()) || isAdmin();
+      allow create, update: if owns(userId) && isActiveUser();
       allow delete: if false;
     }
 
     match /feedback/{feedbackId} {
-      allow create: if signedIn()
+      allow create: if isActiveUser()
         && request.resource.data.userId == request.auth.uid;
 
       allow read: if signedIn()
-        && (resource.data.userId == request.auth.uid || isAdmin());
+        && (
+          (isActiveUser() && resource.data.userId == request.auth.uid)
+          || isAdmin()
+        );
 
       allow update: if isAdmin();
       allow delete: if false;
