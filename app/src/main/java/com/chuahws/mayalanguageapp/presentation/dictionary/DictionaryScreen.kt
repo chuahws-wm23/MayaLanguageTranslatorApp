@@ -132,10 +132,7 @@ fun DictionaryScreen(
                 ) {
                     CircularProgressIndicator()
                 }
-                return@Column
-            }
-
-            if (entries.isEmpty()) {
+            } else if (entries.isEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
