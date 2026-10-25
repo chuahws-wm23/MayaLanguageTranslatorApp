@@ -7,16 +7,29 @@ import com.chuahws.mayalanguageapp.domain.model.UsageAnalytics
 
 interface UserDataRepository {
     suspend fun recordTranslation(record: TranslationRecord)
-    suspend fun getHistory(userId: String, limit: Int = 100): List<TranslationRecord>
+    suspend fun getHistory(
+        userId: String,
+        limit: Int = 100,
+    ): List<TranslationRecord>
+
+    suspend fun deleteTranslation(
+        translationId: String,
+        userId: String,
+    )
 
     suspend fun saveVocabulary(item: SavedVocabularyItem)
     suspend fun removeSavedVocabulary(savedId: String)
-    suspend fun getSavedVocabulary(userId: String): List<SavedVocabularyItem>
+    suspend fun getSavedVocabulary(
+        userId: String,
+    ): List<SavedVocabularyItem>
 
     suspend fun submitFeedback(item: FeedbackItem)
-    suspend fun getFeedback(userId: String): List<FeedbackItem>
+    suspend fun getFeedback(
+        userId: String,
+    ): List<FeedbackItem>
 
     suspend fun getAnalytics(userId: String): UsageAnalytics
+    suspend fun getAllAnalytics(): List<UsageAnalytics>
 
     suspend fun getAllFeedback(): List<FeedbackItem>
     suspend fun updateFeedbackStatus(
