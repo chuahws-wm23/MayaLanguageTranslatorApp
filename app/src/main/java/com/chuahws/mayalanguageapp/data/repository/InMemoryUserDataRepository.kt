@@ -9,11 +9,17 @@ import com.chuahws.mayalanguageapp.domain.repository.UserDataRepository
 
 class InMemoryUserDataRepository : UserDataRepository {
     private val history = mutableListOf<TranslationRecord>()
-    private val saved = linkedMapOf<String, SavedVocabularyItem>()
-    private val feedback = mutableListOf<FeedbackItem>()
+    private val saved =
+        linkedMapOf<String, SavedVocabularyItem>()
+    private val feedback =
+        mutableListOf<FeedbackItem>()
 
-    override suspend fun recordTranslation(record: TranslationRecord) {
-        history.removeAll { it.translationId == record.translationId }
+    override suspend fun recordTranslation(
+        record: TranslationRecord,
+    ) {
+        history.removeAll {
+            it.translationId == record.translationId
+        }
         history += record
     }
 
@@ -26,11 +32,25 @@ class InMemoryUserDataRepository : UserDataRepository {
             .sortedByDescending { it.createdAtMillis }
             .take(limit)
 
-    override suspend fun saveVocabulary(item: SavedVocabularyItem) {
+    override suspend fun deleteTranslation(
+        translationId: String,
+        userId: String,
+    ) {
+        history.removeAll {
+            it.translationId == translationId &&
+                it.userId == userId
+        }
+    }
+
+    override suspend fun saveVocabulary(
+        item: SavedVocabularyItem,
+    ) {
         saved[item.savedId] = item
     }
 
-    override suspend fun removeSavedVocabulary(savedId: String) {
+    override suspend fun removeSavedVocabulary(
+        savedId: String,
+    ) {
         saved.remove(savedId)
     }
 
@@ -42,40 +62,61 @@ class InMemoryUserDataRepository : UserDataRepository {
             .sortedByDescending { it.savedAtMillis }
 
     override suspend fun submitFeedback(item: FeedbackItem) {
-        feedback.removeAll { it.feedbackId == item.feedbackId }
+        feedback.removeAll {
+            it.feedbackId == item.feedbackId
+        }
         feedback += item
     }
 
-    override suspend fun getFeedback(userId: String): List<FeedbackItem> =
+    override suspend fun getFeedback(
+        userId: String,
+    ): List<FeedbackItem> =
         feedback
             .filter { it.userId == userId }
             .sortedByDescending { it.submittedAtMillis }
 
-    override suspend fun getAnalytics(userId: String): UsageAnalytics {
-        val userHistory = history.filter { it.userId == userId }
-        val savedCount = saved.values.count { it.userId == userId }
+    override suspend fun getAnalytics(
+        userId: String,
+    ): UsageAnalytics {
+        val userHistory =
+            history.filter { it.userId == userId }
+        val savedCount =
+            saved.values.count { it.userId == userId }
 
         return UsageAnalytics(
             userId = userId,
-            totalTranslations = userHistory.size.toLong(),
-            textTranslations = userHistory.count {
-                it.inputType == InputType.TEXT.name
-            }.toLong(),
-            imageTranslations = userHistory.count {
-                it.inputType == InputType.IMAGE.name
-            }.toLong(),
-            voiceTranslations = userHistory.count {
-                it.inputType == InputType.VOICE.name
-            }.toLong(),
+            totalTranslations =
+                userHistory.size.toLong(),
+            textTranslations =
+                userHistory.count {
+                    it.inputType == InputType.TEXT.name
+                }.toLong(),
+            imageTranslations =
+                userHistory.count {
+                    it.inputType == InputType.IMAGE.name
+                }.toLong(),
+            voiceTranslations =
+                userHistory.count {
+                    it.inputType == InputType.VOICE.name
+                }.toLong(),
             savedWords = savedCount.toLong(),
-            lastUpdatedMillis = userHistory.maxOfOrNull {
-                it.createdAtMillis
-            } ?: 0L,
+            lastUpdatedMillis =
+                userHistory.maxOfOrNull {
+                    it.createdAtMillis
+                } ?: 0L,
         )
     }
 
+    override suspend fun getAllAnalytics(): List<UsageAnalytics> =
+        history
+            .map { it.userId }
+            .distinct()
+            .map { getAnalytics(it) }
+
     override suspend fun getAllFeedback(): List<FeedbackItem> =
-        feedback.sortedByDescending { it.submittedAtMillis }
+        feedback.sortedByDescending {
+            it.submittedAtMillis
+        }
 
     override suspend fun updateFeedbackStatus(
         feedbackId: String,
