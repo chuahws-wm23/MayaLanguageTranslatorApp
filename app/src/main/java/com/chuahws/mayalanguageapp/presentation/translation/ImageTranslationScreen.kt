@@ -134,14 +134,14 @@ fun ImageTranslationScreen(
                 } else if (extractedText.isBlank()) {
                     viewModel.updateInput("")
                     imageMessage =
-                        "No likely Yucatec Maya text was found. Try a clearer image or enter the Maya text manually."
+                        "No readable Maya text was found. Try a clearer image or type the text instead."
                 } else {
                     viewModel.updateInput(extractedText)
                 }
             }.onFailure {
                 readingImage = false
                 imageMessage =
-                    "Could not read this image. Try another image."
+                    "Couldn’t read this image. Try another one."
             }
         }
     }
@@ -226,12 +226,12 @@ fun ImageTranslationScreen(
     val source =
         if (state.direction ==
             TranslationDirection.MAYA_TO_ENGLISH
-        ) "Yucatec Maya" else "English"
+        ) "Maya" else "English"
 
     val target =
         if (state.direction ==
             TranslationDirection.MAYA_TO_ENGLISH
-        ) "English" else "Yucatec Maya"
+        ) "English" else "Maya"
 
     val outputLanguageTag =
         if (state.direction ==
@@ -272,16 +272,16 @@ fun ImageTranslationScreen(
                         )
                         Column {
                             Text(
-                                text = "Scan text from an image",
+                                text = "Translate from a photo",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                             )
                             Text(
                                 text =
                                     if (imageUri == null) {
-                                        "Choose a clear photo with readable Latin-script text."
+                                        "Choose a clear photo with readable text."
                                     } else {
-                                        "Replace the current image using Camera or Gallery."
+                                        "Take another photo or choose a different one."
                                     },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -309,7 +309,7 @@ fun ImageTranslationScreen(
                                 if (imageUri == null) {
                                     "Camera"
                                 } else {
-                                    "Use Camera"
+                                    "Take photo"
                                 },
                                 modifier =
                                     Modifier.padding(start = 8.dp),
@@ -333,7 +333,7 @@ fun ImageTranslationScreen(
                                 if (imageUri == null) {
                                     "Gallery"
                                 } else {
-                                    "Replace from Gallery"
+                                    "Choose another"
                                 },
                                 modifier =
                                     Modifier.padding(start = 8.dp),
@@ -395,11 +395,11 @@ fun ImageTranslationScreen(
                         CircularProgressIndicator()
                         Column {
                             Text(
-                                text = "Reading image…",
+                                text = "Reading your photo…",
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(
-                                text = "ML Kit is extracting the text.",
+                                text = "This may take a moment.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -441,7 +441,7 @@ fun ImageTranslationScreen(
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(
-                                text = "$source → $target",
+                                text = "$source to $target",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -466,7 +466,7 @@ fun ImageTranslationScreen(
                         enabled = !readingImage &&
                             !state.loading,
                         placeholder = {
-                            Text("Detected text will appear here")
+                            Text("Text from your photo will appear here")
                         },
                         supportingText = {
                             Text(
@@ -474,9 +474,9 @@ fun ImageTranslationScreen(
                                     state.direction ==
                                         TranslationDirection.MAYA_TO_ENGLISH
                                 ) {
-                                    "Only likely Yucatec Maya text is shown. English, numbers and OCR noise are removed automatically. Check and correct the text before translating."
+                                    "Only likely Maya text is kept. Check it before translating."
                                 } else {
-                                    "Check and correct the text before translating."
+                                    "Check the text before translating."
                                 }
                             )
                         },
