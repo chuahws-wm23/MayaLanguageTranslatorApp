@@ -319,7 +319,10 @@ private fun MainShell(
             SnackbarHost(snackbarHostState)
         },
         topBar = {
-            if (page != AppPage.HOME) {
+            if (
+                page != AppPage.HOME &&
+                page != AppPage.PROFILE
+            ) {
                 Column {
                     CenterAlignedTopAppBar(
                         title = {
