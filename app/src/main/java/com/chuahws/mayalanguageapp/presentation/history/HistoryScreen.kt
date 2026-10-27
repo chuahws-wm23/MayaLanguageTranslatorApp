@@ -78,7 +78,7 @@ fun HistoryScreen(
             text = {
                 Text(
                     "This history record will be removed from your account. " +
-                        "Your lifetime usage counter is not reduced."
+                        "Your activity total will stay the same."
                 )
             },
             confirmButton = {
@@ -238,7 +238,7 @@ fun HistoryScreen(
                     Text(
                         text =
                             if (history.isEmpty()) {
-                                "Successful translations will appear here."
+                                "Your translations will appear here."
                             } else {
                                 "Try another search or filter."
                             },
@@ -334,17 +334,29 @@ private fun HistoryCard(
                     Arrangement.spacedBy(5.dp),
             ) {
                 Text(
-                    text =
-                        "${item.sourceText} → ${item.translatedText}",
+                    text = item.sourceText,
+                    style =
+                        MaterialTheme
+                            .typography.bodyMedium,
+                    color =
+                        MaterialTheme.colorScheme
+                            .onSurfaceVariant,
+                )
+                Text(
+                    text = item.translatedText,
                     style =
                         MaterialTheme
                             .typography.titleMedium,
                     fontWeight =
                         FontWeight.SemiBold,
+                    color =
+                        MaterialTheme.colorScheme.primary,
                 )
                 Text(
                     text =
-                        "${item.sourceLanguage} → ${item.targetLanguage}",
+                        friendlyLanguage(item.sourceLanguage) +
+                            " to " +
+                            friendlyLanguage(item.targetLanguage),
                     style =
                         MaterialTheme
                             .typography.bodySmall,
@@ -390,6 +402,22 @@ private fun HistoryCard(
             }
         }
     }
+}
+
+private fun friendlyLanguage(
+    value: String,
+): String = when {
+    value.contains(
+        "maya",
+        ignoreCase = true,
+    ) -> "Maya"
+
+    value.contains(
+        "english",
+        ignoreCase = true,
+    ) -> "English"
+
+    else -> value
 }
 
 private fun formatDate(
