@@ -3,7 +3,7 @@ package com.chuahws.mayalanguageapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import com.chuahws.mayalanguageapp.domain.service.TranslationService
 import com.chuahws.mayalanguageapp.presentation.app.AppDataViewModel
@@ -14,69 +14,93 @@ import com.chuahws.mayalanguageapp.presentation.theme.MayaTranslateTheme
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationViewModel
 
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(
+        savedInstanceState: Bundle?,
+    ) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
 
-        val dependencies = AppDependencies.create(this)
+        // Keep app content inside Android's system-bar area so the
+        // notification/quick-settings shade remains visually separate.
+        WindowCompat.setDecorFitsSystemWindows(
+            window,
+            true,
+        )
 
-        val authViewModel = ViewModelProvider(
-            this,
-            AppViewModelFactory {
-                AuthViewModel(
-                    authRepository =
-                        dependencies.authRepository,
-                    userProfileRepository =
-                        dependencies.userProfileRepository,
-                )
-            },
-        )[AuthViewModel::class.java]
+        val dependencies =
+            AppDependencies.create(this)
 
-        val appDataViewModel = ViewModelProvider(
-            this,
-            AppViewModelFactory {
-                AppDataViewModel(
-                    userDataRepository =
-                        dependencies.userDataRepository,
-                    userProfileRepository =
-                        dependencies.userProfileRepository,
-                    dictionaryRepository =
-                        dependencies.dictionaryRepository,
-                )
-            },
-        )[AppDataViewModel::class.java]
+        val authViewModel =
+            ViewModelProvider(
+                this,
+                AppViewModelFactory {
+                    AuthViewModel(
+                        authRepository =
+                            dependencies
+                                .authRepository,
+                        userProfileRepository =
+                            dependencies
+                                .userProfileRepository,
+                    )
+                },
+            )[AuthViewModel::class.java]
 
-        val translationViewModel = ViewModelProvider(
-            this,
-            AppViewModelFactory {
-                TranslationViewModel(
-                    translationService =
-                        TranslationService(
-                            dependencies.dictionaryRepository
-                        ),
-                    userDataRepository =
-                        dependencies.userDataRepository,
-                    userIdProvider = {
-                        authViewModel.uiState.value
-                            .currentUser?.userId
-                    },
-                    onDataChanged = {
-                        appDataViewModel.refresh()
-                    },
-                )
-            },
-        )[TranslationViewModel::class.java]
+        val appDataViewModel =
+            ViewModelProvider(
+                this,
+                AppViewModelFactory {
+                    AppDataViewModel(
+                        userDataRepository =
+                            dependencies
+                                .userDataRepository,
+                        userProfileRepository =
+                            dependencies
+                                .userProfileRepository,
+                        dictionaryRepository =
+                            dependencies
+                                .dictionaryRepository,
+                    )
+                },
+            )[AppDataViewModel::class.java]
+
+        val translationViewModel =
+            ViewModelProvider(
+                this,
+                AppViewModelFactory {
+                    TranslationViewModel(
+                        translationService =
+                            TranslationService(
+                                dependencies
+                                    .dictionaryRepository
+                            ),
+                        userDataRepository =
+                            dependencies
+                                .userDataRepository,
+                        userIdProvider = {
+                            authViewModel
+                                .uiState.value
+                                .currentUser
+                                ?.userId
+                        },
+                        onDataChanged = {
+                            appDataViewModel
+                                .refresh()
+                        },
+                    )
+                },
+            )[TranslationViewModel::class.java]
 
         setContent {
             MayaTranslateTheme {
                 MayaLanguageApp(
-                    authViewModel = authViewModel,
+                    authViewModel =
+                        authViewModel,
                     appDataViewModel =
                         appDataViewModel,
                     translationViewModel =
                         translationViewModel,
                     firebaseConfigured =
-                        dependencies.firebaseConfigured,
+                        dependencies
+                            .firebaseConfigured,
                 )
             }
         }
