@@ -62,7 +62,7 @@ fun RegisterScreen(
         ) {
             AuthHeader(
                 title = "Create your account",
-                subtitle = "Save translations, build vocabulary and track your learning activity.",
+                subtitle = "Save useful words and keep your translations in one place.",
             )
 
             Spacer(Modifier.height(22.dp))
@@ -82,7 +82,7 @@ fun RegisterScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(
-                        text = "Your details",
+                        text = "Set up your account",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                     )
