@@ -116,3 +116,29 @@ The current screen set is:
 This pass does **not** change Firestore collection names, document field names, API contracts or security rules. It also does not replace the current MVVM/repository structure.
 
 History deletion is intentionally not added in this pass because current Firestore rules deny translation deletion. Adding that function would require an explicit security-rule and workflow decision.
+
+
+## Modern visual refresh
+
+A later UI pass modernised the visual system without changing the application
+workflows or Firebase contracts.
+
+Implemented presentation improvements include:
+
+- refreshed indigo/teal brand palette with improved light/dark neutrals
+- larger, more consistent Material 3 corner radii and spacing
+- clearer typography hierarchy and stronger section headings
+- subtle gradient depth instead of flat full-screen colour blocks
+- redesigned login, registration and password-recovery cards
+- simplified Home hierarchy with one primary translation action
+- grouped translation, dictionary and learning tools more clearly
+- Home top-bar removal to reduce duplicated titles and reclaim vertical space
+- consistent selected states in user and administrator bottom navigation
+- refined profile hero and administrator entry point
+- branded administrator dashboard header and softer management cards
+- no changes to existing Firestore collections, functional requirements or
+  permission workflows
+
+The objective of the refresh is to make the application feel closer to a
+current consumer Android product while retaining clear FYP demonstrability and
+accessible Material components.
