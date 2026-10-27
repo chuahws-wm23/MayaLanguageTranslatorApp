@@ -3,38 +3,55 @@ package com.chuahws.mayalanguageapp.presentation.navigation
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.Feedback
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Keyboard
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
@@ -57,6 +74,7 @@ import com.chuahws.mayalanguageapp.presentation.translation.ImageTranslationScre
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationScreen
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationViewModel
 import com.chuahws.mayalanguageapp.presentation.translation.VoiceTranslationScreen
+import kotlinx.coroutines.launch
 
 private enum class AppPage {
     HOME,
@@ -79,6 +97,69 @@ private enum class BottomItem(
     HISTORY("History"),
     PROFILE("Profile"),
 }
+
+private data class DrawerItem(
+    val page: AppPage,
+    val label: String,
+    val icon: ImageVector,
+)
+
+private val translateDrawerItems = listOf(
+    DrawerItem(
+        AppPage.TEXT_TRANSLATION,
+        "Text",
+        Icons.Rounded.Keyboard,
+    ),
+    DrawerItem(
+        AppPage.IMAGE_TRANSLATION,
+        "Photo",
+        Icons.Rounded.CameraAlt,
+    ),
+    DrawerItem(
+        AppPage.VOICE_TRANSLATION,
+        "Voice",
+        Icons.Rounded.Mic,
+    ),
+)
+
+private val learnDrawerItems = listOf(
+    DrawerItem(
+        AppPage.DICTIONARY,
+        "Dictionary",
+        Icons.Rounded.MenuBook,
+    ),
+    DrawerItem(
+        AppPage.SAVED,
+        "Saved words",
+        Icons.Rounded.Bookmark,
+    ),
+)
+
+private val activityDrawerItems = listOf(
+    DrawerItem(
+        AppPage.HISTORY,
+        "History",
+        Icons.Rounded.History,
+    ),
+    DrawerItem(
+        AppPage.ANALYTICS,
+        "My activity",
+        Icons.Rounded.Analytics,
+    ),
+)
+
+private val accountDrawerItems = listOf(
+    DrawerItem(
+        AppPage.FEEDBACK,
+        "Feedback",
+        Icons.Rounded.Feedback,
+    ),
+    DrawerItem(
+        AppPage.PROFILE,
+        "Profile",
+        Icons.Rounded.Person,
+    ),
+)
 
 @Composable
 fun MayaLanguageApp(
@@ -188,8 +269,30 @@ private fun MainShell(
     val state by appDataViewModel.uiState.collectAsStateWithLifecycle()
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    var page by rememberSaveable { mutableStateOf(AppPage.HOME) }
-    var adminUserView by rememberSaveable { mutableStateOf(false) }
+    val drawerState = rememberDrawerState(
+        initialValue = DrawerValue.Closed,
+    )
+    val scope = rememberCoroutineScope()
+
+    var page by rememberSaveable {
+        mutableStateOf(AppPage.HOME)
+    }
+    var adminUserView by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    fun openDrawer() {
+        scope.launch {
+            drawerState.open()
+        }
+    }
+
+    fun goTo(destination: AppPage) {
+        page = destination
+        scope.launch {
+            drawerState.close()
+        }
+    }
 
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -288,15 +391,27 @@ private fun MainShell(
         return
     }
 
-    BackHandler(enabled = page != AppPage.HOME) {
+    BackHandler(
+        enabled = drawerState.isOpen,
+    ) {
+        scope.launch {
+            drawerState.close()
+        }
+    }
+
+    BackHandler(
+        enabled =
+            drawerState.isClosed &&
+                page != AppPage.HOME,
+    ) {
         page = AppPage.HOME
     }
 
     val pageTitle = when (page) {
-        AppPage.HOME -> "Maya Language App"
-        AppPage.TEXT_TRANSLATION -> "Text Translation"
-        AppPage.IMAGE_TRANSLATION -> "Image Translation"
-        AppPage.VOICE_TRANSLATION -> "Voice Translation"
+        AppPage.HOME -> "Maya Translate"
+        AppPage.TEXT_TRANSLATION -> "Text translation"
+        AppPage.IMAGE_TRANSLATION -> "Photo translation"
+        AppPage.VOICE_TRANSLATION -> "Voice translation"
         AppPage.DICTIONARY -> "Dictionary"
         AppPage.SAVED -> "Saved words"
         AppPage.HISTORY -> "History"
@@ -305,247 +420,464 @@ private fun MainShell(
         AppPage.PROFILE -> "Profile"
     }
 
-    val isDetailPage = page in setOf(
-        AppPage.TEXT_TRANSLATION,
-        AppPage.IMAGE_TRANSLATION,
-        AppPage.VOICE_TRANSLATION,
-        AppPage.DICTIONARY,
-        AppPage.ANALYTICS,
-        AppPage.FEEDBACK,
-    )
-
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(snackbarHostState)
-        },
-        topBar = {
-            if (
-                page != AppPage.HOME &&
-                page != AppPage.PROFILE
-            ) {
-                Column {
-                    CenterAlignedTopAppBar(
-                        title = {
-                            Text(
-                                text = pageTitle,
-                                style =
-                                    MaterialTheme.typography.titleLarge,
-                            )
-                        },
-                        navigationIcon = {
-                            if (isDetailPage) {
-                                IconButton(
-                                    onClick = {
-                                        page = AppPage.HOME
-                                    },
-                                ) {
-                                    Icon(
-                                        imageVector =
-                                            Icons.Rounded.ArrowBack,
-                                        contentDescription = "Back",
-                                    )
-                                }
-                            }
-                        },
-                        colors =
-                            TopAppBarDefaults
-                                .centerAlignedTopAppBarColors(
-                                    containerColor =
-                                        MaterialTheme.colorScheme.surface,
-                                    titleContentColor =
-                                        MaterialTheme.colorScheme.onSurface,
-                                    navigationIconContentColor =
-                                        MaterialTheme.colorScheme.primary,
-                                ),
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = true,
+        drawerContent = {
+            ModalDrawerSheet {
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = 12.dp,
+                        vertical = 18.dp,
+                    ),
+                ) {
+                    Text(
+                        text = "Maya Translate",
+                        style =
+                            MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier =
+                            Modifier.padding(
+                                horizontal = 12.dp,
+                            ),
                     )
 
-                    if (state.loading || state.dictionaryLoading) {
-                        LinearProgressIndicator()
-                    }
-                }
-            }
-        },
-        bottomBar = {
-            NavigationBar(
-                containerColor =
-                    MaterialTheme.colorScheme.surface,
-                tonalElevation = 4.dp,
-            ) {
-                BottomItem.entries.forEach { item ->
-                    val itemPage = when (item) {
-                        BottomItem.HOME -> AppPage.HOME
-                        BottomItem.SAVED -> AppPage.SAVED
-                        BottomItem.HISTORY -> AppPage.HISTORY
-                        BottomItem.PROFILE -> AppPage.PROFILE
-                    }
+                    Text(
+                        text =
+                            state.profile?.displayName
+                                ?.ifBlank { email }
+                                ?: email,
+                        style =
+                            MaterialTheme.typography.bodyMedium,
+                        modifier =
+                            Modifier.padding(
+                                start = 12.dp,
+                                top = 10.dp,
+                                end = 12.dp,
+                            ),
+                    )
 
-                    NavigationBarItem(
-                        selected = page == itemPage,
+                    Text(
+                        text = email,
+                        style =
+                            MaterialTheme.typography.bodySmall,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
+                        modifier =
+                            Modifier.padding(
+                                start = 12.dp,
+                                top = 2.dp,
+                                end = 12.dp,
+                                bottom = 16.dp,
+                            ),
+                    )
+
+                    NavigationDrawerItem(
+                        selected =
+                            page == AppPage.HOME,
                         onClick = {
-                            page = itemPage
+                            goTo(AppPage.HOME)
                         },
                         icon = {
                             Icon(
-                                imageVector = when (item) {
-                                    BottomItem.HOME ->
-                                        Icons.Rounded.Home
-                                    BottomItem.SAVED ->
-                                        Icons.Rounded.Bookmark
-                                    BottomItem.HISTORY ->
-                                        Icons.Rounded.History
-                                    BottomItem.PROFILE ->
-                                        Icons.Rounded.Person
-                                },
-                                contentDescription = item.label,
+                                Icons.Rounded.Home,
+                                contentDescription = null,
                             )
                         },
                         label = {
-                            Text(
-                                item.label,
-                                style =
-                                    MaterialTheme.typography.labelMedium,
-                            )
+                            Text("Home")
                         },
-                        colors =
-                            NavigationBarItemDefaults.colors(
-                                selectedIconColor =
-                                    MaterialTheme.colorScheme.primary,
-                                selectedTextColor =
-                                    MaterialTheme.colorScheme.primary,
-                                indicatorColor =
-                                    MaterialTheme.colorScheme.primaryContainer,
-                                unselectedIconColor =
-                                    MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor =
-                                    MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
+                    )
+
+                    DrawerSectionLabel("Translate")
+                    DrawerItems(
+                        items = translateDrawerItems,
+                        currentPage = page,
+                        onSelect = ::goTo,
+                    )
+
+                    DrawerSectionLabel("Learn")
+                    DrawerItems(
+                        items = learnDrawerItems,
+                        currentPage = page,
+                        onSelect = ::goTo,
+                    )
+
+                    DrawerSectionLabel("Activity")
+                    DrawerItems(
+                        items = activityDrawerItems,
+                        currentPage = page,
+                        onSelect = ::goTo,
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(
+                            vertical = 10.dp,
+                        ),
+                    )
+
+                    DrawerSectionLabel("Account")
+                    DrawerItems(
+                        items = accountDrawerItems,
+                        currentPage = page,
+                        onSelect = ::goTo,
                     )
                 }
             }
         },
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier.padding(innerPadding),
-        ) {
-            when (page) {
-                AppPage.HOME -> HomeScreen(
-                    displayName =
-                        state.profile?.displayName.orEmpty(),
-                    onTextTranslation = {
-                        page = AppPage.TEXT_TRANSLATION
-                    },
-                    onImageTranslation = {
-                        page = AppPage.IMAGE_TRANSLATION
-                    },
-                    onVoiceTranslation = {
-                        page = AppPage.VOICE_TRANSLATION
-                    },
-                    onSaved = {
-                        page = AppPage.SAVED
-                    },
-                    onHistory = {
-                        page = AppPage.HISTORY
-                    },
-                    onAnalytics = {
-                        page = AppPage.ANALYTICS
-                    },
-                    onFeedback = {
-                        page = AppPage.FEEDBACK
-                    },
-                    onDictionary = {
-                        page = AppPage.DICTIONARY
-                    },
-                    onProfile = {
-                        page = AppPage.PROFILE
-                    },
-                )
+    ) {
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(snackbarHostState)
+            },
+            topBar = {
+                if (page != AppPage.PROFILE) {
+                    Column {
+                        CenterAlignedTopAppBar(
+                            title = {
+                                Text(
+                                    text = pageTitle,
+                                    style =
+                                        MaterialTheme
+                                            .typography
+                                            .titleLarge,
+                                )
+                            },
+                            navigationIcon = {
+                                IconButton(
+                                    onClick = ::openDrawer,
+                                ) {
+                                    Icon(
+                                        imageVector =
+                                            Icons.Rounded.Menu,
+                                        contentDescription =
+                                            "Open menu",
+                                    )
+                                }
+                            },
+                            colors =
+                                TopAppBarDefaults
+                                    .centerAlignedTopAppBarColors(
+                                        containerColor =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .surface,
+                                        titleContentColor =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .onSurface,
+                                        navigationIconContentColor =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .primary,
+                                    ),
+                        )
 
-                AppPage.TEXT_TRANSLATION ->
-                    TranslationScreen(
-                        viewModel = translationViewModel,
-                        onSaveEntry =
-                            appDataViewModel::saveEntry,
-                    )
+                        if (
+                            state.loading ||
+                            state.dictionaryLoading
+                        ) {
+                            LinearProgressIndicator()
+                        }
+                    }
+                }
+            },
+            bottomBar = {
+                NavigationBar(
+                    containerColor =
+                        MaterialTheme
+                            .colorScheme.surface,
+                    tonalElevation = 4.dp,
+                ) {
+                    BottomItem.entries.forEach { item ->
+                        val itemPage =
+                            when (item) {
+                                BottomItem.HOME ->
+                                    AppPage.HOME
 
-                AppPage.IMAGE_TRANSLATION ->
-                    ImageTranslationScreen(
-                        viewModel = translationViewModel,
-                        onSaveEntry =
-                            appDataViewModel::saveEntry,
-                    )
+                                BottomItem.SAVED ->
+                                    AppPage.SAVED
 
-                AppPage.VOICE_TRANSLATION ->
-                    VoiceTranslationScreen(
-                        viewModel = translationViewModel,
-                        onSaveEntry =
-                            appDataViewModel::saveEntry,
-                    )
+                                BottomItem.HISTORY ->
+                                    AppPage.HISTORY
 
-                AppPage.DICTIONARY ->
-                    DictionaryScreen(
-                        entries =
-                            state.dictionaryEntries,
-                        loading =
-                            state.dictionaryLoading,
-                        onSearch =
-                            appDataViewModel::loadDictionary,
-                        onSaveEntry =
-                            appDataViewModel::saveEntry,
-                    )
+                                BottomItem.PROFILE ->
+                                    AppPage.PROFILE
+                            }
 
-                AppPage.SAVED ->
-                    SavedScreen(
-                        items = state.savedVocabulary,
-                        onRemove =
-                            appDataViewModel::removeSaved,
-                    )
+                        NavigationBarItem(
+                            selected =
+                                page == itemPage,
+                            onClick = {
+                                page = itemPage
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector =
+                                        when (item) {
+                                            BottomItem.HOME ->
+                                                Icons.Rounded.Home
 
-                AppPage.HISTORY ->
-                    HistoryScreen(
-                        history = state.history,
-                        onDelete =
-                            appDataViewModel::deleteHistory,
-                    )
+                                            BottomItem.SAVED ->
+                                                Icons.Rounded.Bookmark
 
-                AppPage.ANALYTICS ->
-                    AnalyticsScreen(
-                        analytics = state.analytics,
-                        history = state.history,
-                    )
+                                            BottomItem.HISTORY ->
+                                                Icons.Rounded.History
 
-                AppPage.FEEDBACK ->
-                    FeedbackScreen(
-                        email = email,
-                        submissionVersion =
-                            state.feedbackSubmissionVersion,
-                        submitting =
-                            state.feedbackSubmitting,
-                        onSubmit = { rating, comment ->
-                            appDataViewModel.submitFeedback(
-                                email = email,
-                                rating = rating,
-                                comment = comment,
-                            )
-                        },
-                    )
+                                            BottomItem.PROFILE ->
+                                                Icons.Rounded.Person
+                                        },
+                                    contentDescription =
+                                        item.label,
+                                )
+                            },
+                            label = {
+                                Text(
+                                    item.label,
+                                    style =
+                                        MaterialTheme
+                                            .typography
+                                            .labelMedium,
+                                )
+                            },
+                            colors =
+                                NavigationBarItemDefaults
+                                    .colors(
+                                        selectedIconColor =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .primary,
+                                        selectedTextColor =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .primary,
+                                        indicatorColor =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .primaryContainer,
+                                        unselectedIconColor =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                        unselectedTextColor =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                    ),
+                        )
+                    }
+                }
+            },
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier.padding(
+                    innerPadding
+                ),
+            ) {
+                when (page) {
+                    AppPage.HOME ->
+                        HomeScreen(
+                            displayName =
+                                state.profile
+                                    ?.displayName
+                                    .orEmpty(),
+                            onTextTranslation = {
+                                page =
+                                    AppPage
+                                        .TEXT_TRANSLATION
+                            },
+                            onImageTranslation = {
+                                page =
+                                    AppPage
+                                        .IMAGE_TRANSLATION
+                            },
+                            onVoiceTranslation = {
+                                page =
+                                    AppPage
+                                        .VOICE_TRANSLATION
+                            },
+                            onSaved = {
+                                page = AppPage.SAVED
+                            },
+                            onHistory = {
+                                page = AppPage.HISTORY
+                            },
+                            onAnalytics = {
+                                page =
+                                    AppPage.ANALYTICS
+                            },
+                            onFeedback = {
+                                page = AppPage.FEEDBACK
+                            },
+                            onDictionary = {
+                                page =
+                                    AppPage.DICTIONARY
+                            },
+                            onProfile = {
+                                page = AppPage.PROFILE
+                            },
+                        )
 
-                AppPage.PROFILE ->
-                    ProfileScreen(
-                        profile = state.profile,
-                        email = email,
-                        onUpdateName =
-                            appDataViewModel::updateDisplayName,
-                        onResetPassword =
-                            authViewModel::sendPasswordReset,
-                        onOpenAdmin = {
-                            adminUserView = false
-                        },
-                        onSignOut = {
-                            appDataViewModel.clearUser()
-                            authViewModel.signOut()
-                        },
-                    )
+                    AppPage.TEXT_TRANSLATION ->
+                        TranslationScreen(
+                            viewModel =
+                                translationViewModel,
+                            onSaveEntry =
+                                appDataViewModel
+                                    ::saveEntry,
+                        )
+
+                    AppPage.IMAGE_TRANSLATION ->
+                        ImageTranslationScreen(
+                            viewModel =
+                                translationViewModel,
+                            onSaveEntry =
+                                appDataViewModel
+                                    ::saveEntry,
+                        )
+
+                    AppPage.VOICE_TRANSLATION ->
+                        VoiceTranslationScreen(
+                            viewModel =
+                                translationViewModel,
+                            onSaveEntry =
+                                appDataViewModel
+                                    ::saveEntry,
+                        )
+
+                    AppPage.DICTIONARY ->
+                        DictionaryScreen(
+                            entries =
+                                state
+                                    .dictionaryEntries,
+                            loading =
+                                state
+                                    .dictionaryLoading,
+                            onSearch =
+                                appDataViewModel
+                                    ::loadDictionary,
+                            onSaveEntry =
+                                appDataViewModel
+                                    ::saveEntry,
+                        )
+
+                    AppPage.SAVED ->
+                        SavedScreen(
+                            items =
+                                state
+                                    .savedVocabulary,
+                            onRemove =
+                                appDataViewModel
+                                    ::removeSaved,
+                        )
+
+                    AppPage.HISTORY ->
+                        HistoryScreen(
+                            history = state.history,
+                            onDelete =
+                                appDataViewModel
+                                    ::deleteHistory,
+                        )
+
+                    AppPage.ANALYTICS ->
+                        AnalyticsScreen(
+                            analytics =
+                                state.analytics,
+                            history = state.history,
+                        )
+
+                    AppPage.FEEDBACK ->
+                        FeedbackScreen(
+                            email = email,
+                            submissionVersion =
+                                state
+                                    .feedbackSubmissionVersion,
+                            submitting =
+                                state
+                                    .feedbackSubmitting,
+                            onSubmit = {
+                                    rating,
+                                    comment,
+                                ->
+                                appDataViewModel
+                                    .submitFeedback(
+                                        email = email,
+                                        rating = rating,
+                                        comment = comment,
+                                    )
+                            },
+                        )
+
+                    AppPage.PROFILE ->
+                        ProfileScreen(
+                            profile = state.profile,
+                            email = email,
+                            onOpenMenu = ::openDrawer,
+                            onUpdateName =
+                                appDataViewModel
+                                    ::updateDisplayName,
+                            onResetPassword =
+                                authViewModel
+                                    ::sendPasswordReset,
+                            onOpenAdmin = {
+                                adminUserView = false
+                            },
+                            onSignOut = {
+                                appDataViewModel
+                                    .clearUser()
+                                authViewModel
+                                    .signOut()
+                            },
+                        )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun DrawerSectionLabel(
+    text: String,
+) {
+    Text(
+        text = text,
+        style =
+            MaterialTheme.typography.labelMedium,
+        color =
+            MaterialTheme.colorScheme
+                .onSurfaceVariant,
+        modifier = Modifier.padding(
+            start = 16.dp,
+            top = 14.dp,
+            end = 16.dp,
+            bottom = 4.dp,
+        ),
+    )
+}
+
+@Composable
+private fun DrawerItems(
+    items: List<DrawerItem>,
+    currentPage: AppPage,
+    onSelect: (AppPage) -> Unit,
+) {
+    items.forEach { item ->
+        NavigationDrawerItem(
+            selected =
+                currentPage == item.page,
+            onClick = {
+                onSelect(item.page)
+            },
+            icon = {
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = null,
+                )
+            },
+            label = {
+                Text(item.label)
+            },
+        )
     }
 }
