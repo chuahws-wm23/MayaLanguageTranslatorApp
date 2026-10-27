@@ -785,7 +785,7 @@ private fun DictionaryManagementContent(
                         if (builtIn) {
                             Text(
                                 text =
-                                    "Built-in fallback entry · read only",
+                                    "Built-in word · read only",
                                 style =
                                     MaterialTheme.typography.labelSmall,
                                 color =
@@ -1063,7 +1063,7 @@ private fun AnalyticsContent(
             )
             Text(
                 text =
-                    "Summary statistics across registered users, translations and feedback.",
+                    "A quick summary of users, translations and feedback.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -1106,7 +1106,7 @@ private fun AnalyticsContent(
 
         item {
             Text(
-                text = "Translation channels",
+                text = "Translation methods",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
