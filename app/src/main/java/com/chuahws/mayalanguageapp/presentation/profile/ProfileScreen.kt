@@ -98,11 +98,11 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            Brush.verticalGradient(
+                            Brush.linearGradient(
                                 listOf(
                                     MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.80f),
-                                    MaterialTheme.colorScheme.primaryContainer,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.88f),
+                                    MaterialTheme.colorScheme.secondary,
                                 )
                             )
                         )
@@ -151,7 +151,7 @@ fun ProfileScreen(
                                 if (profile?.role == "admin") {
                                     "Administrator"
                                 } else {
-                                    "User"
+                                    "Learner"
                                 },
                             color = Color.White,
                         )
@@ -264,7 +264,7 @@ fun ProfileScreen(
                 ProfileAction(
                     icon = Icons.Rounded.AdminPanelSettings,
                     title = "Admin dashboard",
-                    subtitle = "Review submitted feedback",
+                    subtitle = "Manage users, words, feedback & reports",
                     onClick = onOpenAdmin,
                 )
             }
@@ -305,7 +305,7 @@ private fun ProfileAction(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp,
+            defaultElevation = 2.dp,
         ),
     ) {
         Row(
