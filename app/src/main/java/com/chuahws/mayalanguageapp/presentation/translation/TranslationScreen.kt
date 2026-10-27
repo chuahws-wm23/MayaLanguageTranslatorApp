@@ -106,7 +106,7 @@ fun TranslationScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     LanguagePill(
-                        label = source,
+                        label = "From $source",
                         selected = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -125,7 +125,7 @@ fun TranslationScreen(
                     }
 
                     LanguagePill(
-                        label = target,
+                        label = "To $target",
                         selected = false,
                         modifier = Modifier.weight(1f),
                     )
