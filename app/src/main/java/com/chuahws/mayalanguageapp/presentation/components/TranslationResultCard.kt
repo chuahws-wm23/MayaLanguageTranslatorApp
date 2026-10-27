@@ -61,9 +61,9 @@ fun TranslationResultCard(
                 Column {
                     Text(
                         text = if (alternatives.isEmpty()) {
-                            "Translation result"
+                            "Your translation"
                         } else {
-                            "Possible translations"
+                            "Other meanings"
                         },
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
@@ -78,7 +78,7 @@ fun TranslationResultCard(
                     } else {
                         Text(
                             text =
-                                "This input has more than one valid dictionary match.",
+                                "This word can have more than one meaning.",
                             style = MaterialTheme.typography.bodyMedium,
                             color =
                                 MaterialTheme.colorScheme.onSurfaceVariant,
@@ -160,7 +160,7 @@ fun TranslationResultCard(
                                         contentDescription = null,
                                     )
                                     Text(
-                                        text = "Save this meaning",
+                                        text = "Save this word",
                                         modifier =
                                             Modifier.padding(start = 6.dp),
                                     )
@@ -175,7 +175,7 @@ fun TranslationResultCard(
                         text = "+" +
                             (alternatives.size -
                                 visibleAlternatives.size) +
-                            " more dictionary senses",
+                             more meanings,
                         style = MaterialTheme.typography.bodySmall,
                         color =
                             MaterialTheme.colorScheme.onSurfaceVariant,
@@ -193,7 +193,7 @@ fun TranslationResultCard(
                     }
 
                 Text(
-                    text = "English meaning",
+                    text = "Meaning in English",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -221,7 +221,7 @@ fun TranslationResultCard(
                     .takeIf { it.size > 1 }
                     ?.let { inputs ->
                         Text(
-                            text = "Also accepted",
+                            text = "Also used for",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -242,9 +242,9 @@ fun TranslationResultCard(
                 ) {
                     SoftBadge(
                         text = if (dictionaryEntry.verified) {
-                            "Verified entry"
+                            "Checked entry"
                         } else {
-                            "Source-derived entry"
+                            "Dictionary entry"
                         },
                         color = if (dictionaryEntry.verified) {
                             MayaGreen
@@ -270,9 +270,9 @@ fun TranslationResultCard(
                             dictionaryEntry.pronunciation
                                 ?.isNotBlank() == true
                         ) {
-                            "If device audio is unavailable, use the pronunciation shown above."
+                            "If audio isn’t available, use the pronunciation shown above."
                         } else {
-                            "Yucatec Maya speech audio depends on the text-to-speech voices installed on this device."
+                            "Maya audio depends on the voices available on your device."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
