@@ -531,7 +531,7 @@ private fun PhotoSettingsPage(
     ProfileDetailScaffold(
         title = "Profile photo",
         subtitle =
-            "Choose how you appear in Maya Translate.",
+            "Choose a photo for your profile.",
         onBack = onBack,
     ) {
         Card(
@@ -809,7 +809,7 @@ private fun LanguageSettingsPage(
     ProfileDetailScaffold(
         title = "App language",
         subtitle =
-            "Choose the language used for the application interface.",
+            "Choose the language used in the app.",
         onBack = onBack,
     ) {
         Card(
@@ -913,7 +913,7 @@ private fun AboutPage(
     ProfileDetailScaffold(
         title = "About Maya Translate",
         subtitle =
-            "Project information and supported scope.",
+            "See what the app can do.",
         onBack = onBack,
     ) {
         Card(
@@ -941,7 +941,7 @@ private fun AboutPage(
 
                 Text(
                     text =
-                        "A mobile translation and learning application for modern Yucatec Maya written in Latin orthography.",
+                        "A simple app for translating between English and modern Yucatec Maya.",
                     color =
                         MaterialTheme
                             .colorScheme
@@ -949,7 +949,7 @@ private fun AboutPage(
                 )
 
                 Text(
-                    text = "Supported features",
+                    text = "What you can do",
                     style =
                         MaterialTheme
                             .typography.titleMedium,
@@ -959,12 +959,12 @@ private fun AboutPage(
 
                 Text(
                     text =
-                        "• Maya ↔ English text translation\n" +
-                            "• Image OCR translation\n" +
-                            "• English voice input\n" +
+                        "• Translate between English and Maya\n" +
+                            "• Translate text from photos\n" +
+                            "• Speak English to translate\n" +
                             "• Pronunciation support\n" +
                             "• Dictionary and saved vocabulary\n" +
-                            "• History and learning analytics",
+                            "• Review your history and activity",
                     color =
                         MaterialTheme
                             .colorScheme
