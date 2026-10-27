@@ -3,6 +3,10 @@ package com.chuahws.mayalanguageapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import com.chuahws.mayalanguageapp.domain.service.TranslationService
@@ -19,8 +23,6 @@ class MainActivity : ComponentActivity() {
     ) {
         super.onCreate(savedInstanceState)
 
-        // Keep app content inside Android's system-bar area so the
-        // notification/quick-settings shade remains visually separate.
         WindowCompat.setDecorFitsSystemWindows(
             window,
             true,
@@ -35,11 +37,9 @@ class MainActivity : ComponentActivity() {
                 AppViewModelFactory {
                     AuthViewModel(
                         authRepository =
-                            dependencies
-                                .authRepository,
+                            dependencies.authRepository,
                         userProfileRepository =
-                            dependencies
-                                .userProfileRepository,
+                            dependencies.userProfileRepository,
                     )
                 },
             )[AuthViewModel::class.java]
@@ -50,14 +50,11 @@ class MainActivity : ComponentActivity() {
                 AppViewModelFactory {
                     AppDataViewModel(
                         userDataRepository =
-                            dependencies
-                                .userDataRepository,
+                            dependencies.userDataRepository,
                         userProfileRepository =
-                            dependencies
-                                .userProfileRepository,
+                            dependencies.userProfileRepository,
                         dictionaryRepository =
-                            dependencies
-                                .dictionaryRepository,
+                            dependencies.dictionaryRepository,
                     )
                 },
             )[AppDataViewModel::class.java]
@@ -69,21 +66,16 @@ class MainActivity : ComponentActivity() {
                     TranslationViewModel(
                         translationService =
                             TranslationService(
-                                dependencies
-                                    .dictionaryRepository
+                                dependencies.dictionaryRepository
                             ),
                         userDataRepository =
-                            dependencies
-                                .userDataRepository,
+                            dependencies.userDataRepository,
                         userIdProvider = {
-                            authViewModel
-                                .uiState.value
-                                .currentUser
-                                ?.userId
+                            authViewModel.uiState.value
+                                .currentUser?.userId
                         },
                         onDataChanged = {
-                            appDataViewModel
-                                .refresh()
+                            appDataViewModel.refresh()
                         },
                     )
                 },
@@ -91,17 +83,21 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MayaTranslateTheme {
-                MayaLanguageApp(
-                    authViewModel =
-                        authViewModel,
-                    appDataViewModel =
-                        appDataViewModel,
-                    translationViewModel =
-                        translationViewModel,
-                    firebaseConfigured =
-                        dependencies
-                            .firebaseConfigured,
-                )
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color =
+                        MaterialTheme.colorScheme.background,
+                ) {
+                    MayaLanguageApp(
+                        authViewModel = authViewModel,
+                        appDataViewModel =
+                            appDataViewModel,
+                        translationViewModel =
+                            translationViewModel,
+                        firebaseConfigured =
+                            dependencies.firebaseConfigured,
+                    )
+                }
             }
         }
     }
