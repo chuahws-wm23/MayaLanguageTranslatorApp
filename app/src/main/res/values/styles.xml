@@ -6,22 +6,18 @@
 
         <item name="android:fontFamily">sans</item>
 
-        <item name="android:statusBarColor">
-            #F7F8FC
-        </item>
-        <item name="android:navigationBarColor">
-            #FFFFFF
-        </item>
+        <!-- Keep the activity fully opaque so the launcher wallpaper can
+             never show through while Compose is drawing. -->
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">#F7F8FC</item>
+        <item name="android:colorBackground">#F7F8FC</item>
 
-        <item name="android:windowLightStatusBar">
-            true
-        </item>
-        <item name="android:windowLightNavigationBar">
-            true
-        </item>
+        <item name="android:statusBarColor">#F7F8FC</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
 
-        <item name="android:windowActionModeOverlay">
-            false
-        </item>
+        <item name="android:windowActionModeOverlay">false</item>
     </style>
 </resources>
