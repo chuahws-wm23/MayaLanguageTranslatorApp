@@ -65,7 +65,7 @@ fun VoiceTranslationScreen(
         )
         putExtra(
             RecognizerIntent.EXTRA_PROMPT,
-            "Speak in English",
+            "Speak a phrase",
         )
     }
 
@@ -132,13 +132,13 @@ fun VoiceTranslationScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(
-                        text = "Speak in English",
+                        text = "Speak a phrase",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
                         text =
-                            "Tap the microphone, speak clearly, then review the transcript before translating.",
+                            "Tap the microphone and speak clearly. You can check the words before translating.",
                         color =
                             MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
@@ -181,7 +181,7 @@ fun VoiceTranslationScreen(
                                     imageVector =
                                         Icons.Rounded.Mic,
                                     contentDescription =
-                                        "Start English speech recognition",
+                                        "Start listening",
                                     tint =
                                         MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(42.dp),
@@ -209,9 +209,9 @@ fun VoiceTranslationScreen(
                             )
                             Text(
                                 text = if (speechAvailable) {
-                                    "Ready to listen"
+                                    "Tap the microphone when you’re ready"
                                 } else {
-                                    "Speech recognition unavailable"
+                                    "Voice input isn’t available"
                                 },
                                 color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.labelLarge,
@@ -228,7 +228,7 @@ fun VoiceTranslationScreen(
                 ) {
                     Text(
                         text =
-                            "Speech recognition is unavailable on this device. You can type the English transcript below instead.",
+                            "Voice input isn’t available on this device. You can type the words below instead.",
                         style =
                             MaterialTheme.typography.bodySmall,
                         color =
@@ -247,7 +247,7 @@ fun VoiceTranslationScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
-                        text = "Recognised speech",
+                        text = "What we heard",
                         style =
                             MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
@@ -259,7 +259,7 @@ fun VoiceTranslationScreen(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !state.loading,
                         label = {
-                            Text("English transcript")
+                            Text("Spoken words")
                         },
                         minLines = 4,
                     )
@@ -277,7 +277,7 @@ fun VoiceTranslationScreen(
                 contentPadding = PaddingValues(vertical = 15.dp),
             ) {
                 Text(
-                    text = "Translate to Yucatec Maya",
+                    text = "Translate to Maya",
                     fontWeight = FontWeight.SemiBold,
                 )
             }
