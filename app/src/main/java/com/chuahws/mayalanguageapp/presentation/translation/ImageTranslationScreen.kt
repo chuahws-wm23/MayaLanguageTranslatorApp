@@ -436,12 +436,12 @@ fun ImageTranslationScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Extracted text",
+                                text = "Text from photo",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(
-                                text = "$source to $target",
+                                text = "From $source · To $target",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
