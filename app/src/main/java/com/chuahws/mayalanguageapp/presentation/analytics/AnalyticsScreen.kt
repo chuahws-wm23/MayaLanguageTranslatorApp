@@ -95,12 +95,12 @@ fun AnalyticsScreen(
                     )
                     Column {
                         Text(
-                            text = "Your learning activity",
+                            text = "Your activity",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = "A quick view of how you use Maya Translate.",
+                            text = "See how you’ve been using the app.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -139,7 +139,7 @@ fun AnalyticsScreen(
                 )
                 MetricCard(
                     value = mostUsedType,
-                    label = "Most used method",
+                    label = "Most used",
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -161,7 +161,7 @@ fun AnalyticsScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
-                        text = "Translations by type",
+                        text = "How you translate",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -429,7 +429,7 @@ private fun WeeklyActivityCard(
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = "Successful translations recorded in your history.",
+                text = "Translations saved in your history.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
