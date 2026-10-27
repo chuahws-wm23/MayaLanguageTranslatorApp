@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.My activity
+import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.CameraAlt
@@ -58,7 +58,7 @@ fun HomeScreen(
     onVoiceTranslation: () -> Unit,
     onSaved: () -> Unit,
     onHistory: () -> Unit,
-    onMy activity: () -> Unit,
+    onAnalytics: () -> Unit,
     onFeedback: () -> Unit,
     onDictionary: () -> Unit,
     onProfile: () -> Unit,
@@ -150,9 +150,9 @@ fun HomeScreen(
                     right = Feature(
                         title = "My activity",
                         subtitle = "See your progress",
-                        icon = Icons.Rounded.My activity,
+                        icon = Icons.Rounded.Analytics,
                         color = MayaGreen,
-                        onClick = onMy activity,
+                        onClick = onAnalytics,
                     ),
                 )
             }
