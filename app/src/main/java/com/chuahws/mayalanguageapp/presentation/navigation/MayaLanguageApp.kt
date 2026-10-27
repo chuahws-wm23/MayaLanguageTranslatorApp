@@ -20,6 +20,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -312,58 +313,60 @@ private fun MainShell(
         AppPage.FEEDBACK,
     )
 
-    val homeTopBar = page == AppPage.HOME
-
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState)
         },
         topBar = {
-            Column {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(pageTitle)
-                    },
-                    navigationIcon = {
-                        if (isDetailPage) {
-                            IconButton(
-                                onClick = {
-                                    page = AppPage.HOME
-                                },
-                            ) {
-                                Icon(
-                                    imageVector =
-                                        Icons.Rounded.ArrowBack,
-                                    contentDescription = "Back",
-                                )
+            if (page != AppPage.HOME) {
+                Column {
+                    CenterAlignedTopAppBar(
+                        title = {
+                            Text(
+                                text = pageTitle,
+                                style =
+                                    MaterialTheme.typography.titleLarge,
+                            )
+                        },
+                        navigationIcon = {
+                            if (isDetailPage) {
+                                IconButton(
+                                    onClick = {
+                                        page = AppPage.HOME
+                                    },
+                                ) {
+                                    Icon(
+                                        imageVector =
+                                            Icons.Rounded.ArrowBack,
+                                        contentDescription = "Back",
+                                    )
+                                }
                             }
-                        }
-                    },
-                    colors =
-                        TopAppBarDefaults
-                            .centerAlignedTopAppBarColors(
-                                containerColor = if (homeTopBar) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.surface
-                                },
-                                titleContentColor = if (homeTopBar) {
-                                    MaterialTheme.colorScheme.onPrimary
-                                } else {
-                                    MaterialTheme.colorScheme.primary
-                                },
-                                navigationIconContentColor =
-                                    MaterialTheme.colorScheme.primary,
-                            ),
-                )
+                        },
+                        colors =
+                            TopAppBarDefaults
+                                .centerAlignedTopAppBarColors(
+                                    containerColor =
+                                        MaterialTheme.colorScheme.surface,
+                                    titleContentColor =
+                                        MaterialTheme.colorScheme.onSurface,
+                                    navigationIconContentColor =
+                                        MaterialTheme.colorScheme.primary,
+                                ),
+                    )
 
-                if (state.loading || state.dictionaryLoading) {
-                    LinearProgressIndicator()
+                    if (state.loading || state.dictionaryLoading) {
+                        LinearProgressIndicator()
+                    }
                 }
             }
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor =
+                    MaterialTheme.colorScheme.surface,
+                tonalElevation = 4.dp,
+            ) {
                 BottomItem.entries.forEach { item ->
                     val itemPage = when (item) {
                         BottomItem.HOME -> AppPage.HOME
@@ -393,8 +396,25 @@ private fun MainShell(
                             )
                         },
                         label = {
-                            Text(item.label)
+                            Text(
+                                item.label,
+                                style =
+                                    MaterialTheme.typography.labelMedium,
+                            )
                         },
+                        colors =
+                            NavigationBarItemDefaults.colors(
+                                selectedIconColor =
+                                    MaterialTheme.colorScheme.primary,
+                                selectedTextColor =
+                                    MaterialTheme.colorScheme.primary,
+                                indicatorColor =
+                                    MaterialTheme.colorScheme.primaryContainer,
+                                unselectedIconColor =
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor =
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                     )
                 }
             }
