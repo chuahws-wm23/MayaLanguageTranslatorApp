@@ -298,9 +298,9 @@ private fun MainShell(
         AppPage.IMAGE_TRANSLATION -> "Image Translation"
         AppPage.VOICE_TRANSLATION -> "Voice Translation"
         AppPage.DICTIONARY -> "Dictionary"
-        AppPage.SAVED -> "Saved vocabulary"
+        AppPage.SAVED -> "Saved words"
         AppPage.HISTORY -> "History"
-        AppPage.ANALYTICS -> "Analytics"
+        AppPage.ANALYTICS -> "My activity"
         AppPage.FEEDBACK -> "Feedback"
         AppPage.PROFILE -> "Profile"
     }
