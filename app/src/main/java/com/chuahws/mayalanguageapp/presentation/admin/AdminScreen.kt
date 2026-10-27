@@ -1,5 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.admin
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,6 +63,9 @@ import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.FeedbackItem
 import com.chuahws.mayalanguageapp.domain.model.UsageAnalytics
 import com.chuahws.mayalanguageapp.domain.model.UserProfile
+import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
+import com.chuahws.mayalanguageapp.presentation.components.SoftBadge
+import com.chuahws.mayalanguageapp.presentation.theme.MayaGreen
 
 private enum class AdminSection(
     val label: String,
@@ -164,59 +170,61 @@ fun AdminScreen(
             }
         },
     ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+        AppGradientBackground(
+            modifier = Modifier.padding(innerPadding),
         ) {
-            if (loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 12.dp),
-                )
-            }
-
-            when (section) {
-                AdminSection.DASHBOARD ->
-                    DashboardContent(
-                        displayName = displayName,
-                        email = email,
-                        users = users,
-                        feedback = feedback,
-                        analytics = analytics,
-                        onOpenFeedback = {
-                            section = AdminSection.FEEDBACK
-                        },
+            Box(
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                if (loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 12.dp),
                     )
+                }
 
-                AdminSection.USERS ->
-                    UserManagementContent(
-                        currentUserId = currentUserId,
-                        users = users,
-                        onToggleStatus = onToggleUserStatus,
-                    )
+                when (section) {
+                    AdminSection.DASHBOARD ->
+                        DashboardContent(
+                            displayName = displayName,
+                            email = email,
+                            users = users,
+                            feedback = feedback,
+                            analytics = analytics,
+                            onOpenFeedback = {
+                                section = AdminSection.FEEDBACK
+                            },
+                        )
 
-                AdminSection.DICTIONARY ->
-                    DictionaryManagementContent(
-                        entries = dictionaryEntries,
-                        onSearch = onSearchDictionary,
-                        onSave = onSaveDictionaryEntry,
-                        onDelete = onDeleteDictionaryEntry,
-                    )
+                    AdminSection.USERS ->
+                        UserManagementContent(
+                            currentUserId = currentUserId,
+                            users = users,
+                            onToggleStatus = onToggleUserStatus,
+                        )
 
-                AdminSection.FEEDBACK ->
-                    FeedbackContent(
-                        feedback = feedback,
-                        onMarkReviewed = onMarkReviewed,
-                    )
+                    AdminSection.DICTIONARY ->
+                        DictionaryManagementContent(
+                            entries = dictionaryEntries,
+                            onSearch = onSearchDictionary,
+                            onSave = onSaveDictionaryEntry,
+                            onDelete = onDeleteDictionaryEntry,
+                        )
 
-                AdminSection.ANALYTICS ->
-                    AnalyticsContent(
-                        users = users,
-                        feedback = feedback,
-                        analytics = analytics,
-                    )
+                    AdminSection.FEEDBACK ->
+                        FeedbackContent(
+                            feedback = feedback,
+                            onMarkReviewed = onMarkReviewed,
+                        )
+
+                    AdminSection.ANALYTICS ->
+                        AnalyticsContent(
+                            users = users,
+                            feedback = feedback,
+                            analytics = analytics,
+                        )
+                }
             }
         }
     }
@@ -251,34 +259,48 @@ private fun DashboardContent(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
                 colors = CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.primaryContainer,
+                    containerColor = Color.Transparent,
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 5.dp,
                 ),
             ) {
                 Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.primary
+                                        .copy(alpha = 0.90f),
+                                    MaterialTheme.colorScheme.secondary,
+                                )
+                            )
+                        )
+                        .padding(22.dp),
+                    verticalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
-                    Text(
+                    SoftBadge(
                         text = "Administrator",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
                     )
                     Text(
                         text = displayName.ifBlank { "Welcome back" },
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
+                        color = Color.White,
                     )
                     Text(
                         text = email,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = Color.White.copy(alpha = 0.82f),
                     )
                     Text(
                         text =
                             "Manage users, vocabulary, feedback and system activity.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = Color.White.copy(alpha = 0.82f),
                     )
                 }
             }
@@ -449,10 +471,17 @@ private fun UserCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+        ),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(7.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = user.displayName.ifBlank { user.email },
@@ -462,27 +491,27 @@ private fun UserCard(
             Text(
                 text = user.email,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text =
-                    "Role: " +
-                        user.role.replaceFirstChar { it.uppercase() },
                 style = MaterialTheme.typography.bodySmall,
             )
-            Text(
-                text =
-                    "Status: " +
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SoftBadge(
+                    text = user.role.replaceFirstChar { it.uppercase() },
+                )
+                SoftBadge(
+                    text =
                         user.accountStatus.replaceFirstChar {
                             it.uppercase()
                         },
-                style = MaterialTheme.typography.bodySmall,
-                color =
-                    if (suspended) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
-            )
+                    color =
+                        if (suspended) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MayaGreen
+                        },
+                )
+            }
 
             if (isCurrentAdmin) {
                 Text(
@@ -1096,14 +1125,18 @@ private fun MetricCard(
 ) {
     Card(
         modifier = modifier,
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor =
-                MaterialTheme.colorScheme.surfaceVariant,
+                MaterialTheme.colorScheme.surface,
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
         ),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
                 text = value,
