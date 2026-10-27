@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,6 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.chuahws.mayalanguageapp.presentation.theme.MayaGreen
+import com.chuahws.mayalanguageapp.presentation.theme.MayaPurple
 
 @Composable
 fun AppGradientBackground(
@@ -28,16 +31,49 @@ fun AppGradientBackground(
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = modifier.background(
-            Brush.verticalGradient(
-                listOf(
-                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.34f),
-                    MaterialTheme.colorScheme.background,
-                    MaterialTheme.colorScheme.background,
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primaryContainer
+                            .copy(alpha = 0.42f),
+                        MaterialTheme.colorScheme.background,
+                        MaterialTheme.colorScheme.background,
+                    ),
                 )
-            )
-        )
+            ),
     ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(220.dp)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            MayaPurple.copy(alpha = 0.10f),
+                            Color.Transparent,
+                        ),
+                    ),
+                    CircleShape,
+                ),
+        )
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .size(180.dp)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            MayaGreen.copy(alpha = 0.07f),
+                            Color.Transparent,
+                        ),
+                    ),
+                    CircleShape,
+                ),
+        )
+
         content()
     }
 }
@@ -50,20 +86,19 @@ fun AccentIcon(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        color = color.copy(alpha = 0.13f),
+        color = color.copy(alpha = 0.12f),
         shape = MaterialTheme.shapes.medium,
         modifier = modifier,
     ) {
         Box(
-            modifier = Modifier
-                .size(46.dp),
+            modifier = Modifier.size(46.dp),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = contentDescription,
                 tint = color,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(23.dp),
             )
         }
     }
@@ -75,7 +110,7 @@ fun SoftBadge(
     color: Color = MaterialTheme.colorScheme.primary,
 ) {
     Surface(
-        color = color.copy(alpha = 0.12f),
+        color = color.copy(alpha = 0.10f),
         shape = CircleShape,
     ) {
         Text(
@@ -123,12 +158,11 @@ fun HairlineCardBorder(
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = MaterialTheme.shapes.large,
-            )
+        modifier = modifier.border(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant,
+            shape = MaterialTheme.shapes.large,
+        )
     ) {
         content()
     }
