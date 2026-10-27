@@ -38,6 +38,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -145,7 +146,10 @@ fun AdminScreen(
             )
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 4.dp,
+            ) {
                 AdminSection.entries.forEach { item ->
                     NavigationBarItem(
                         selected = section == item,
@@ -158,13 +162,28 @@ fun AdminScreen(
                         },
                         label = {
                             Text(
-                                when (item) {
+                                text = when (item) {
                                     AdminSection.DICTIONARY -> "Words"
                                     AdminSection.ANALYTICS -> "Stats"
                                     else -> item.label
-                                }
+                                },
+                                style =
+                                    MaterialTheme.typography.labelMedium,
                             )
                         },
+                        colors =
+                            NavigationBarItemDefaults.colors(
+                                selectedIconColor =
+                                    MaterialTheme.colorScheme.primary,
+                                selectedTextColor =
+                                    MaterialTheme.colorScheme.primary,
+                                indicatorColor =
+                                    MaterialTheme.colorScheme.primaryContainer,
+                                unselectedIconColor =
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor =
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                     )
                 }
             }
