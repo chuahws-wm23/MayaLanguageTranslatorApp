@@ -3,6 +3,7 @@ package com.chuahws.mayalanguageapp.presentation.auth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Icon
@@ -49,6 +50,12 @@ fun PasswordField(
             }
         },
         singleLine = true,
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Rounded.Lock,
+                contentDescription = null,
+            )
+        },
         visualTransformation = if (visible) {
             VisualTransformation.None
         } else {
