@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Analytics
+import androidx.compose.material.icons.rounded.My activity
 import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.CameraAlt
@@ -58,7 +58,7 @@ fun HomeScreen(
     onVoiceTranslation: () -> Unit,
     onSaved: () -> Unit,
     onHistory: () -> Unit,
-    onAnalytics: () -> Unit,
+    onMy activity: () -> Unit,
     onFeedback: () -> Unit,
     onDictionary: () -> Unit,
     onProfile: () -> Unit,
@@ -89,7 +89,7 @@ fun HomeScreen(
             item {
                 SectionLabel(
                     title = "Translate",
-                    subtitle = "Choose an input method",
+                    subtitle = "How would you like to translate?",
                 )
             }
 
@@ -97,14 +97,14 @@ fun HomeScreen(
                 FeatureRow(
                     left = Feature(
                         title = "Image",
-                        subtitle = "Scan printed text",
+                        subtitle = "Use a photo",
                         icon = Icons.Rounded.CameraAlt,
                         color = MayaPink,
                         onClick = onImageTranslation,
                     ),
                     right = Feature(
                         title = "Voice",
-                        subtitle = "Speak in English",
+                        subtitle = "Speak a phrase",
                         icon = Icons.Rounded.Mic,
                         color = MayaBlue,
                         onClick = onVoiceTranslation,
@@ -114,8 +114,8 @@ fun HomeScreen(
 
             item {
                 SectionLabel(
-                    title = "Your learning",
-                    subtitle = "Review & grow",
+                    title = "Keep learning",
+                    subtitle = "Your words and activity",
                 )
             }
 
@@ -123,14 +123,14 @@ fun HomeScreen(
                 FeatureRow(
                     left = Feature(
                         title = "Dictionary",
-                        subtitle = "Browse Maya words",
+                        subtitle = "Find a word",
                         icon = Icons.Rounded.MenuBook,
                         color = MayaPurple,
                         onClick = onDictionary,
                     ),
                     right = Feature(
                         title = "Saved",
-                        subtitle = "Your vocabulary",
+                        subtitle = "Words you saved",
                         icon = Icons.Rounded.Bookmark,
                         color = MayaOrange,
                         onClick = onSaved,
@@ -142,17 +142,17 @@ fun HomeScreen(
                 FeatureRow(
                     left = Feature(
                         title = "History",
-                        subtitle = "Past translations",
+                        subtitle = "Things you translated",
                         icon = Icons.Rounded.History,
                         color = MayaCyan,
                         onClick = onHistory,
                     ),
                     right = Feature(
-                        title = "Analytics",
-                        subtitle = "Track your activity",
-                        icon = Icons.Rounded.Analytics,
+                        title = "My activity",
+                        subtitle = "See your progress",
+                        icon = Icons.Rounded.My activity,
                         color = MayaGreen,
-                        onClick = onAnalytics,
+                        onClick = onMy activity,
                     ),
                 )
             }
@@ -286,7 +286,7 @@ private fun HeroCard(
                             modifier = Modifier.size(18.dp),
                         )
                         Text(
-                            text = "Yucatec Maya ↔ English",
+                            text = "English and Maya",
                             color = Color.White,
                             style = MaterialTheme.typography.labelLarge,
                         )
@@ -294,14 +294,14 @@ private fun HeroCard(
                 }
 
                 Text(
-                    text = "Translate with confidence.",
+                    text = "What would you like to translate?",
                     color = Color.White,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                 )
 
                 Text(
-                    text = "Type a word or phrase and explore supported Maya meanings.",
+                    text = "Type a word or phrase to get started.",
                     color = Color.White.copy(alpha = 0.82f),
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -311,7 +311,7 @@ private fun HeroCard(
                     horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     Text(
-                        text = "Start text translation",
+                        text = "Type something",
                         color = Color.White,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
@@ -425,12 +425,12 @@ private fun FeedbackCard(
                 modifier = Modifier.weight(1f),
             ) {
                 Text(
-                    text = "Help us improve",
+                    text = "Send feedback",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "Share quick feedback about Maya Translate.",
+                    text = "Tell us what you think about the app.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
