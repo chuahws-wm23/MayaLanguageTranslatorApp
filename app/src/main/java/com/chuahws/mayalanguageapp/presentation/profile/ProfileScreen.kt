@@ -37,6 +37,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LockReset
 import androidx.compose.material.icons.rounded.Logout
+import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.Refresh
@@ -95,6 +96,7 @@ private enum class ProfilePage {
 fun ProfileScreen(
     profile: UserProfile?,
     email: String,
+    onOpenMenu: () -> Unit,
     onUpdateName: (String) -> Unit,
     onResetPassword: () -> Unit,
     onOpenAdmin: () -> Unit,
@@ -161,6 +163,7 @@ fun ProfileScreen(
                 email = email,
                 photoUri = photoUri,
                 context = context,
+                onOpenMenu = onOpenMenu,
                 onOpenPhoto = {
                     page = ProfilePage.PHOTO
                 },
@@ -244,6 +247,7 @@ private fun ProfileOverview(
     email: String,
     photoUri: String?,
     context: Context,
+    onOpenMenu: () -> Unit,
     onOpenPhoto: () -> Unit,
     onOpenEdit: () -> Unit,
     onOpenPassword: () -> Unit,
@@ -290,6 +294,7 @@ private fun ProfileOverview(
         ) {
             ProfilePageTitle(
                 title = "Profile",
+                onMenu = onOpenMenu,
             )
 
             Card(
@@ -1017,6 +1022,7 @@ private fun ProfilePageTitle(
     title: String,
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
+    onMenu: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
@@ -1025,21 +1031,39 @@ private fun ProfilePageTitle(
         verticalAlignment =
             Alignment.CenterVertically,
     ) {
-        if (onBack != null) {
-            IconButton(
-                onClick = onBack,
-            ) {
-                Icon(
-                    imageVector =
-                        Icons.Rounded.ArrowBack,
-                    contentDescription =
-                        "Back to profile",
+        when {
+            onBack != null -> {
+                IconButton(
+                    onClick = onBack,
+                ) {
+                    Icon(
+                        imageVector =
+                            Icons.Rounded.ArrowBack,
+                        contentDescription =
+                            "Back to profile",
+                    )
+                }
+            }
+
+            onMenu != null -> {
+                IconButton(
+                    onClick = onMenu,
+                ) {
+                    Icon(
+                        imageVector =
+                            Icons.Rounded.Menu,
+                        contentDescription =
+                            "Open menu",
+                    )
+                }
+            }
+
+            else -> {
+                Spacer(
+                    modifier =
+                        Modifier.size(48.dp)
                 )
             }
-        } else {
-            Spacer(
-                modifier = Modifier.size(48.dp)
-            )
         }
 
         Column(
