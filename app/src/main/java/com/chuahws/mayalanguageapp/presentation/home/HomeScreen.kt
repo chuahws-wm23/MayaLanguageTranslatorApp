@@ -21,8 +21,8 @@ import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Keyboard
-import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.Card
@@ -66,12 +66,12 @@ fun HomeScreen(
     AppGradientBackground {
         LazyColumn(
             contentPadding = PaddingValues(
-                start = 18.dp,
-                top = 18.dp,
-                end = 18.dp,
-                bottom = 112.dp,
+                start = 20.dp,
+                top = 22.dp,
+                end = 20.dp,
+                bottom = 116.dp,
             ),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             item {
                 GreetingHeader(
@@ -88,42 +88,49 @@ fun HomeScreen(
 
             item {
                 SectionLabel(
-                    title = "Quick access",
-                    subtitle = "Translate · Learn · Review",
+                    title = "Translate",
+                    subtitle = "Choose an input method",
                 )
             }
 
             item {
                 FeatureRow(
                     left = Feature(
-                        title = "Text Translation",
-                        subtitle = "Type or paste text",
-                        icon = Icons.Rounded.Keyboard,
-                        color = MayaPurple,
-                        onClick = onTextTranslation,
-                    ),
-                    right = Feature(
-                        title = "Image Translation",
-                        subtitle = "Scan from a photo",
+                        title = "Image",
+                        subtitle = "Scan printed text",
                         icon = Icons.Rounded.CameraAlt,
                         color = MayaPink,
                         onClick = onImageTranslation,
                     ),
-                )
-            }
-
-            item {
-                FeatureRow(
-                    left = Feature(
-                        title = "Voice Translation",
+                    right = Feature(
+                        title = "Voice",
                         subtitle = "Speak in English",
                         icon = Icons.Rounded.Mic,
                         color = MayaBlue,
                         onClick = onVoiceTranslation,
                     ),
+                )
+            }
+
+            item {
+                SectionLabel(
+                    title = "Your learning",
+                    subtitle = "Review & grow",
+                )
+            }
+
+            item {
+                FeatureRow(
+                    left = Feature(
+                        title = "Dictionary",
+                        subtitle = "Browse Maya words",
+                        icon = Icons.Rounded.MenuBook,
+                        color = MayaPurple,
+                        onClick = onDictionary,
+                    ),
                     right = Feature(
-                        title = "Saved Vocabulary",
-                        subtitle = "Your word collection",
+                        title = "Saved",
+                        subtitle = "Your vocabulary",
                         icon = Icons.Rounded.Bookmark,
                         color = MayaOrange,
                         onClick = onSaved,
@@ -135,7 +142,7 @@ fun HomeScreen(
                 FeatureRow(
                     left = Feature(
                         title = "History",
-                        subtitle = "Recent translations",
+                        subtitle = "Past translations",
                         icon = Icons.Rounded.History,
                         color = MayaCyan,
                         onClick = onHistory,
@@ -151,21 +158,8 @@ fun HomeScreen(
             }
 
             item {
-                FeatureRow(
-                    left = Feature(
-                        title = "Feedback",
-                        subtitle = "Share your thoughts",
-                        icon = Icons.Rounded.ChatBubble,
-                        color = MayaPink,
-                        onClick = onFeedback,
-                    ),
-                    right = Feature(
-                        title = "Dictionary",
-                        subtitle = "Browse Maya vocabulary",
-                        icon = Icons.Rounded.MenuBook,
-                        color = MayaPurple,
-                        onClick = onDictionary,
-                    ),
+                FeedbackCard(
+                    onClick = onFeedback,
                 )
             }
         }
@@ -183,9 +177,10 @@ private fun GreetingHeader(
     ) {
         Column(
             modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
-                text = "Good to see you!",
+                text = "Welcome back",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -198,10 +193,12 @@ private fun GreetingHeader(
 
         Surface(
             modifier = Modifier
-                .size(48.dp)
+                .size(50.dp)
                 .clickable(onClick = onProfile),
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 2.dp,
+            shadowElevation = 2.dp,
         ) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -220,63 +217,67 @@ private fun GreetingHeader(
 private fun HeroCard(
     onClick: () -> Unit,
 ) {
-    val gradient = Brush.horizontalGradient(
+    val gradient = Brush.linearGradient(
         listOf(
-            Color(0xFF6C3BEF),
-            Color(0xFF8B4FE8),
-            Color(0xFF5035C8),
+            Color(0xFF5146D8),
+            Color(0xFF6B5EE8),
+            Color(0xFF278F91),
         )
     )
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 158.dp)
+            .heightIn(min = 184.dp)
             .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent,
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 5.dp,
+            defaultElevation = 6.dp,
         ),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(gradient)
-                .padding(20.dp),
+                .padding(22.dp),
         ) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .size(92.dp)
+                    .size(118.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.10f))
+                    .background(
+                        Color.White.copy(alpha = 0.09f)
+                    ),
             )
 
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .size(58.dp)
+                    .size(72.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.08f))
+                    .background(
+                        Color.White.copy(alpha = 0.07f)
+                    ),
             )
 
             Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Surface(
-                    color = Color.White.copy(alpha = 0.16f),
+                    color = Color.White.copy(alpha = 0.15f),
                     shape = CircleShape,
                 ) {
                     Row(
                         modifier = Modifier.padding(
-                            horizontal = 10.dp,
-                            vertical = 6.dp,
+                            horizontal = 11.dp,
+                            vertical = 7.dp,
                         ),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Translate,
@@ -285,7 +286,7 @@ private fun HeroCard(
                             modifier = Modifier.size(18.dp),
                         )
                         Text(
-                            text = "Yucatec Maya",
+                            text = "Yucatec Maya ↔ English",
                             color = Color.White,
                             style = MaterialTheme.typography.labelLarge,
                         )
@@ -293,26 +294,27 @@ private fun HeroCard(
                 }
 
                 Text(
-                    text = "Explore the language,\none word at a time.",
+                    text = "Translate with confidence.",
                     color = Color.White,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                 )
 
                 Text(
-                    text = "Translate · Learn · Discover",
-                    color = Color.White.copy(alpha = 0.83f),
+                    text = "Type a word or phrase and explore supported Maya meanings.",
+                    color = Color.White.copy(alpha = 0.82f),
                     style = MaterialTheme.typography.bodyMedium,
                 )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     Text(
-                        text = "Start translating",
+                        text = "Start text translation",
                         color = Color.White,
                         style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
                     )
                     Icon(
                         imageVector = Icons.Rounded.ArrowForward,
@@ -361,7 +363,7 @@ private fun FeatureCard(
 ) {
     Card(
         modifier = modifier
-            .heightIn(min = 134.dp)
+            .heightIn(min = 128.dp)
             .clickable(onClick = feature.onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
@@ -372,7 +374,7 @@ private fun FeatureCard(
         ),
     ) {
         Column(
-            modifier = Modifier.padding(15.dp),
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             AccentIcon(
@@ -382,14 +384,61 @@ private fun FeatureCard(
 
             Text(
                 text = feature.title,
-                fontWeight = FontWeight.SemiBold,
-                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
             )
 
             Text(
                 text = feature.subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FeedbackCard(
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor =
+                MaterialTheme.colorScheme.secondaryContainer
+                    .copy(alpha = 0.72f),
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            AccentIcon(
+                icon = Icons.Rounded.ChatBubble,
+                color = MayaGreen,
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    text = "Help us improve",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Share quick feedback about Maya Translate.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(
+                imageVector = Icons.Rounded.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.secondary,
             )
         }
     }
