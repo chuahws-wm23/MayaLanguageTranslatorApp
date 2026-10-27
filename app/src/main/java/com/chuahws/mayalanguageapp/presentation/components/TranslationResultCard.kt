@@ -175,7 +175,7 @@ fun TranslationResultCard(
                         text = "+" +
                             (alternatives.size -
                                 visibleAlternatives.size) +
-                             more meanings,
+                            " more meanings",
                         style = MaterialTheme.typography.bodySmall,
                         color =
                             MaterialTheme.colorScheme.onSurfaceVariant,
