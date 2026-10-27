@@ -4,17 +4,21 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +29,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AdminPanelSettings
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Info
@@ -33,6 +39,7 @@ import androidx.compose.material.icons.rounded.LockReset
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,6 +50,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,6 +71,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.domain.model.UserProfile
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
@@ -72,6 +81,15 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private enum class ProfilePage {
+    OVERVIEW,
+    PHOTO,
+    EDIT,
+    PASSWORD,
+    LANGUAGE,
+    ABOUT,
+}
 
 @Composable
 fun ProfileScreen(
@@ -83,7 +101,6 @@ fun ProfileScreen(
     onSignOut: () -> Unit,
 ) {
     val context = LocalContext.current
-    val focusManager = LocalFocusManager.current
     val profileKey = remember(profile?.userId, email) {
         "profile_photo_" +
             (profile?.userId
@@ -97,6 +114,9 @@ fun ProfileScreen(
         )
     }
 
+    var page by rememberSaveable {
+        mutableStateOf(ProfilePage.OVERVIEW)
+    }
     var photoUri by rememberSaveable(profileKey) {
         mutableStateOf(
             preferences.getString(
@@ -128,18 +148,110 @@ fun ProfileScreen(
         }
     }
 
-    var editing by rememberSaveable {
-        mutableStateOf(false)
-    }
-    var showAbout by rememberSaveable {
-        mutableStateOf(false)
-    }
-    var name by rememberSaveable(profile?.displayName) {
-        mutableStateOf(
-            profile?.displayName.orEmpty()
-        )
+    BackHandler(
+        enabled = page != ProfilePage.OVERVIEW,
+    ) {
+        page = ProfilePage.OVERVIEW
     }
 
+    when (page) {
+        ProfilePage.OVERVIEW ->
+            ProfileOverview(
+                profile = profile,
+                email = email,
+                photoUri = photoUri,
+                context = context,
+                onOpenPhoto = {
+                    page = ProfilePage.PHOTO
+                },
+                onOpenEdit = {
+                    page = ProfilePage.EDIT
+                },
+                onOpenPassword = {
+                    page = ProfilePage.PASSWORD
+                },
+                onOpenLanguage = {
+                    page = ProfilePage.LANGUAGE
+                },
+                onOpenAbout = {
+                    page = ProfilePage.ABOUT
+                },
+                onOpenAdmin = onOpenAdmin,
+                onSignOut = onSignOut,
+            )
+
+        ProfilePage.PHOTO ->
+            PhotoSettingsPage(
+                photoUri = photoUri,
+                context = context,
+                onChoosePhoto = {
+                    photoLauncher.launch(
+                        arrayOf("image/*")
+                    )
+                },
+                onRemovePhoto = {
+                    photoUri = null
+                    preferences.edit()
+                        .remove(profileKey)
+                        .apply()
+                },
+                onBack = {
+                    page = ProfilePage.OVERVIEW
+                },
+            )
+
+        ProfilePage.EDIT ->
+            EditProfilePage(
+                currentName =
+                    profile?.displayName.orEmpty(),
+                onSave = { name ->
+                    onUpdateName(name)
+                    page = ProfilePage.OVERVIEW
+                },
+                onBack = {
+                    page = ProfilePage.OVERVIEW
+                },
+            )
+
+        ProfilePage.PASSWORD ->
+            PasswordSettingsPage(
+                email = email,
+                onSendReset = onResetPassword,
+                onBack = {
+                    page = ProfilePage.OVERVIEW
+                },
+            )
+
+        ProfilePage.LANGUAGE ->
+            LanguageSettingsPage(
+                onBack = {
+                    page = ProfilePage.OVERVIEW
+                },
+            )
+
+        ProfilePage.ABOUT ->
+            AboutPage(
+                onBack = {
+                    page = ProfilePage.OVERVIEW
+                },
+            )
+    }
+}
+
+@Composable
+private fun ProfileOverview(
+    profile: UserProfile?,
+    email: String,
+    photoUri: String?,
+    context: Context,
+    onOpenPhoto: () -> Unit,
+    onOpenEdit: () -> Unit,
+    onOpenPassword: () -> Unit,
+    onOpenLanguage: () -> Unit,
+    onOpenAbout: () -> Unit,
+    onOpenAdmin: () -> Unit,
+    onSignOut: () -> Unit,
+) {
     val memberSince = remember(
         profile?.createdAtMillis
     ) {
@@ -159,14 +271,14 @@ fun ProfileScreen(
     AppGradientBackground {
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .verticalScroll(
                     rememberScrollState()
                 )
-                .imePadding()
                 .padding(
                     PaddingValues(
                         start = 18.dp,
-                        top = 18.dp,
+                        top = 16.dp,
                         end = 18.dp,
                         bottom = 112.dp,
                     )
@@ -176,6 +288,10 @@ fun ProfileScreen(
             verticalArrangement =
                 Arrangement.spacedBy(14.dp),
         ) {
+            ProfilePageTitle(
+                title = "Profile",
+            )
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape =
@@ -226,26 +342,25 @@ fun ProfileScreen(
                                     .align(
                                         Alignment.BottomEnd
                                     )
-                                    .size(36.dp),
+                                    .size(36.dp)
+                                    .clickable(
+                                        onClick =
+                                            onOpenPhoto
+                                    ),
                                 shape = CircleShape,
                                 color = Color.White,
                                 shadowElevation = 3.dp,
                             ) {
-                                IconButton(
-                                    onClick = {
-                                        photoLauncher.launch(
-                                            arrayOf(
-                                                "image/*"
-                                            )
-                                        )
-                                    },
+                                Box(
+                                    contentAlignment =
+                                        Alignment.Center,
                                 ) {
                                     Icon(
                                         imageVector =
                                             Icons.Rounded
                                                 .PhotoCamera,
                                         contentDescription =
-                                            "Change profile photo",
+                                            "Profile photo settings",
                                         tint =
                                             MaterialTheme
                                                 .colorScheme.primary,
@@ -315,112 +430,24 @@ fun ProfileScreen(
                         "Change profile photo"
                     },
                 subtitle =
-                    "Choose a photo from your device",
-                onClick = {
-                    photoLauncher.launch(
-                        arrayOf("image/*")
-                    )
-                },
+                    "Manage your profile picture",
+                onClick = onOpenPhoto,
             )
-
-            if (editing) {
-                Card(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    shape =
-                        MaterialTheme.shapes.large,
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor =
-                                MaterialTheme
-                                    .colorScheme.surface,
-                        ),
-                ) {
-                    Column(
-                        modifier =
-                            Modifier.padding(16.dp),
-                        verticalArrangement =
-                            Arrangement.spacedBy(
-                                12.dp
-                            ),
-                    ) {
-                        Text(
-                            text = "Edit profile",
-                            style =
-                                MaterialTheme
-                                    .typography
-                                    .titleMedium,
-                            fontWeight =
-                                FontWeight.SemiBold,
-                        )
-
-                        OutlinedTextField(
-                            value = name,
-                            onValueChange = {
-                                name = it
-                            },
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth(),
-                            label = {
-                                Text("Display name")
-                            },
-                            singleLine = true,
-                            keyboardOptions =
-                                KeyboardOptions(
-                                    imeAction =
-                                        ImeAction.Done,
-                                ),
-                            keyboardActions =
-                                KeyboardActions(
-                                    onDone = {
-                                        focusManager
-                                            .clearFocus()
-                                        onUpdateName(
-                                            name
-                                        )
-                                        editing =
-                                            false
-                                    },
-                                ),
-                        )
-
-                        Button(
-                            onClick = {
-                                focusManager
-                                    .clearFocus()
-                                onUpdateName(name)
-                                editing = false
-                            },
-                            enabled =
-                                name.trim()
-                                    .length >= 2,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth(),
-                        ) {
-                            Text("Save changes")
-                        }
-                    }
-                }
-            }
 
             ProfileAction(
                 icon = Icons.Rounded.Edit,
                 title = "Edit profile",
                 subtitle =
                     "Update your display name",
-                onClick = {
-                    editing = !editing
-                },
+                onClick = onOpenEdit,
             )
 
             ProfileAction(
                 icon = Icons.Rounded.LockReset,
                 title = "Change password",
                 subtitle =
-                    "Send a reset link to your email",
-                onClick = onResetPassword,
+                    "Manage password recovery",
+                onClick = onOpenPassword,
             )
 
             ProfileInfo(
@@ -431,12 +458,12 @@ fun ProfileScreen(
                 value = memberSince,
             )
 
-            ProfileInfo(
+            ProfileAction(
                 icon = Icons.Rounded.Language,
                 title = "App language",
                 subtitle =
-                    "Current interface language",
-                value = "English",
+                    "English",
+                onClick = onOpenLanguage,
             )
 
             ProfileAction(
@@ -444,35 +471,8 @@ fun ProfileScreen(
                 title = "About app",
                 subtitle =
                     "Project information and scope",
-                onClick = {
-                    showAbout = !showAbout
-                },
+                onClick = onOpenAbout,
             )
-
-            if (showAbout) {
-                Card(
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    shape =
-                        MaterialTheme.shapes.large,
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor =
-                                MaterialTheme
-                                    .colorScheme.surface,
-                        ),
-                ) {
-                    Text(
-                        text =
-                            "Maya Translate supports modern Yucatec Maya written in Latin orthography, with text, image and English voice input.",
-                        modifier =
-                            Modifier.padding(16.dp),
-                        color =
-                            MaterialTheme.colorScheme
-                                .onSurfaceVariant,
-                    )
-                }
-            }
 
             if (profile?.role == "admin") {
                 ProfileAction(
@@ -517,6 +517,563 @@ fun ProfileScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun PhotoSettingsPage(
+    photoUri: String?,
+    context: Context,
+    onChoosePhoto: () -> Unit,
+    onRemovePhoto: () -> Unit,
+    onBack: () -> Unit,
+) {
+    ProfileDetailScaffold(
+        title = "Profile photo",
+        subtitle =
+            "Choose how you appear in Maya Translate.",
+        onBack = onBack,
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape =
+                MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme.surface,
+            ),
+            elevation =
+                CardDefaults.cardElevation(
+                    defaultElevation = 2.dp,
+                ),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment =
+                    Alignment.CenterHorizontally,
+                verticalArrangement =
+                    Arrangement.spacedBy(16.dp),
+            ) {
+                ProfilePhoto(
+                    uri = photoUri,
+                    context = context,
+                )
+
+                Text(
+                    text =
+                        if (photoUri == null) {
+                            "No custom photo yet"
+                        } else {
+                            "Current profile photo"
+                        },
+                    style =
+                        MaterialTheme
+                            .typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+
+                Text(
+                    text =
+                        "Choose a clear square or portrait image. The app displays it as a circle.",
+                    style =
+                        MaterialTheme
+                            .typography.bodySmall,
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+
+                Button(
+                    onClick = onChoosePhoto,
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        Icons.Rounded.PhotoCamera,
+                        contentDescription = null,
+                    )
+                    Text(
+                        text =
+                            if (photoUri == null) {
+                                "Choose photo"
+                            } else {
+                                "Choose another photo"
+                            },
+                        modifier =
+                            Modifier.padding(
+                                start = 8.dp
+                            ),
+                    )
+                }
+
+                if (photoUri != null) {
+                    TextButton(
+                        onClick = onRemovePhoto,
+                    ) {
+                        Text("Remove photo")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EditProfilePage(
+    currentName: String,
+    onSave: (String) -> Unit,
+    onBack: () -> Unit,
+) {
+    val focusManager =
+        LocalFocusManager.current
+    var name by rememberSaveable(
+        currentName
+    ) {
+        mutableStateOf(currentName)
+    }
+
+    ProfileDetailScaffold(
+        title = "Edit profile",
+        subtitle =
+            "Keep the name shown across the app up to date.",
+        onBack = onBack,
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape =
+                MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme.surface,
+            ),
+            elevation =
+                CardDefaults.cardElevation(
+                    defaultElevation = 2.dp,
+                ),
+        ) {
+            Column(
+                modifier =
+                    Modifier.padding(20.dp),
+                verticalArrangement =
+                    Arrangement.spacedBy(16.dp),
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = {
+                        name = it
+                    },
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    label = {
+                        Text("Display name")
+                    },
+                    singleLine = true,
+                    keyboardOptions =
+                        KeyboardOptions(
+                            imeAction =
+                                ImeAction.Done,
+                        ),
+                    keyboardActions =
+                        KeyboardActions(
+                            onDone = {
+                                focusManager
+                                    .clearFocus()
+                                if (
+                                    name.trim()
+                                        .length >= 2
+                                ) {
+                                    onSave(name)
+                                }
+                            },
+                        ),
+                )
+
+                Button(
+                    onClick = {
+                        focusManager.clearFocus()
+                        onSave(name)
+                    },
+                    enabled =
+                        name.trim().length >= 2 &&
+                            name.trim() !=
+                                currentName.trim(),
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                ) {
+                    Text("Save changes")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PasswordSettingsPage(
+    email: String,
+    onSendReset: () -> Unit,
+    onBack: () -> Unit,
+) {
+    ProfileDetailScaffold(
+        title = "Change password",
+        subtitle =
+            "Password changes are completed securely through your email.",
+        onBack = onBack,
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape =
+                MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme.surface,
+            ),
+            elevation =
+                CardDefaults.cardElevation(
+                    defaultElevation = 2.dp,
+                ),
+        ) {
+            Column(
+                modifier =
+                    Modifier.padding(20.dp),
+                verticalArrangement =
+                    Arrangement.spacedBy(14.dp),
+            ) {
+                Icon(
+                    imageVector =
+                        Icons.Rounded.LockReset,
+                    contentDescription = null,
+                    tint =
+                        MaterialTheme
+                            .colorScheme.primary,
+                    modifier =
+                        Modifier.size(38.dp),
+                )
+
+                Text(
+                    text = "Reset via email",
+                    style =
+                        MaterialTheme
+                            .typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+
+                Text(
+                    text =
+                        "We will send a password reset link to:",
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .onSurfaceVariant,
+                )
+
+                Text(
+                    text = email,
+                    color =
+                        MaterialTheme
+                            .colorScheme.primary,
+                    fontWeight =
+                        FontWeight.SemiBold,
+                )
+
+                Button(
+                    onClick = onSendReset,
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        Icons.Rounded.Refresh,
+                        contentDescription = null,
+                    )
+                    Text(
+                        text =
+                            "Send password reset link",
+                        modifier =
+                            Modifier.padding(
+                                start = 8.dp
+                            ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LanguageSettingsPage(
+    onBack: () -> Unit,
+) {
+    ProfileDetailScaffold(
+        title = "App language",
+        subtitle =
+            "Choose the language used for the application interface.",
+        onBack = onBack,
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape =
+                MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme.surface,
+            ),
+        ) {
+            Row(
+                modifier =
+                    Modifier.padding(18.dp),
+                verticalAlignment =
+                    Alignment.CenterVertically,
+                horizontalArrangement =
+                    Arrangement.spacedBy(14.dp),
+            ) {
+                Surface(
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .primaryContainer,
+                    shape =
+                        MaterialTheme
+                            .shapes.medium,
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.size(46.dp),
+                        contentAlignment =
+                            Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector =
+                                Icons.Rounded
+                                    .Language,
+                            contentDescription = null,
+                            tint =
+                                MaterialTheme
+                                    .colorScheme.primary,
+                        )
+                    }
+                }
+
+                Column(
+                    modifier =
+                        Modifier.weight(1f),
+                ) {
+                    Text(
+                        text = "English",
+                        fontWeight =
+                            FontWeight.SemiBold,
+                    )
+                    Text(
+                        text =
+                            "Current interface language",
+                        style =
+                            MaterialTheme
+                                .typography
+                                .bodySmall,
+                        color =
+                            MaterialTheme
+                                .colorScheme
+                                .onSurfaceVariant,
+                    )
+                }
+
+                Icon(
+                    imageVector =
+                        Icons.Rounded
+                            .CheckCircle,
+                    contentDescription =
+                        "Selected",
+                    tint =
+                        MaterialTheme
+                            .colorScheme.primary,
+                )
+            }
+        }
+
+        Text(
+            text =
+                "Additional interface languages can be added in a future version.",
+            style =
+                MaterialTheme
+                    .typography.bodySmall,
+            color =
+                MaterialTheme
+                    .colorScheme
+                    .onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun AboutPage(
+    onBack: () -> Unit,
+) {
+    ProfileDetailScaffold(
+        title = "About Maya Translate",
+        subtitle =
+            "Project information and supported scope.",
+        onBack = onBack,
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape =
+                MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme.surface,
+            ),
+        ) {
+            Column(
+                modifier =
+                    Modifier.padding(20.dp),
+                verticalArrangement =
+                    Arrangement.spacedBy(14.dp),
+            ) {
+                Text(
+                    text = "Maya Translate",
+                    style =
+                        MaterialTheme
+                            .typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+
+                Text(
+                    text =
+                        "A mobile translation and learning application for modern Yucatec Maya written in Latin orthography.",
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .onSurfaceVariant,
+                )
+
+                Text(
+                    text = "Supported features",
+                    style =
+                        MaterialTheme
+                            .typography.titleMedium,
+                    fontWeight =
+                        FontWeight.SemiBold,
+                )
+
+                Text(
+                    text =
+                        "• Maya ↔ English text translation\n" +
+                            "• Image OCR translation\n" +
+                            "• English voice input\n" +
+                            "• Pronunciation support\n" +
+                            "• Dictionary and saved vocabulary\n" +
+                            "• History and learning analytics",
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileDetailScaffold(
+    title: String,
+    subtitle: String,
+    onBack: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    AppGradientBackground {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(
+                    rememberScrollState()
+                )
+                .imePadding()
+                .padding(
+                    PaddingValues(
+                        start = 18.dp,
+                        top = 12.dp,
+                        end = 18.dp,
+                        bottom = 112.dp,
+                    )
+                ),
+            verticalArrangement =
+                Arrangement.spacedBy(18.dp),
+        ) {
+            ProfilePageTitle(
+                title = title,
+                subtitle = subtitle,
+                onBack = onBack,
+            )
+
+            content()
+        }
+    }
+}
+
+@Composable
+private fun ProfilePageTitle(
+    title: String,
+    subtitle: String? = null,
+    onBack: (() -> Unit)? = null,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        verticalAlignment =
+            Alignment.CenterVertically,
+    ) {
+        if (onBack != null) {
+            IconButton(
+                onClick = onBack,
+            ) {
+                Icon(
+                    imageVector =
+                        Icons.Rounded.ArrowBack,
+                    contentDescription =
+                        "Back to profile",
+                )
+            }
+        } else {
+            Spacer(
+                modifier = Modifier.size(48.dp)
+            )
+        }
+
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment =
+                Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = title,
+                style =
+                    MaterialTheme
+                        .typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+
+            subtitle?.let {
+                Text(
+                    text = it,
+                    style =
+                        MaterialTheme
+                            .typography.bodySmall,
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .onSurfaceVariant,
+                    textAlign =
+                        TextAlign.Center,
+                )
+            }
+        }
+
+        Spacer(
+            modifier = Modifier.size(48.dp)
+        )
     }
 }
 
