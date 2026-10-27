@@ -62,7 +62,7 @@ fun LoginScreen(
         ) {
             AuthHeader(
                 title = "Welcome back",
-                subtitle = "Translate, learn and keep your Maya vocabulary in one place.",
+                subtitle = "Translate between English and Maya, save words and come back to them anytime.",
             )
 
             Spacer(Modifier.height(24.dp))
@@ -88,7 +88,7 @@ fun LoginScreen(
                     )
 
                     Text(
-                        text = "Continue with your registered account.",
+                        text = "Use your account to continue.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
