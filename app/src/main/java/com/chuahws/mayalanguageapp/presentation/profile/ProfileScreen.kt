@@ -1,11 +1,19 @@
 package com.chuahws.mayalanguageapp.presentation.profile
 
+import android.content.Context
+import android.content.Intent
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -24,25 +32,34 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LockReset
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -50,6 +67,11 @@ import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.domain.model.UserProfile
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.SoftBadge
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ProfileScreen(
@@ -60,7 +82,52 @@ fun ProfileScreen(
     onOpenAdmin: () -> Unit,
     onSignOut: () -> Unit,
 ) {
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val profileKey = remember(profile?.userId, email) {
+        "profile_photo_" +
+            (profile?.userId
+                ?.takeIf { it.isNotBlank() }
+                ?: email)
+    }
+    val preferences = remember {
+        context.getSharedPreferences(
+            "maya_profile_preferences",
+            Context.MODE_PRIVATE,
+        )
+    }
+
+    var photoUri by rememberSaveable(profileKey) {
+        mutableStateOf(
+            preferences.getString(
+                profileKey,
+                null,
+            )
+        )
+    }
+
+    val photoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver
+                    .takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+            }
+
+            photoUri = uri.toString()
+            preferences.edit()
+                .putString(
+                    profileKey,
+                    uri.toString(),
+                )
+                .apply()
+        }
+    }
+
     var editing by rememberSaveable {
         mutableStateOf(false)
     }
@@ -68,13 +135,33 @@ fun ProfileScreen(
         mutableStateOf(false)
     }
     var name by rememberSaveable(profile?.displayName) {
-        mutableStateOf(profile?.displayName.orEmpty())
+        mutableStateOf(
+            profile?.displayName.orEmpty()
+        )
     }
+
+    val memberSince = remember(
+        profile?.createdAtMillis
+    ) {
+        formatMemberSince(
+            profile?.createdAtMillis ?: 0L
+        )
+    }
+
+    val accountStatus =
+        profile?.accountStatus
+            ?.takeIf { it.isNotBlank() }
+            ?.replaceFirstChar {
+                it.uppercase()
+            }
+            ?: "Active"
 
     AppGradientBackground {
         Column(
             modifier = Modifier
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(
+                    rememberScrollState()
+                )
                 .imePadding()
                 .padding(
                     PaddingValues(
@@ -84,15 +171,23 @@ fun ProfileScreen(
                         bottom = 112.dp,
                     )
                 ),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment =
+                Alignment.CenterHorizontally,
+            verticalArrangement =
+                Arrangement.spacedBy(14.dp),
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraLarge,
+                shape =
+                    MaterialTheme.shapes.extraLarge,
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.Transparent,
+                    containerColor =
+                        Color.Transparent,
                 ),
+                elevation =
+                    CardDefaults.cardElevation(
+                        defaultElevation = 4.dp,
+                    ),
             ) {
                 Box(
                     modifier = Modifier
@@ -100,33 +195,66 @@ fun ProfileScreen(
                         .background(
                             Brush.linearGradient(
                                 listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.88f),
-                                    MaterialTheme.colorScheme.secondary,
+                                    MaterialTheme
+                                        .colorScheme.primary,
+                                    MaterialTheme
+                                        .colorScheme.primary
+                                        .copy(alpha = 0.88f),
+                                    MaterialTheme
+                                        .colorScheme.secondary,
                                 )
                             )
                         )
                         .padding(24.dp),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment =
+                        Alignment.Center,
                 ) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment =
+                            Alignment.CenterHorizontally,
+                        verticalArrangement =
+                            Arrangement.spacedBy(8.dp),
                     ) {
-                        Surface(
-                            color = Color.White.copy(alpha = 0.20f),
-                            shape = CircleShape,
-                        ) {
-                            Box(
-                                modifier = Modifier.size(92.dp),
-                                contentAlignment = Alignment.Center,
+                        Box {
+                            ProfilePhoto(
+                                uri = photoUri,
+                                context = context,
+                            )
+
+                            Surface(
+                                modifier = Modifier
+                                    .align(
+                                        Alignment.BottomEnd
+                                    )
+                                    .size(36.dp),
+                                shape = CircleShape,
+                                color = Color.White,
+                                shadowElevation = 3.dp,
                             ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Person,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(52.dp),
-                                )
+                                IconButton(
+                                    onClick = {
+                                        photoLauncher.launch(
+                                            arrayOf(
+                                                "image/*"
+                                            )
+                                        )
+                                    },
+                                ) {
+                                    Icon(
+                                        imageVector =
+                                            Icons.Rounded
+                                                .PhotoCamera,
+                                        contentDescription =
+                                            "Change profile photo",
+                                        tint =
+                                            MaterialTheme
+                                                .colorScheme.primary,
+                                        modifier =
+                                            Modifier.size(
+                                                18.dp
+                                            ),
+                                    )
+                                }
                             }
                         }
 
@@ -136,45 +264,94 @@ fun ProfileScreen(
                                     ?.ifBlank { email }
                                     ?: email,
                             color = Color.White,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
+                            style =
+                                MaterialTheme
+                                    .typography.titleLarge,
+                            fontWeight =
+                                FontWeight.Bold,
                         )
 
                         Text(
                             text = email,
-                            color = Color.White.copy(alpha = 0.84f),
-                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White
+                                .copy(alpha = 0.84f),
+                            style =
+                                MaterialTheme
+                                    .typography.bodyMedium,
                         )
 
-                        SoftBadge(
-                            text =
-                                if (profile?.role == "admin") {
-                                    "Administrator"
-                                } else {
-                                    "Learner"
-                                },
-                            color = Color.White,
-                        )
+                        Row(
+                            horizontalArrangement =
+                                Arrangement.spacedBy(8.dp),
+                        ) {
+                            SoftBadge(
+                                text =
+                                    if (
+                                        profile?.role ==
+                                            "admin"
+                                    ) {
+                                        "Administrator"
+                                    } else {
+                                        "Learner"
+                                    },
+                                color = Color.White,
+                            )
+
+                            SoftBadge(
+                                text = accountStatus,
+                                color = Color.White,
+                            )
+                        }
                     }
                 }
             }
 
+            ProfileAction(
+                icon = Icons.Rounded.PhotoCamera,
+                title =
+                    if (photoUri == null) {
+                        "Add profile photo"
+                    } else {
+                        "Change profile photo"
+                    },
+                subtitle =
+                    "Choose a photo from your device",
+                onClick = {
+                    photoLauncher.launch(
+                        arrayOf("image/*")
+                    )
+                },
+            )
+
             if (editing) {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    ),
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    shape =
+                        MaterialTheme.shapes.large,
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme
+                                    .colorScheme.surface,
+                        ),
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier =
+                            Modifier.padding(16.dp),
+                        verticalArrangement =
+                            Arrangement.spacedBy(
+                                12.dp
+                            ),
                     ) {
                         Text(
                             text = "Edit profile",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .titleMedium,
+                            fontWeight =
+                                FontWeight.SemiBold,
                         )
 
                         OutlinedTextField(
@@ -182,31 +359,45 @@ fun ProfileScreen(
                             onValueChange = {
                                 name = it
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth(),
                             label = {
                                 Text("Display name")
                             },
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                imeAction = ImeAction.Done,
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    focusManager.clearFocus()
-                                    onUpdateName(name)
-                                    editing = false
-                                },
-                            ),
+                            keyboardOptions =
+                                KeyboardOptions(
+                                    imeAction =
+                                        ImeAction.Done,
+                                ),
+                            keyboardActions =
+                                KeyboardActions(
+                                    onDone = {
+                                        focusManager
+                                            .clearFocus()
+                                        onUpdateName(
+                                            name
+                                        )
+                                        editing =
+                                            false
+                                    },
+                                ),
                         )
 
                         Button(
                             onClick = {
-                                focusManager.clearFocus()
+                                focusManager
+                                    .clearFocus()
                                 onUpdateName(name)
                                 editing = false
                             },
-                            enabled = name.trim().length >= 2,
-                            modifier = Modifier.fillMaxWidth(),
+                            enabled =
+                                name.trim()
+                                    .length >= 2,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth(),
                         ) {
                             Text("Save changes")
                         }
@@ -217,7 +408,8 @@ fun ProfileScreen(
             ProfileAction(
                 icon = Icons.Rounded.Edit,
                 title = "Edit profile",
-                subtitle = "Update your display name",
+                subtitle =
+                    "Update your display name",
                 onClick = {
                     editing = !editing
                 },
@@ -226,21 +418,32 @@ fun ProfileScreen(
             ProfileAction(
                 icon = Icons.Rounded.LockReset,
                 title = "Change password",
-                subtitle = "Send a reset link to your email",
+                subtitle =
+                    "Send a reset link to your email",
                 onClick = onResetPassword,
+            )
+
+            ProfileInfo(
+                icon = Icons.Rounded.Person,
+                title = "Member since",
+                subtitle =
+                    "Account creation date",
+                value = memberSince,
             )
 
             ProfileInfo(
                 icon = Icons.Rounded.Language,
                 title = "App language",
-                subtitle = "Current interface language",
+                subtitle =
+                    "Current interface language",
                 value = "English",
             )
 
             ProfileAction(
                 icon = Icons.Rounded.Info,
                 title = "About app",
-                subtitle = "Project information and scope",
+                subtitle =
+                    "Project information and scope",
                 onClick = {
                     showAbout = !showAbout
                 },
@@ -248,42 +451,141 @@ fun ProfileScreen(
 
             if (showAbout) {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    shape =
+                        MaterialTheme.shapes.large,
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme
+                                    .colorScheme.surface,
+                        ),
                 ) {
                     Text(
                         text =
                             "Maya Translate supports modern Yucatec Maya written in Latin orthography, with text, image and English voice input.",
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier =
+                            Modifier.padding(16.dp),
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
                     )
                 }
             }
 
             if (profile?.role == "admin") {
                 ProfileAction(
-                    icon = Icons.Rounded.AdminPanelSettings,
-                    title = "Admin dashboard",
-                    subtitle = "Manage users, words, feedback & reports",
+                    icon =
+                        Icons.Rounded
+                            .AdminPanelSettings,
+                    title =
+                        "Admin dashboard",
+                    subtitle =
+                        "Manage users, words, feedback & reports",
                     onClick = onOpenAdmin,
                 )
             }
 
             OutlinedButton(
                 onClick = onSignOut,
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(vertical = 14.dp),
+                modifier =
+                    Modifier.fillMaxWidth(),
+                contentPadding =
+                    PaddingValues(
+                        vertical = 14.dp
+                    ),
             ) {
                 Icon(
                     Icons.Rounded.Logout,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error,
+                    tint =
+                        MaterialTheme
+                            .colorScheme.error,
                 )
                 Text(
                     text = "Logout",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(start = 8.dp),
-                    fontWeight = FontWeight.SemiBold,
+                    color =
+                        MaterialTheme
+                            .colorScheme.error,
+                    modifier =
+                        Modifier.padding(
+                            start = 8.dp
+                        ),
+                    fontWeight =
+                        FontWeight.SemiBold,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfilePhoto(
+    uri: String?,
+    context: Context,
+) {
+    var bitmap by remember(uri) {
+        mutableStateOf<ImageBitmap?>(null)
+    }
+
+    LaunchedEffect(uri) {
+        bitmap =
+            if (uri.isNullOrBlank()) {
+                null
+            } else {
+                withContext(
+                    Dispatchers.IO
+                ) {
+                    runCatching {
+                        context.contentResolver
+                            .openInputStream(
+                                Uri.parse(uri)
+                            )
+                            ?.use { stream ->
+                                BitmapFactory
+                                    .decodeStream(
+                                        stream
+                                    )
+                                    ?.asImageBitmap()
+                            }
+                    }.getOrNull()
+                }
+            }
+    }
+
+    Surface(
+        color =
+            Color.White.copy(alpha = 0.20f),
+        shape = CircleShape,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(104.dp)
+                .clip(CircleShape),
+            contentAlignment =
+                Alignment.Center,
+        ) {
+            if (bitmap != null) {
+                Image(
+                    bitmap =
+                        requireNotNull(bitmap),
+                    contentDescription =
+                        "Profile photo",
+                    modifier =
+                        Modifier.fillMaxSize(),
+                    contentScale =
+                        ContentScale.Crop,
+                )
+            } else {
+                Icon(
+                    imageVector =
+                        Icons.Rounded.Person,
+                    contentDescription =
+                        "Default profile photo",
+                    tint = Color.White,
+                    modifier =
+                        Modifier.size(56.dp),
                 )
             }
         }
@@ -302,7 +604,8 @@ private fun ProfileAction(
         onClick = onClick,
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor =
+                MaterialTheme.colorScheme.surface,
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 2.dp,
@@ -310,21 +613,31 @@ private fun ProfileAction(
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment =
+                Alignment.CenterVertically,
+            horizontalArrangement =
+                Arrangement.spacedBy(14.dp),
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = MaterialTheme.shapes.medium,
+                color =
+                    MaterialTheme
+                        .colorScheme
+                        .primaryContainer,
+                shape =
+                    MaterialTheme.shapes.medium,
             ) {
                 Box(
-                    modifier = Modifier.size(44.dp),
-                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(44.dp),
+                    contentAlignment =
+                        Alignment.Center,
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint =
+                            MaterialTheme
+                                .colorScheme.primary,
                     )
                 }
             }
@@ -334,19 +647,29 @@ private fun ProfileAction(
             ) {
                 Text(
                     text = title,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight =
+                        FontWeight.SemiBold,
                 )
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style =
+                        MaterialTheme
+                            .typography.bodySmall,
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .onSurfaceVariant,
                 )
             }
 
             Icon(
-                imageVector = Icons.Rounded.ChevronRight,
+                imageVector =
+                    Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint =
+                    MaterialTheme
+                        .colorScheme
+                        .onSurfaceVariant,
             )
         }
     }
@@ -363,26 +686,40 @@ private fun ProfileInfo(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor =
+                MaterialTheme.colorScheme.surface,
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 1.dp,
         ),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment =
+                Alignment.CenterVertically,
+            horizontalArrangement =
+                Arrangement.spacedBy(14.dp),
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = MaterialTheme.shapes.medium,
+                color =
+                    MaterialTheme
+                        .colorScheme
+                        .primaryContainer,
+                shape =
+                    MaterialTheme.shapes.medium,
             ) {
                 Box(
-                    modifier = Modifier.size(44.dp),
-                    contentAlignment = Alignment.Center,
+                    modifier =
+                        Modifier.size(44.dp),
+                    contentAlignment =
+                        Alignment.Center,
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint =
+                            MaterialTheme
+                                .colorScheme.primary,
                     )
                 }
             }
@@ -392,20 +729,42 @@ private fun ProfileInfo(
             ) {
                 Text(
                     text = title,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight =
+                        FontWeight.SemiBold,
                 )
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style =
+                        MaterialTheme
+                            .typography.bodySmall,
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .onSurfaceVariant,
                 )
             }
 
             Text(
                 text = value,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold,
+                color =
+                    MaterialTheme
+                        .colorScheme.primary,
+                fontWeight =
+                    FontWeight.SemiBold,
             )
         }
     }
+}
+
+private fun formatMemberSince(
+    timestamp: Long,
+): String {
+    if (timestamp <= 0L) {
+        return "Current account"
+    }
+
+    return SimpleDateFormat(
+        "MMM yyyy",
+        Locale.getDefault(),
+    ).format(Date(timestamp))
 }
