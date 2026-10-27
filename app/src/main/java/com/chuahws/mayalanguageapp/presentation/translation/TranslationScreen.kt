@@ -61,12 +61,12 @@ fun TranslationScreen(
     val source =
         if (state.direction ==
             TranslationDirection.MAYA_TO_ENGLISH
-        ) "Yucatec Maya" else "English"
+        ) "Maya" else "English"
 
     val target =
         if (state.direction ==
             TranslationDirection.MAYA_TO_ENGLISH
-        ) "English" else "Yucatec Maya"
+        ) "English" else "Maya"
 
     val outputLanguageTag =
         if (state.direction ==
@@ -147,7 +147,7 @@ fun TranslationScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "Enter text",
+                            text = "Type something",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.weight(1f),
@@ -173,7 +173,7 @@ fun TranslationScreen(
                                 if (source == "English") {
                                     "Type or paste English text…"
                                 } else {
-                                    "Type or paste Yucatec Maya text…"
+                                    "Type or paste Maya text…"
                                 }
                             )
                         },
