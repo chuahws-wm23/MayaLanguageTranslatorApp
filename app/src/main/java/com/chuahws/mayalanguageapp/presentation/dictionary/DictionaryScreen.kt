@@ -49,7 +49,7 @@ private enum class DictionarySortMode(
 ) {
     MAYA("Maya A–Z"),
     ENGLISH("English A–Z"),
-    PART_OF_SPEECH("Part of speech"),
+    PART_OF_SPEECH("Word type"),
 }
 
 @Composable
@@ -273,7 +273,7 @@ fun DictionaryScreen(
                                     .primary,
                         )
                         Text(
-                            text = "Sort dictionary",
+                            text = "Sort by",
                             style =
                                 MaterialTheme
                                     .typography
@@ -583,7 +583,7 @@ private fun DictionaryEntryCard(
 
             if (entry.verified) {
                 Text(
-                    text = "Verified entry",
+                    text = "Checked entry",
                     style =
                         MaterialTheme
                             .typography
