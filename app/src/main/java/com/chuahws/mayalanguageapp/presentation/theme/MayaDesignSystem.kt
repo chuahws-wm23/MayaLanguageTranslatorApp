@@ -16,32 +16,41 @@ object MayaSpacing {
     val lg = 20.dp
     val xl = 24.dp
     val xxl = 32.dp
+    val xxxl = 40.dp
 }
 
 object MayaSize {
     val minimumTouchTarget = 48.dp
-    val buttonHeight = 52.dp
+    val buttonHeight = 54.dp
     val contentMaxWidth = 720.dp
 }
 
 val MayaShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(20.dp),
-    extraLarge = RoundedCornerShape(28.dp),
+    extraSmall = RoundedCornerShape(10.dp),
+    small = RoundedCornerShape(14.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(22.dp),
+    extraLarge = RoundedCornerShape(30.dp),
 )
 
 val MayaTypography = Typography(
+    displaySmall = TextStyle(
+        fontSize = 36.sp,
+        lineHeight = 42.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = (-0.6).sp,
+    ),
     headlineLarge = TextStyle(
         fontSize = 30.sp,
         lineHeight = 36.sp,
         fontWeight = FontWeight.Bold,
+        letterSpacing = (-0.4).sp,
     ),
     headlineMedium = TextStyle(
         fontSize = 26.sp,
         lineHeight = 32.sp,
         fontWeight = FontWeight.Bold,
+        letterSpacing = (-0.2).sp,
     ),
     headlineSmall = TextStyle(
         fontSize = 22.sp,
@@ -58,6 +67,11 @@ val MayaTypography = Typography(
         lineHeight = 22.sp,
         fontWeight = FontWeight.SemiBold,
     ),
+    titleSmall = TextStyle(
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        fontWeight = FontWeight.SemiBold,
+    ),
     bodyLarge = TextStyle(
         fontSize = 16.sp,
         lineHeight = 24.sp,
@@ -65,7 +79,7 @@ val MayaTypography = Typography(
     ),
     bodyMedium = TextStyle(
         fontSize = 14.sp,
-        lineHeight = 20.sp,
+        lineHeight = 21.sp,
         fontWeight = FontWeight.Normal,
     ),
     bodySmall = TextStyle(
@@ -76,6 +90,11 @@ val MayaTypography = Typography(
     labelLarge = TextStyle(
         fontSize = 14.sp,
         lineHeight = 20.sp,
+        fontWeight = FontWeight.SemiBold,
+    ),
+    labelMedium = TextStyle(
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
         fontWeight = FontWeight.SemiBold,
     ),
 )
