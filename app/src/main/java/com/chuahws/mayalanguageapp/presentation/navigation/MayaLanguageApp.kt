@@ -226,6 +226,14 @@ private fun AuthFlow(
         }
 
         composable("register") {
+            LaunchedEffect(
+                state.registrationCompleted,
+            ) {
+                if (state.registrationCompleted) {
+                    navController.popBackStack()
+                }
+            }
+
             RegisterScreen(
                 state = state,
                 onDisplayNameChanged =
