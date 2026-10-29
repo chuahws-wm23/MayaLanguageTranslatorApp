@@ -112,25 +112,70 @@ class AppDataViewModel(
     ) {
         if (_uiState.value.dictionaryLoading) return
 
+        val cleanQuery = query.trim()
+        loadDictionaryPage(
+            query = cleanQuery,
+            limit = DICTIONARY_PAGE_SIZE,
+        )
+    }
+
+    fun loadMoreDictionary() {
+        val state = _uiState.value
+
+        if (
+            state.dictionaryLoading ||
+            !state.dictionaryHasMore
+        ) {
+            return
+        }
+
+        loadDictionaryPage(
+            query = state.dictionaryQuery,
+            limit =
+                state.dictionaryLimit +
+                    DICTIONARY_PAGE_SIZE,
+        )
+    }
+
+    private fun loadDictionaryPage(
+        query: String,
+        limit: Int,
+    ) {
         _uiState.update {
-            it.copy(dictionaryLoading = true)
+            it.copy(
+                dictionaryLoading = true,
+                dictionaryQuery = query,
+            )
         }
 
         viewModelScope.launch {
             runCatching {
                 if (query.isBlank()) {
-                    dictionaryRepository.browseEntries(150)
+                    dictionaryRepository
+                        .browseEntries(limit + 1)
                 } else {
-                    dictionaryRepository.searchEntries(
-                        query = query.trim(),
-                        limit = 100,
-                    )
+                    dictionaryRepository
+                        .searchEntries(
+                            query = query,
+                            limit = limit + 1,
+                        )
                 }
             }.onSuccess { entries ->
+                val hasMore =
+                    entries.size > limit
+
                 _uiState.update {
                     it.copy(
-                        dictionaryEntries = entries,
-                        dictionaryLoading = false,
+                        dictionaryEntries =
+                            entries.take(limit),
+                        dictionaryLoading =
+                            false,
+                        dictionaryQuery =
+                            query,
+                        dictionaryLimit =
+                            limit,
+                        dictionaryHasMore =
+                            hasMore,
                     )
                 }
             }.onFailure {
@@ -1035,5 +1080,6 @@ class AppDataViewModel(
 
     private companion object {
         const val MAX_CSV_IMPORT_ROWS = 2_000
+        const val DICTIONARY_PAGE_SIZE = 100
     }
 }
