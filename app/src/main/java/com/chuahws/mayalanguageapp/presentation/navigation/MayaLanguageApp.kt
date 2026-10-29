@@ -1,6 +1,7 @@
 package com.chuahws.mayalanguageapp.presentation.navigation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -52,12 +53,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.chuahws.mayalanguageapp.R
 import com.chuahws.mayalanguageapp.presentation.admin.AdminScreen
 import com.chuahws.mayalanguageapp.presentation.analytics.AnalyticsScreen
 import com.chuahws.mayalanguageapp.presentation.app.AppDataViewModel
@@ -491,14 +494,29 @@ private fun MainShell(
                         vertical = 18.dp,
                     ),
                 ) {
+                    Image(
+                        painter = painterResource(
+                            R.drawable.maya_translate_logo
+                        ),
+                        contentDescription =
+                            "Maya Translate logo",
+                        modifier = Modifier
+                            .size(52.dp)
+                            .padding(start = 8.dp),
+                    )
+
                     Text(
                         text = "Maya Translate",
                         style =
                             MaterialTheme.typography.titleLarge,
+                        color =
+                            MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         modifier =
                             Modifier.padding(
-                                horizontal = 12.dp,
+                                start = 12.dp,
+                                top = 8.dp,
+                                end = 12.dp,
                             ),
                     )
 
