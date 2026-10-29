@@ -17,6 +17,9 @@ data class AppUiState(
 
     val dictionaryEntries: List<DictionaryEntry> = emptyList(),
     val dictionaryLoading: Boolean = false,
+    val dictionaryQuery: String = "",
+    val dictionaryLimit: Int = 100,
+    val dictionaryHasMore: Boolean = false,
 
     val adminUsers: List<UserProfile> = emptyList(),
     val adminFeedback: List<FeedbackItem> = emptyList(),
