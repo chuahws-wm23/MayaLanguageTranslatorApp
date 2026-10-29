@@ -130,6 +130,12 @@ treated as conceptual unless they are updated to the final code:
 3. Pronunciation is implemented by the reusable Compose `SpeakButton`/Android
    TTS integration rather than a standalone domain `PronunciationService`
    class.
+4. Chapter 4 says translation history, saved vocabulary, dictionary entries
+   and feedback are all loaded using database pagination. The final app now
+   provides progressive dictionary loading and bounded report/history reads,
+   but saved vocabulary and feedback still load the authenticated user's
+   collection directly. This does not violate formal NFR08, but the Chapter 4
+   wording should be softened unless full Firestore cursor pagination is added.
 
 Do not add unused classes only to make the source code resemble a diagram.
 Either describe those diagrams as conceptual design, or revise the final report
