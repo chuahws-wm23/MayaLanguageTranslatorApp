@@ -11,4 +11,5 @@ data class AuthUiState(
     val loading: Boolean = false,
     val message: String? = null,
     val passwordResetSent: Boolean = false,
+    val registrationCompleted: Boolean = false,
 )
