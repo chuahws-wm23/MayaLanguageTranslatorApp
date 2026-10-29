@@ -52,6 +52,121 @@ fun SavedScreen(
     var pendingRemoval by rememberSaveable {
         mutableStateOf<String?>(null)
     }
+    var selectedSavedId by rememberSaveable {
+        mutableStateOf<String?>(null)
+    }
+
+    val selectedItem = items.firstOrNull {
+        it.savedId == selectedSavedId
+    }
+
+    if (selectedItem != null) {
+        AlertDialog(
+            onDismissRequest = {
+                selectedSavedId = null
+            },
+            title = {
+                Text("Saved word")
+            },
+            text = {
+                Column(
+                    verticalArrangement =
+                        Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = selectedItem.mayaText,
+                        style =
+                            MaterialTheme.typography
+                                .headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color =
+                            MaterialTheme.colorScheme
+                                .primary,
+                    )
+                    Text(
+                        text = selectedItem.englishText,
+                        style =
+                            MaterialTheme.typography
+                                .titleMedium,
+                    )
+
+                    selectedItem.partOfSpeech
+                        ?.takeIf {
+                            it.isNotBlank()
+                        }
+                        ?.let {
+                            SoftBadge(
+                                text =
+                                    it.replaceFirstChar {
+                                        char ->
+                                        char.uppercase()
+                                    }
+                            )
+                        }
+
+                    selectedItem.pronunciation
+                        ?.takeIf {
+                            it.isNotBlank()
+                        }
+                        ?.let {
+                            Text(
+                                text =
+                                    "Pronunciation: $it",
+                                style =
+                                    MaterialTheme.typography
+                                        .bodySmall,
+                                color =
+                                    MaterialTheme.colorScheme
+                                        .onSurfaceVariant,
+                            )
+                        }
+
+                    Row(
+                        verticalAlignment =
+                            Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "Listen",
+                            modifier =
+                                Modifier.weight(1f),
+                            fontWeight =
+                                FontWeight.SemiBold,
+                        )
+                        SpeakButton(
+                            text =
+                                selectedItem.mayaText,
+                            languageTag = "yua",
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedSavedId = null
+                    },
+                ) {
+                    Text("Close")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        selectedSavedId = null
+                        pendingRemoval =
+                            selectedItem.savedId
+                    },
+                ) {
+                    Text(
+                        text = "Remove",
+                        color =
+                            MaterialTheme.colorScheme
+                                .error,
+                    )
+                }
+            },
+        )
+    }
 
     val filtered = items.filter { item ->
         val matchesQuery =
@@ -227,6 +342,10 @@ fun SavedScreen(
                     ) { item ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                selectedSavedId =
+                                    item.savedId
+                            },
                             shape = MaterialTheme.shapes.large,
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surface,
