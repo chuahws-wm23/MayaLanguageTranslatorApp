@@ -1,6 +1,7 @@
 package com.chuahws.mayalanguageapp.data.repository
 
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
+import com.chuahws.mayalanguageapp.domain.model.FeedbackItem
 import com.chuahws.mayalanguageapp.domain.model.InputType
 import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.domain.model.UserProfile
@@ -111,6 +112,47 @@ class RequirementRepositoryTest {
         assertEquals(
             123L,
             profile?.updatedAtMillis,
+        )
+    }
+
+
+    @Test
+    fun systemHistoryReturnsRecentTranslationsAcrossUsers() = runTest {
+        val repository =
+            InMemoryUserDataRepository()
+
+        repository.recordTranslation(
+            TranslationRecord(
+                translationId = "older",
+                userId = "user-1",
+                createdAtMillis = 10L,
+            )
+        )
+        repository.recordTranslation(
+            TranslationRecord(
+                translationId = "newer",
+                userId = "user-2",
+                createdAtMillis = 20L,
+            )
+        )
+
+        val all =
+            repository.getAllHistory(
+                limit = 1,
+            )
+
+        assertEquals(1, all.size)
+        assertEquals(
+            "newer",
+            all.single().translationId,
+        )
+    }
+
+    @Test
+    fun newFeedbackStartsPending() {
+        assertEquals(
+            "pending",
+            FeedbackItem().status,
         )
     }
 
