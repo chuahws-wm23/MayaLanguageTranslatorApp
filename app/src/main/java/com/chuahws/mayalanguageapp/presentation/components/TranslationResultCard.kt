@@ -304,6 +304,7 @@ fun TranslationResultCard(
                     SpeakButton(
                         text = output,
                         languageTag = outputLanguageTag,
+                        showUnavailableLabel = true,
                     )
                 }
 
