@@ -82,11 +82,6 @@ class TranslationViewModel(
         }
     }
 
-    suspend fun filterMayaOcrText(
-        rawText: String,
-    ): String =
-        translationService.filterMayaOcrText(rawText)
-
     fun translate(
         inputType: InputType = InputType.TEXT,
     ) {
