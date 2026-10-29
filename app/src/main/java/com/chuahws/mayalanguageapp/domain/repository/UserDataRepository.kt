@@ -12,6 +12,10 @@ interface UserDataRepository {
         limit: Int = 100,
     ): List<TranslationRecord>
 
+    suspend fun getAllHistory(
+        limit: Int = 100,
+    ): List<TranslationRecord>
+
     suspend fun deleteTranslation(
         translationId: String,
         userId: String,
