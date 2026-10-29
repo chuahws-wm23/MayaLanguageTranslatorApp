@@ -6,7 +6,7 @@ data class FeedbackItem(
     val userEmail: String = "",
     val rating: Int = 0,
     val comment: String = "",
-    val status: String = "new",
+    val status: String = "pending",
     val submittedAtMillis: Long = 0L,
     val reviewedAtMillis: Long? = null,
 )
