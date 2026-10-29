@@ -136,6 +136,7 @@ fun SavedScreen(
                             text =
                                 selectedItem.mayaText,
                             languageTag = "yua",
+                            showUnavailableLabel = true,
                         )
                     }
                 }
