@@ -9,6 +9,7 @@ import com.chuahws.mayalanguageapp.domain.repository.UserDataRepository
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import android.util.Log
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
@@ -74,6 +75,24 @@ class FirebaseUserDataRepository(
             }
             .sortedByDescending { it.createdAtMillis }
             .take(limit)
+
+    override suspend fun getAllHistory(
+        limit: Int,
+    ): List<TranslationRecord> =
+        firestore.collection("translations")
+            .orderBy(
+                "createdAtMillis",
+                Query.Direction.DESCENDING,
+            )
+            .limit(limit.toLong())
+            .get()
+            .await()
+            .documents
+            .mapNotNull {
+                it.toObject(
+                    TranslationRecord::class.java
+                )
+            }
 
     override suspend fun deleteTranslation(
         translationId: String,
