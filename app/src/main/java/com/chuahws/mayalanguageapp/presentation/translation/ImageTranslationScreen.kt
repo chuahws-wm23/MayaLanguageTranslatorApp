@@ -138,10 +138,14 @@ fun ImageTranslationScreen(
                 } else {
                     viewModel.updateInput(extractedText)
                 }
-            }.onFailure {
+            }.onFailure { error ->
                 readingImage = false
                 imageMessage =
-                    "Couldn’t read this image. Try another one."
+                    error.message
+                        ?.takeIf {
+                            it.isNotBlank()
+                        }
+                        ?: "Couldn’t read this image. Try another one."
             }
         }
     }
