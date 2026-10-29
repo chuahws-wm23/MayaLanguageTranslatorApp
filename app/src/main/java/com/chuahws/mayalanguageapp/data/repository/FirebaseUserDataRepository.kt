@@ -8,6 +8,7 @@ import com.chuahws.mayalanguageapp.domain.model.UsageAnalytics
 import com.chuahws.mayalanguageapp.domain.repository.UserDataRepository
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import android.util.Log
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
@@ -42,10 +43,21 @@ class FirebaseUserDataRepository(
                     FieldValue.increment(1)
         }
 
-        firestore.collection("analytics")
-            .document(record.userId)
-            .set(analytics, SetOptions.merge())
-            .await()
+        runCatching {
+            firestore.collection("analytics")
+                .document(record.userId)
+                .set(analytics, SetOptions.merge())
+                .await()
+        }.onFailure { error ->
+            // History is already stored at this point. Analytics is
+            // intentionally best-effort so an analytics outage never
+            // removes or hides a successful translation/history record.
+            Log.w(
+                "MayaTranslate",
+                "Could not update usage analytics.",
+                error,
+            )
+        }
     }
 
     override suspend fun getHistory(
