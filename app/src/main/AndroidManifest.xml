@@ -11,6 +11,8 @@
 
     <application
         android:allowBackup="true"
+        android:icon="@drawable/maya_translate_logo"
+        android:roundIcon="@drawable/maya_translate_logo"
         android:label="Maya Translate"
         android:supportsRtl="true"
         android:theme="@style/Theme.MayaLanguageApp">
