@@ -129,7 +129,10 @@ class AuthViewModel(
                         registrationCompleted = true,
                     )
                 }
-            }.onFailure(::onOperationFailed)
+            }.onFailure { error ->
+                authRepository.signOut()
+                onOperationFailed(error)
+            }
         }
     }
 
@@ -163,13 +166,37 @@ class AuthViewModel(
                     state.password,
                 )
 
-                val profile =
+                var profile =
                     userProfileRepository.getProfile(
                         user.userId
                     )
 
+                if (profile == null) {
+                    val now =
+                        System.currentTimeMillis()
+                    profile = UserProfile(
+                        userId = user.userId,
+                        displayName =
+                            user.displayName
+                                .orEmpty()
+                                .ifBlank {
+                                    user.email
+                                        .substringBefore(
+                                            "@"
+                                        )
+                                },
+                        email = user.email,
+                        role = "user",
+                        accountStatus = "active",
+                        createdAtMillis = now,
+                        updatedAtMillis = now,
+                    )
+                    userProfileRepository
+                        .createProfile(profile)
+                }
+
                 if (
-                    profile?.accountStatus ==
+                    profile.accountStatus ==
                         "suspended"
                 ) {
                     authRepository.signOut()
