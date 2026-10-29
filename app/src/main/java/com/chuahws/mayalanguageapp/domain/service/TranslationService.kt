@@ -128,17 +128,6 @@ class TranslationService(
         )
     }
 
-    suspend fun filterMayaOcrText(
-        rawText: String,
-    ): String = MayaOcrTextFilter.filter(
-        rawText = rawText,
-        isKnownMaya = { candidate ->
-            dictionaryRepository.findByMaya(
-                TextNormalizer.normalize(candidate)
-            ) != null
-        },
-    )
-
     private suspend fun translateSegmentByPhrases(
         segment: String,
         direction: TranslationDirection,
