@@ -37,6 +37,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
@@ -303,9 +304,56 @@ private fun MainShell(
     }
 
     LaunchedEffect(state.message) {
-        state.message?.let {
-            snackbarHostState.showSnackbar(it)
+        state.message?.let { message ->
+            val retryTarget =
+                when {
+                    message.startsWith(
+                        "Could not refresh your data"
+                    ) -> "user"
+
+                    message.startsWith(
+                        "Could not load administrator data"
+                    ) -> "admin"
+
+                    message.startsWith(
+                        "Could not load the dictionary"
+                    ) -> "dictionary"
+
+                    else -> null
+                }
+
+            val result =
+                snackbarHostState.showSnackbar(
+                    message = message,
+                    actionLabel =
+                        if (retryTarget != null) {
+                            "Retry"
+                        } else {
+                            null
+                        },
+                )
+
             appDataViewModel.clearMessage()
+
+            if (
+                result ==
+                    SnackbarResult.ActionPerformed
+            ) {
+                when (retryTarget) {
+                    "user" ->
+                        appDataViewModel.refresh()
+
+                    "admin" ->
+                        appDataViewModel
+                            .loadAdminData()
+
+                    "dictionary" ->
+                        appDataViewModel
+                            .loadDictionary(
+                                state.dictionaryQuery
+                            )
+                }
+            }
         }
     }
 
