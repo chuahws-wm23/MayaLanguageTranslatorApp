@@ -113,13 +113,37 @@ class TranslationViewModel(
         }
 
         viewModelScope.launch {
-            when (
-                val result =
-                    translationService.translate(
-                        state.input,
-                        state.direction,
+            val result = runCatching {
+                translationService.translate(
+                    state.input,
+                    state.direction,
+                )
+            }.getOrElse { error ->
+                _uiState.update {
+                    it.copy(
+                        loading = false,
+                        output = "",
+                        matchedEntry = null,
+                        alternativeEntries =
+                            emptyList(),
+                        message =
+                            if (
+                                error.message
+                                    ?.contains(
+                                        "network",
+                                        ignoreCase = true,
+                                    ) == true
+                            ) {
+                                "Check your internet connection and try again."
+                            } else {
+                                "Translation is unavailable right now. Please try again."
+                            },
                     )
-            ) {
+                }
+                return@launch
+            }
+
+            when (result) {
                 is TranslationResult.Success -> {
                     _uiState.update {
                         it.copy(
