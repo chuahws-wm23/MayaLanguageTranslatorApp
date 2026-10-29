@@ -21,6 +21,7 @@ data class AppUiState(
     val adminUsers: List<UserProfile> = emptyList(),
     val adminFeedback: List<FeedbackItem> = emptyList(),
     val adminAnalytics: List<UsageAnalytics> = emptyList(),
+    val adminTranslations: List<TranslationRecord> = emptyList(),
     val adminDictionaryEntries: List<DictionaryEntry> = emptyList(),
     val adminLoading: Boolean = false,
 
