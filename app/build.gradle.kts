@@ -57,6 +57,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 
     implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("androidx.exifinterface:exifinterface:1.4.1")
 
     // CameraX powers the in-app camera used by Image Translation.
     val cameraXVersion = "1.4.2"
