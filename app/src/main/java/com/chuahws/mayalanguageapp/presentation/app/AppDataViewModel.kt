@@ -763,10 +763,19 @@ class AppDataViewModel(
             var imported = 0
             var duplicates = 0
             var invalid = 0
+            val duplicateRows =
+                mutableListOf<Int>()
+            val invalidRows =
+                mutableListOf<Int>()
 
             rows.drop(1)
                 .take(MAX_CSV_IMPORT_ROWS)
-                .forEach { row ->
+                .forEachIndexed {
+                        rowIndex,
+                        row,
+                    ->
+                    val csvRowNumber =
+                        rowIndex + 2
                     fun valueAt(
                         index: Int,
                     ): String =
@@ -789,7 +798,9 @@ class AppDataViewModel(
                         english.isBlank()
                     ) {
                         invalid += 1
-                        return@forEach
+                        invalidRows +=
+                            csvRowNumber
+                        return@forEachIndexed
                     }
 
                     val entryId =
@@ -871,7 +882,41 @@ class AppDataViewModel(
                             existingKeys
                     ) {
                         duplicates += 1
-                        return@forEach
+                        duplicateRows +=
+                            csvRowNumber
+                        return@forEachIndexed
+                    }
+
+                    val alreadyStored =
+                        runCatching {
+                            (
+                                dictionaryRepository
+                                    .searchEntries(
+                                        maya,
+                                        25,
+                                    ) +
+                                    dictionaryRepository
+                                        .searchEntries(
+                                            english,
+                                            25,
+                                        )
+                                )
+                                .distinctBy {
+                                    it.entryId
+                                }
+                                .any {
+                                    dictionaryDuplicateKey(
+                                        it
+                                    ) ==
+                                        duplicateKey
+                                }
+                        }.getOrDefault(false)
+
+                    if (alreadyStored) {
+                        duplicates += 1
+                        duplicateRows +=
+                            csvRowNumber
+                        return@forEachIndexed
                     }
 
                     runCatching {
@@ -884,6 +929,8 @@ class AppDataViewModel(
                             duplicateKey
                     }.onFailure {
                         invalid += 1
+                        invalidRows +=
+                            csvRowNumber
                     }
                 }
 
@@ -902,9 +949,41 @@ class AppDataViewModel(
                         refreshed,
                     adminLoading = false,
                     message =
-                        "$imported imported, " +
-                            "$duplicates duplicate(s) skipped, " +
-                            "$invalid invalid row(s).",
+                        buildString {
+                            append(
+                                "$imported imported, " +
+                                    "$duplicates duplicate(s) skipped, " +
+                                    "$invalid invalid row(s)."
+                            )
+                            if (
+                                duplicateRows
+                                    .isNotEmpty()
+                            ) {
+                                append(
+                                    " Duplicate rows: " +
+                                        duplicateRows
+                                            .take(8)
+                                            .joinToString(
+                                                ", "
+                                            ) +
+                                        "."
+                                )
+                            }
+                            if (
+                                invalidRows
+                                    .isNotEmpty()
+                            ) {
+                                append(
+                                    " Invalid rows: " +
+                                        invalidRows
+                                            .take(8)
+                                            .joinToString(
+                                                ", "
+                                            ) +
+                                        "."
+                                )
+                            }
+                        },
                 )
             }
         }
