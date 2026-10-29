@@ -45,6 +45,7 @@ class AuthViewModel(
                 email = value,
                 message = null,
                 passwordResetSent = false,
+                registrationCompleted = false,
             )
         }
     }
@@ -54,6 +55,7 @@ class AuthViewModel(
             it.copy(
                 password = value,
                 message = null,
+                registrationCompleted = false,
             )
         }
     }
@@ -109,14 +111,34 @@ class AuthViewModel(
                 )
 
                 user
-            }.onSuccess(::onAuthenticated)
-                .onFailure(::onOperationFailed)
+            }.onSuccess { user ->
+                // Firebase signs a newly-created account in automatically.
+                // The documented flow requires registration to finish at
+                // the login screen, so end that temporary session here.
+                authRepository.signOut()
+                _uiState.update {
+                    it.copy(
+                        currentUser = null,
+                        email = user.email,
+                        displayName = "",
+                        password = "",
+                        confirmPassword = "",
+                        loading = false,
+                        message =
+                            "Account created. Sign in to continue.",
+                        registrationCompleted = true,
+                    )
+                }
+            }.onFailure(::onOperationFailed)
         }
     }
 
     fun login() {
         if (_uiState.value.loading) return
 
+        _uiState.update {
+            it.copy(registrationCompleted = false)
+        }
         val state = _uiState.value
 
         if (
