@@ -372,6 +372,8 @@ private fun MainShell(
             users = state.adminUsers,
             feedback = state.adminFeedback,
             analytics = state.adminAnalytics,
+            translations =
+                state.adminTranslations,
             dictionaryEntries =
                 state.adminDictionaryEntries,
             loading = state.adminLoading,
@@ -385,6 +387,8 @@ private fun MainShell(
                 appDataViewModel::searchAdminDictionary,
             onSaveDictionaryEntry =
                 appDataViewModel::saveAdminDictionaryEntry,
+            onImportDictionaryCsv =
+                appDataViewModel::importAdminDictionaryCsv,
             onDeleteDictionaryEntry =
                 appDataViewModel::deleteAdminDictionaryEntry,
             onSwitchToUserView = {
