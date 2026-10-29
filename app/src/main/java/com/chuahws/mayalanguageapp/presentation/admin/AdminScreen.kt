@@ -1010,8 +1010,12 @@ private fun FeedbackContent(
                     Text(item.comment)
                     Text(
                         text =
-                            item.status.replaceFirstChar {
-                                it.uppercase()
+                            if (item.status == "new") {
+                                "Pending"
+                            } else {
+                                item.status.replaceFirstChar {
+                                    it.uppercase()
+                                }
                             },
                         style = MaterialTheme.typography.labelMedium,
                         color =
