@@ -319,7 +319,7 @@ class AppDataViewModel(
                 userEmail = email,
                 rating = rating,
                 comment = cleanComment,
-                status = "new",
+                status = "pending",
                 submittedAtMillis =
                     System.currentTimeMillis(),
             )
