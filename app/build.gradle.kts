@@ -2,8 +2,14 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
-    // Enable after app/google-services.json has been added locally:
-    // id("com.google.gms.google-services")
+}
+
+// Firebase credentials stay local and are intentionally ignored by Git.
+// When app/google-services.json exists, automatically enable the
+// Google Services plugin. CI and development builds without the file
+// continue to use the in-memory development repositories.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 android {
