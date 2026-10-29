@@ -340,6 +340,45 @@ class TranslationServiceTest {
         )
     }
 
+
+    @Test
+    fun inputLongerThanLimit_isRejected() = runTest {
+        val service = TranslationService(
+            InMemoryDictionaryRepository(
+                listOf(testEntry)
+            )
+        )
+
+        val result = service.translate(
+            rawInput = "a".repeat(501),
+            direction =
+                TranslationDirection.ENGLISH_TO_MAYA,
+        )
+
+        assertTrue(
+            result is TranslationResult.InvalidInput
+        )
+    }
+
+    @Test
+    fun inputWithoutLetters_isRejected() = runTest {
+        val service = TranslationService(
+            InMemoryDictionaryRepository(
+                listOf(testEntry)
+            )
+        )
+
+        val result = service.translate(
+            rawInput = "12345 !!!",
+            direction =
+                TranslationDirection.ENGLISH_TO_MAYA,
+        )
+
+        assertTrue(
+            result is TranslationResult.InvalidInput
+        )
+    }
+
     @Test
     fun translateUnknownInput_returnsNoMatch() = runTest {
         val service = TranslationService(
