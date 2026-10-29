@@ -1,7 +1,9 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,6 +32,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +42,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.InputType
@@ -51,6 +57,9 @@ fun VoiceTranslationScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var voiceMessage by remember {
+        mutableStateOf<String?>(null)
+    }
 
     val speechIntent = Intent(
         RecognizerIntent.ACTION_RECOGNIZE_SPEECH
@@ -85,22 +94,69 @@ fun VoiceTranslationScreen(
             ActivityResultContracts
                 .StartActivityForResult()
         ) { result ->
-            if (result.resultCode ==
-                Activity.RESULT_OK
+            if (
+                result.resultCode ==
+                    Activity.RESULT_OK
             ) {
-                result.data
+                val heard = result.data
                     ?.getStringArrayListExtra(
                         RecognizerIntent.EXTRA_RESULTS
                     )
                     ?.firstOrNull()
-                    ?.takeIf {
-                        it.isNotBlank()
-                    }
-                    ?.let(
-                        viewModel::updateInput
-                    )
+                    ?.trim()
+                    .orEmpty()
+
+                if (heard.isBlank()) {
+                    voiceMessage =
+                        "We couldn’t hear anything clearly. Try again."
+                } else {
+                    voiceMessage = null
+                    viewModel.updateInput(heard)
+                }
+            } else {
+                voiceMessage =
+                    "Voice input was not completed. Tap the microphone to try again."
             }
         }
+
+    val microphonePermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts
+                .RequestPermission()
+        ) { granted ->
+            if (granted) {
+                voiceMessage = null
+                speechLauncher.launch(
+                    speechIntent
+                )
+            } else {
+                voiceMessage =
+                    "Microphone permission is needed for voice input. You can still type the words below."
+            }
+        }
+
+    fun startListening() {
+        if (!speechAvailable) {
+            voiceMessage =
+                "Voice input isn’t available on this device."
+            return
+        }
+
+        val permissionGranted =
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO,
+            ) == PackageManager.PERMISSION_GRANTED
+
+        if (permissionGranted) {
+            voiceMessage = null
+            speechLauncher.launch(speechIntent)
+        } else {
+            microphonePermissionLauncher.launch(
+                Manifest.permission.RECORD_AUDIO
+            )
+        }
+    }
 
     AppGradientBackground {
         Column(
@@ -159,11 +215,7 @@ fun VoiceTranslationScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Surface(
-                            onClick = {
-                                if (speechAvailable) {
-                                    speechLauncher.launch(speechIntent)
-                                }
-                            },
+                            onClick = ::startListening,
                             enabled =
                                 speechAvailable &&
                                     !state.loading,
@@ -234,6 +286,30 @@ fun VoiceTranslationScreen(
                         color =
                             MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.padding(12.dp),
+                    )
+                }
+            }
+
+            voiceMessage?.let { message ->
+                Surface(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+                    shape =
+                        MaterialTheme.shapes.medium,
+                    color =
+                        MaterialTheme.colorScheme
+                            .errorContainer,
+                ) {
+                    Text(
+                        text = message,
+                        style =
+                            MaterialTheme.typography
+                                .bodySmall,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onErrorContainer,
+                        modifier =
+                            Modifier.padding(12.dp),
                     )
                 }
             }
