@@ -109,22 +109,14 @@ fun ImageTranslationScreen(
             runCatching {
                 ocrService.readText(context, uri)
             }.onSuccess { text ->
-                val extractedText =
-                    if (
-                        state.direction ==
-                            TranslationDirection.MAYA_TO_ENGLISH
-                    ) {
-                        viewModel.filterMayaOcrText(text)
-                    } else {
-                        text
-                            .lineSequence()
-                            .map(String::trim)
-                            .filter(String::isNotBlank)
-                            .filter { line ->
-                                line.any(Char::isLetter)
-                            }
-                            .joinToString("\n")
-                    }
+                // Show the OCR result before applying any language
+                // assumptions. The user can review and correct the
+                // recognised text before requesting translation.
+                val extractedText = text
+                    .lineSequence()
+                    .map(String::trim)
+                    .filter(String::isNotBlank)
+                    .joinToString("\n")
 
                 readingImage = false
 
@@ -134,7 +126,7 @@ fun ImageTranslationScreen(
                 } else if (extractedText.isBlank()) {
                     viewModel.updateInput("")
                     imageMessage =
-                        "No readable Maya text was found. Try a clearer image or type the text instead."
+                        "No readable text was found. Try a clearer image or type the text instead."
                 } else {
                     viewModel.updateInput(extractedText)
                 }
@@ -474,14 +466,7 @@ fun ImageTranslationScreen(
                         },
                         supportingText = {
                             Text(
-                                if (
-                                    state.direction ==
-                                        TranslationDirection.MAYA_TO_ENGLISH
-                                ) {
-                                    "Only likely Maya text is kept. Check it before translating."
-                                } else {
-                                    "Check the text before translating."
-                                }
+                                "Check the recognised text and correct anything that looks wrong before translating."
                             )
                         },
                         minLines = 4,
