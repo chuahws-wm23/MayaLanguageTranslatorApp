@@ -20,6 +20,18 @@ class TranslationService(
             )
         }
 
+        if (rawInput.length > MAX_INPUT_LENGTH) {
+            return TranslationResult.InvalidInput(
+                "Keep the text under $MAX_INPUT_LENGTH characters."
+            )
+        }
+
+        if (!rawInput.any(Char::isLetter)) {
+            return TranslationResult.InvalidInput(
+                "Enter text that contains letters."
+            )
+        }
+
         // Exact dictionary matches can legitimately have several senses or
         // several target-language forms. Never hide that ambiguity by taking
         // an arbitrary first Firestore document.
@@ -317,6 +329,7 @@ class TranslationService(
         // Keeps fallback lookup bounded when the backing repository is
         // Firestore while still supporting common multi-word phrases.
         const val MAX_PHRASE_WORDS = 4
+        const val MAX_INPUT_LENGTH = 500
 
         // Below this threshold, word-by-word glosses are too likely to look
         // like a sentence translation even though most of the phrase is
