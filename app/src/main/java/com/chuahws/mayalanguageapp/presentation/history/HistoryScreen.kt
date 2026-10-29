@@ -62,6 +62,117 @@ fun HistoryScreen(
     var pendingDeleteId by rememberSaveable {
         mutableStateOf<String?>(null)
     }
+    var selectedRecordId by rememberSaveable {
+        mutableStateOf<String?>(null)
+    }
+
+    val selectedRecord = history.firstOrNull {
+        it.translationId == selectedRecordId
+    }
+
+    if (selectedRecord != null) {
+        AlertDialog(
+            onDismissRequest = {
+                selectedRecordId = null
+            },
+            title = {
+                Text("Translation details")
+            },
+            text = {
+                Column(
+                    verticalArrangement =
+                        Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = "Original",
+                        style =
+                            MaterialTheme.typography
+                                .labelMedium,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
+                    )
+                    Text(
+                        text = selectedRecord.sourceText,
+                        style =
+                            MaterialTheme.typography
+                                .titleMedium,
+                    )
+
+                    Text(
+                        text = "Translation",
+                        style =
+                            MaterialTheme.typography
+                                .labelMedium,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
+                    )
+                    Text(
+                        text =
+                            selectedRecord.translatedText,
+                        style =
+                            MaterialTheme.typography
+                                .titleMedium,
+                        color =
+                            MaterialTheme.colorScheme
+                                .primary,
+                    )
+
+                    Text(
+                        text =
+                            friendlyLanguage(
+                                selectedRecord
+                                    .sourceLanguage
+                            ) +
+                                " to " +
+                                friendlyLanguage(
+                                    selectedRecord
+                                        .targetLanguage
+                                ),
+                        style =
+                            MaterialTheme.typography
+                                .bodySmall,
+                        color =
+                            MaterialTheme.colorScheme
+                                .onSurfaceVariant,
+                    )
+                    Text(
+                        text =
+                            "Method: " +
+                                selectedRecord.inputType
+                                    .lowercase()
+                                    .replaceFirstChar {
+                                        it.uppercase()
+                                    },
+                        style =
+                            MaterialTheme.typography
+                                .bodySmall,
+                    )
+                    Text(
+                        text =
+                            "Date: " +
+                                formatDate(
+                                    selectedRecord
+                                        .createdAtMillis
+                                ),
+                        style =
+                            MaterialTheme.typography
+                                .bodySmall,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedRecordId = null
+                    },
+                ) {
+                    Text("Close")
+                }
+            },
+        )
+    }
 
     val pendingDelete = history.firstOrNull {
         it.translationId == pendingDeleteId
@@ -267,6 +378,10 @@ fun HistoryScreen(
                     ) { item ->
                         HistoryCard(
                             item = item,
+                            onOpen = {
+                                selectedRecordId =
+                                    item.translationId
+                            },
                             onDelete = {
                                 pendingDeleteId =
                                     item.translationId
@@ -282,6 +397,7 @@ fun HistoryScreen(
 @Composable
 private fun HistoryCard(
     item: TranslationRecord,
+    onOpen: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val date =
@@ -308,6 +424,7 @@ private fun HistoryCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
+        onClick = onOpen,
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor =
