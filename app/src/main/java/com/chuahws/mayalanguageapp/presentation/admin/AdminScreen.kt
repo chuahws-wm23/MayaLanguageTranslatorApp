@@ -1,5 +1,7 @@
 package com.chuahws.mayalanguageapp.presentation.admin
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +37,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -51,10 +54,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -62,11 +67,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.FeedbackItem
+import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.domain.model.UsageAnalytics
 import com.chuahws.mayalanguageapp.domain.model.UserProfile
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.SoftBadge
 import com.chuahws.mayalanguageapp.presentation.theme.MayaGreen
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private enum class AdminSection(
     val label: String,
@@ -88,6 +100,7 @@ fun AdminScreen(
     users: List<UserProfile>,
     feedback: List<FeedbackItem>,
     analytics: List<UsageAnalytics>,
+    translations: List<TranslationRecord>,
     dictionaryEntries: List<DictionaryEntry>,
     loading: Boolean,
     snackbarHostState: SnackbarHostState,
@@ -96,6 +109,7 @@ fun AdminScreen(
     onSearchDictionary: (String) -> Unit,
     onSaveDictionaryEntry:
         (DictionaryEntry?, String, String, String, String) -> Unit,
+    onImportDictionaryCsv: (String) -> Unit,
     onDeleteDictionaryEntry: (DictionaryEntry) -> Unit,
     onSwitchToUserView: () -> Unit,
     onSignOut: () -> Unit,
@@ -228,6 +242,7 @@ fun AdminScreen(
                             entries = dictionaryEntries,
                             onSearch = onSearchDictionary,
                             onSave = onSaveDictionaryEntry,
+                            onImportCsv = onImportDictionaryCsv,
                             onDelete = onDeleteDictionaryEntry,
                         )
 
@@ -242,6 +257,7 @@ fun AdminScreen(
                             users = users,
                             feedback = feedback,
                             analytics = analytics,
+                            translations = translations,
                         )
                 }
             }
@@ -570,6 +586,7 @@ private fun DictionaryManagementContent(
     onSearch: (String) -> Unit,
     onSave:
         (DictionaryEntry?, String, String, String, String) -> Unit,
+    onImportCsv: (String) -> Unit,
     onDelete: (DictionaryEntry) -> Unit,
 ) {
     var query by rememberSaveable {
@@ -584,6 +601,32 @@ private fun DictionaryManagementContent(
     var pendingDelete by remember {
         mutableStateOf<DictionaryEntry?>(null)
     }
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val csvLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            if (uri != null) {
+                scope.launch {
+                    val csvText = withContext(
+                        Dispatchers.IO
+                    ) {
+                        runCatching {
+                            context.contentResolver
+                                .openInputStream(uri)
+                                ?.bufferedReader()
+                                ?.use { it.readText() }
+                        }.getOrNull()
+                    }
+
+                    onImportCsv(
+                        csvText.orEmpty()
+                    )
+                }
+            }
+        }
 
     if (editorOpen) {
         DictionaryEditorDialog(
@@ -729,6 +772,27 @@ private fun DictionaryManagementContent(
                     modifier = Modifier.padding(start = 6.dp),
                 )
             }
+        }
+
+        OutlinedButton(
+            onClick = {
+                csvLauncher.launch(
+                    arrayOf(
+                        "text/csv",
+                        "text/comma-separated-values",
+                        "text/plain",
+                    )
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = 18.dp,
+                    end = 18.dp,
+                    bottom = 10.dp,
+                ),
+        ) {
+            Text("Import dictionary CSV")
         }
 
         LazyColumn(
@@ -1042,6 +1106,7 @@ private fun AnalyticsContent(
     users: List<UserProfile>,
     feedback: List<FeedbackItem>,
     analytics: List<UsageAnalytics>,
+    translations: List<TranslationRecord>,
 ) {
     val total =
         analytics.sumOf { it.totalTranslations }
@@ -1117,6 +1182,14 @@ private fun AnalyticsContent(
         }
 
         item {
+            TranslationMethodChart(
+                textTranslations = textTranslations,
+                imageTranslations = imageTranslations,
+                voiceTranslations = voiceTranslations,
+            )
+        }
+
+        item {
             MetricCard(
                 title = "Text translations",
                 value = textTranslations.toString(),
@@ -1137,8 +1210,159 @@ private fun AnalyticsContent(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+
+        if (translations.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Recent translations",
+                    style =
+                        MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier =
+                        Modifier.padding(top = 6.dp),
+                )
+            }
+
+            items(
+                items = translations.take(10),
+                key = { it.translationId },
+            ) { record ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(
+                        containerColor =
+                            MaterialTheme.colorScheme.surface,
+                    ),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement =
+                            Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = record.sourceText,
+                            style =
+                                MaterialTheme.typography.bodySmall,
+                            color =
+                                MaterialTheme.colorScheme
+                                    .onSurfaceVariant,
+                        )
+                        Text(
+                            text = record.translatedText,
+                            style =
+                                MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            text =
+                                record.inputType
+                                    .lowercase()
+                                    .replaceFirstChar {
+                                        it.uppercase()
+                                    } +
+                                    " · " +
+                                    formatAdminDate(
+                                        record.createdAtMillis
+                                    ),
+                            style =
+                                MaterialTheme.typography.bodySmall,
+                            color =
+                                MaterialTheme.colorScheme
+                                    .onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
+
+@Composable
+private fun TranslationMethodChart(
+    textTranslations: Long,
+    imageTranslations: Long,
+    voiceTranslations: Long,
+) {
+    val total =
+        (textTranslations +
+            imageTranslations +
+            voiceTranslations)
+            .coerceAtLeast(1L)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor =
+                MaterialTheme.colorScheme.surface,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement =
+                Arrangement.spacedBy(12.dp),
+        ) {
+            MethodBar(
+                label = "Text",
+                value = textTranslations,
+                total = total,
+            )
+            MethodBar(
+                label = "Photo",
+                value = imageTranslations,
+                total = total,
+            )
+            MethodBar(
+                label = "Voice",
+                value = voiceTranslations,
+                total = total,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MethodBar(
+    label: String,
+    value: Long,
+    total: Long,
+) {
+    Column(
+        verticalArrangement =
+            Arrangement.spacedBy(5.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = label,
+                modifier = Modifier.weight(1f),
+                style =
+                    MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                text = value.toString(),
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+
+        LinearProgressIndicator(
+            progress = {
+                value.toFloat() /
+                    total.toFloat()
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+private fun formatAdminDate(
+    time: Long,
+): String = SimpleDateFormat(
+    "dd MMM yyyy",
+    Locale.getDefault(),
+).format(Date(time))
 
 @Composable
 private fun MetricCard(
