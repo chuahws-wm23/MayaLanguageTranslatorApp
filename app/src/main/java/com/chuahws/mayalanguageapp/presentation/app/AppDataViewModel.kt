@@ -371,6 +371,11 @@ class AppDataViewModel(
                     val analytics = async {
                         userDataRepository.getAllAnalytics()
                     }
+                    val translations = async {
+                        userDataRepository.getAllHistory(
+                            limit = 100,
+                        )
+                    }
                     val dictionary = async {
                         dictionaryRepository.browseEntries(200)
                     }
@@ -379,6 +384,8 @@ class AppDataViewModel(
                         users = users.await(),
                         feedback = feedback.await(),
                         analytics = analytics.await(),
+                        translations =
+                            translations.await(),
                         dictionary = dictionary.await(),
                     )
                 }
@@ -389,6 +396,8 @@ class AppDataViewModel(
                         adminFeedback = adminData.feedback,
                         adminAnalytics =
                             adminData.analytics,
+                        adminTranslations =
+                            adminData.translations,
                         adminDictionaryEntries =
                             adminData.dictionary,
                         adminLoading = false,
@@ -603,6 +612,259 @@ class AppDataViewModel(
         }
     }
 
+    fun importAdminDictionaryCsv(
+        csvText: String,
+    ) {
+        if (_uiState.value.profile?.role != "admin") {
+            return
+        }
+
+        if (csvText.isBlank()) {
+            _uiState.update {
+                it.copy(
+                    message =
+                        "The selected CSV file is empty.",
+                )
+            }
+            return
+        }
+
+        val rows = parseCsv(csvText)
+        if (rows.size < 2) {
+            _uiState.update {
+                it.copy(
+                    message =
+                        "The CSV file does not contain dictionary rows.",
+                )
+            }
+            return
+        }
+
+        val header = rows.first()
+            .map(::normaliseCsvHeader)
+
+        fun columnIndex(
+            vararg names: String,
+        ): Int = names
+            .asSequence()
+            .map(::normaliseCsvHeader)
+            .map(header::indexOf)
+            .firstOrNull { it >= 0 }
+            ?: -1
+
+        val mayaIndex = columnIndex(
+            "maya_text",
+            "maya",
+        )
+        val englishIndex = columnIndex(
+            "english_text",
+            "english",
+        )
+
+        if (mayaIndex < 0 || englishIndex < 0) {
+            _uiState.update {
+                it.copy(
+                    message =
+                        "CSV must include maya_text and english_text columns.",
+                )
+            }
+            return
+        }
+
+        val idIndex = columnIndex(
+            "entry_id",
+            "id",
+        )
+        val partOfSpeechIndex =
+            columnIndex(
+                "part_of_speech",
+                "word_type",
+            )
+        val pronunciationIndex =
+            columnIndex("pronunciation")
+        val exampleIndex =
+            columnIndex(
+                "example_sentence",
+                "example",
+            )
+        val categoryIndex =
+            columnIndex("category")
+        val sourceIndex =
+            columnIndex("source")
+        val usageIndex =
+            columnIndex(
+                "usage_label",
+                "usage",
+            )
+
+        val existingIds =
+            _uiState.value
+                .adminDictionaryEntries
+                .map { it.entryId }
+                .filter(String::isNotBlank)
+                .toMutableSet()
+
+        val existingKeys =
+            _uiState.value
+                .adminDictionaryEntries
+                .map(::dictionaryDuplicateKey)
+                .toMutableSet()
+
+        _uiState.update {
+            it.copy(adminLoading = true)
+        }
+
+        viewModelScope.launch {
+            var imported = 0
+            var duplicates = 0
+            var invalid = 0
+
+            rows.drop(1)
+                .take(MAX_CSV_IMPORT_ROWS)
+                .forEach { row ->
+                    fun valueAt(
+                        index: Int,
+                    ): String =
+                        if (
+                            index >= 0 &&
+                            index < row.size
+                        ) {
+                            row[index].trim()
+                        } else {
+                            ""
+                        }
+
+                    val maya =
+                        valueAt(mayaIndex)
+                    val english =
+                        valueAt(englishIndex)
+
+                    if (
+                        maya.isBlank() ||
+                        english.isBlank()
+                    ) {
+                        invalid += 1
+                        return@forEach
+                    }
+
+                    val entryId =
+                        valueAt(idIndex)
+                            .takeIf {
+                                it.isNotBlank()
+                            }
+                            ?: UUID.randomUUID()
+                                .toString()
+
+                    val entry = DictionaryEntry(
+                        entryId = entryId,
+                        mayaText = maya,
+                        mayaNormalized =
+                            TextNormalizer.normalize(
+                                maya
+                            ),
+                        englishText = english,
+                        englishNormalized =
+                            TextNormalizer.normalize(
+                                english
+                            ),
+                        partOfSpeech =
+                            valueAt(
+                                partOfSpeechIndex
+                            ).takeIf {
+                                it.isNotBlank()
+                            },
+                        pronunciation =
+                            valueAt(
+                                pronunciationIndex
+                            ).takeIf {
+                                it.isNotBlank()
+                            },
+                        exampleSentence =
+                            valueAt(
+                                exampleIndex
+                            ).takeIf {
+                                it.isNotBlank()
+                            },
+                        category =
+                            valueAt(
+                                categoryIndex
+                            ).takeIf {
+                                it.isNotBlank()
+                            },
+                        source =
+                            valueAt(
+                                sourceIndex
+                            ).takeIf {
+                                it.isNotBlank()
+                            }
+                                ?: "Administrator import",
+                        usageLabel =
+                            valueAt(
+                                usageIndex
+                            ).takeIf {
+                                it.isNotBlank()
+                            },
+                        acceptedEnglishInputs =
+                            listOf(
+                                TextNormalizer
+                                    .normalize(
+                                        english
+                                    )
+                            ),
+                        verified = true,
+                        active = true,
+                    )
+
+                    val duplicateKey =
+                        dictionaryDuplicateKey(
+                            entry
+                        )
+
+                    if (
+                        entryId in existingIds ||
+                        duplicateKey in
+                            existingKeys
+                    ) {
+                        duplicates += 1
+                        return@forEach
+                    }
+
+                    runCatching {
+                        dictionaryRepository
+                            .upsertEntry(entry)
+                    }.onSuccess {
+                        imported += 1
+                        existingIds += entryId
+                        existingKeys +=
+                            duplicateKey
+                    }.onFailure {
+                        invalid += 1
+                    }
+                }
+
+            val refreshed =
+                runCatching {
+                    dictionaryRepository
+                        .browseEntries(500)
+                }.getOrElse {
+                    _uiState.value
+                        .adminDictionaryEntries
+                }
+
+            _uiState.update {
+                it.copy(
+                    adminDictionaryEntries =
+                        refreshed,
+                    adminLoading = false,
+                    message =
+                        "$imported imported, " +
+                            "$duplicates duplicate(s) skipped, " +
+                            "$invalid invalid row(s).",
+                )
+            }
+        }
+    }
+
     fun deleteAdminDictionaryEntry(
         entry: DictionaryEntry,
     ) {
@@ -655,6 +917,80 @@ class AppDataViewModel(
         }
     }
 
+    private fun parseCsv(
+        csvText: String,
+    ): List<List<String>> =
+        csvText
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .lineSequence()
+            .filter { it.isNotBlank() }
+            .map(::parseCsvLine)
+            .toList()
+
+    private fun parseCsvLine(
+        line: String,
+    ): List<String> {
+        val values = mutableListOf<String>()
+        val current = StringBuilder()
+        var quoted = false
+        var index = 0
+
+        while (index < line.length) {
+            val char = line[index]
+
+            when {
+                char == '"' &&
+                    quoted &&
+                    index + 1 < line.length &&
+                    line[index + 1] == '"' -> {
+                    current.append('"')
+                    index += 1
+                }
+
+                char == '"' -> {
+                    quoted = !quoted
+                }
+
+                char == ',' && !quoted -> {
+                    values += current.toString()
+                    current.clear()
+                }
+
+                else -> current.append(char)
+            }
+
+            index += 1
+        }
+
+        values += current.toString()
+        return values
+    }
+
+    private fun normaliseCsvHeader(
+        value: String,
+    ): String =
+        value.trim()
+            .lowercase()
+            .replace(" ", "_")
+            .replace("-", "_")
+
+    private fun dictionaryDuplicateKey(
+        entry: DictionaryEntry,
+    ): String =
+        listOf(
+            TextNormalizer.normalize(
+                entry.mayaText
+            ),
+            TextNormalizer.normalize(
+                entry.englishText
+            ),
+            entry.partOfSpeech
+                .orEmpty()
+                .trim()
+                .lowercase(),
+        ).joinToString("|")
+
     fun clearMessage() {
         _uiState.update {
             it.copy(message = null)
@@ -692,6 +1028,12 @@ class AppDataViewModel(
         val feedback: List<FeedbackItem>,
         val analytics:
             List<com.chuahws.mayalanguageapp.domain.model.UsageAnalytics>,
+        val translations:
+            List<TranslationRecord>,
         val dictionary: List<DictionaryEntry>,
     )
+
+    private companion object {
+        const val MAX_CSV_IMPORT_ROWS = 2_000
+    }
 }
