@@ -639,6 +639,49 @@ class AppDataViewModel(
         )
 
         viewModelScope.launch {
+            val duplicateKey =
+                dictionaryDuplicateKey(entry)
+
+            val duplicateExists =
+                runCatching {
+                    (
+                        dictionaryRepository
+                            .searchEntries(
+                                cleanMaya,
+                                25,
+                            ) +
+                            dictionaryRepository
+                                .searchEntries(
+                                    cleanEnglish,
+                                    25,
+                                )
+                        )
+                        .distinctBy {
+                            it.entryId
+                        }
+                        .any { candidate ->
+                            candidate.entryId !=
+                                entry.entryId &&
+                                dictionaryDuplicateKey(
+                                    candidate
+                                ) ==
+                                    duplicateKey
+                        }
+                }.getOrElse { error ->
+                    showError(error)
+                    return@launch
+                }
+
+            if (duplicateExists) {
+                _uiState.update {
+                    it.copy(
+                        message =
+                            "A matching dictionary entry already exists.",
+                    )
+                }
+                return@launch
+            }
+
             runCatching {
                 dictionaryRepository.upsertEntry(entry)
             }.onSuccess {
