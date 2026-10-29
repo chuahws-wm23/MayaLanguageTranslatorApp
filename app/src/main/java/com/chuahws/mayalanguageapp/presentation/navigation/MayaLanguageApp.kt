@@ -766,9 +766,15 @@ private fun MainShell(
                             loading =
                                 state
                                     .dictionaryLoading,
+                            hasMore =
+                                state
+                                    .dictionaryHasMore,
                             onSearch =
                                 appDataViewModel
                                     ::loadDictionary,
+                            onLoadMore =
+                                appDataViewModel
+                                    ::loadMoreDictionary,
                             onSaveEntry =
                                 appDataViewModel
                                     ::saveEntry,
