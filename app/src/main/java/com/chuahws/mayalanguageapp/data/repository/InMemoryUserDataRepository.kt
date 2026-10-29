@@ -32,6 +32,15 @@ class InMemoryUserDataRepository : UserDataRepository {
             .sortedByDescending { it.createdAtMillis }
             .take(limit)
 
+    override suspend fun getAllHistory(
+        limit: Int,
+    ): List<TranslationRecord> =
+        history
+            .sortedByDescending {
+                it.createdAtMillis
+            }
+            .take(limit)
+
     override suspend fun deleteTranslation(
         translationId: String,
         userId: String,
