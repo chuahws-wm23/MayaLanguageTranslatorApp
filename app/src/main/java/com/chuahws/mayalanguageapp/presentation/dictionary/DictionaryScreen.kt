@@ -56,7 +56,9 @@ private enum class DictionarySortMode(
 fun DictionaryScreen(
     entries: List<DictionaryEntry>,
     loading: Boolean,
+    hasMore: Boolean,
     onSearch: (String) -> Unit,
+    onLoadMore: () -> Unit,
     onSaveEntry: (DictionaryEntry) -> Unit,
 ) {
     var query by rememberSaveable {
@@ -428,6 +430,21 @@ fun DictionaryScreen(
                                 )
                             }
                         }
+
+                    if (hasMore) {
+                        item(
+                            key = "load-more",
+                        ) {
+                            FilledTonalButton(
+                                onClick = onLoadMore,
+                                enabled = !loading,
+                                modifier =
+                                    Modifier.fillMaxWidth(),
+                            ) {
+                                Text("Load more words")
+                            }
+                        }
+                    }
                 }
             }
         }
