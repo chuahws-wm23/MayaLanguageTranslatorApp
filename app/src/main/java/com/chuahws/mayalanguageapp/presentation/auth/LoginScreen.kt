@@ -170,18 +170,31 @@ fun LoginScreen(
                     )
 
                     state.message?.let {
+                        val success =
+                            state.registrationCompleted ||
+                                state.passwordResetSent
                         Card(
                             colors = CardDefaults.cardColors(
                                 containerColor =
-                                    MaterialTheme.colorScheme
-                                        .errorContainer,
+                                    if (success) {
+                                        MaterialTheme.colorScheme
+                                            .secondaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme
+                                            .errorContainer
+                                    },
                             ),
                         ) {
                             Text(
                                 text = it,
                                 color =
-                                    MaterialTheme.colorScheme
-                                        .onErrorContainer,
+                                    if (success) {
+                                        MaterialTheme.colorScheme
+                                            .onSecondaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme
+                                            .onErrorContainer
+                                    },
                                 style =
                                     MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(12.dp),
