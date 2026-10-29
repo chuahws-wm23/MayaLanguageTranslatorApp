@@ -207,7 +207,10 @@ class AuthViewModel(
 
                 user
             }.onSuccess(::onAuthenticated)
-                .onFailure(::onOperationFailed)
+                .onFailure { error ->
+                    authRepository.signOut()
+                    onOperationFailed(error)
+                }
         }
     }
 
