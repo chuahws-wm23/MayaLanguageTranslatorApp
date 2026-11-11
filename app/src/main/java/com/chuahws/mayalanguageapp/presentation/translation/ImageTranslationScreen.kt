@@ -168,12 +168,13 @@ fun ImageTranslationScreen(
         filteredText = null
         yucatecSuggestions = emptyList()
         viewModel.updateInput("")
-        imageMessage = null
         val raw = reviewedText.orEmpty()
         if (raw.isBlank()) {
+            // Preserve the helpful "no readable text" message from OCR.
             filteringImage = false
             return@LaunchedEffect
         }
+        imageMessage = null
         filteringImage = true
         try {
             val result = viewModel.filterPhotoText(raw, state.direction)
