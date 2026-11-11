@@ -879,7 +879,9 @@ private fun MainShell(
 
                     AppPage.FEEDBACK ->
                         FeedbackScreen(
-                            email = email,
+                            email = state.profile?.email
+                                ?.takeIf(String::isNotBlank)
+                                ?: email,
                             submissionVersion =
                                 state
                                     .feedbackSubmissionVersion,
