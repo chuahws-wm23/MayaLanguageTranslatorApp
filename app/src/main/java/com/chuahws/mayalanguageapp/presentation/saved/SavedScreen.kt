@@ -41,12 +41,14 @@ import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.SoftBadge
 import com.chuahws.mayalanguageapp.presentation.components.SpeakButton
 import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
+import com.chuahws.mayalanguageapp.presentation.components.TranslationDetailsDialog
 import com.chuahws.mayalanguageapp.domain.service.ListPaging
 
 @Composable
 fun SavedScreen(
     items: List<SavedVocabularyItem>,
     onRemove: (SavedVocabularyItem) -> Unit,
+    onTranslate: (SavedVocabularyItem) -> Unit,
 ) {
     var query by rememberSaveable {
         mutableStateOf("")
@@ -70,106 +72,26 @@ fun SavedScreen(
     }
 
     if (selectedItem != null) {
-        AlertDialog(
-            onDismissRequest = {
+        TranslationDetailsDialog(
+            title = "Saved word",
+            sourceLabel = "Yucatec Maya",
+            sourceText = selectedItem.mayaText,
+            translationLabel = "English",
+            translationText = selectedItem.englishText,
+            metadata = selectedItem.partOfSpeech
+                ?.replaceFirstChar { it.uppercase() }
+                ?.takeIf(String::isNotBlank)
+                ?: "Saved vocabulary",
+            pronunciation = selectedItem.pronunciation,
+            spokenMayaText = selectedItem.mayaText,
+            onDismiss = { selectedSavedId = null },
+            onTranslate = {
                 selectedSavedId = null
+                onTranslate(selectedItem)
             },
-            title = {
-                Text("Saved word")
-            },
-            text = {
-                Column(
-                    verticalArrangement =
-                        Arrangement.spacedBy(10.dp),
-                ) {
-                    Text(
-                        text = selectedItem.mayaText,
-                        style =
-                            MaterialTheme.typography
-                                .headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color =
-                            MaterialTheme.colorScheme
-                                .primary,
-                    )
-                    Text(
-                        text = selectedItem.englishText,
-                        style =
-                            MaterialTheme.typography
-                                .titleMedium,
-                    )
-
-                    selectedItem.partOfSpeech
-                        ?.takeIf {
-                            it.isNotBlank()
-                        }
-                        ?.let {
-                            SoftBadge(
-                                text =
-                                    it.replaceFirstChar {
-                                        char ->
-                                        char.uppercase()
-                                    }
-                            )
-                        }
-
-                    selectedItem.pronunciation
-                        ?.takeIf {
-                            it.isNotBlank()
-                        }
-                        ?.let {
-                            Text(
-                                text =
-                                    "Pronunciation: $it",
-                                style =
-                                    MaterialTheme.typography
-                                        .bodySmall,
-                                color =
-                                    MaterialTheme.colorScheme
-                                        .onSurfaceVariant,
-                            )
-                        }
-
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = "Pronunciation audio",
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        SpeakButton(
-                            text = selectedItem.mayaText,
-                            languageTag = "yua",
-                            showUnavailableLabel = true,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selectedSavedId = null
-                    },
-                ) {
-                    Text("Close")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        selectedSavedId = null
-                        pendingRemoval =
-                            selectedItem.savedId
-                    },
-                ) {
-                    Text(
-                        text = "Remove",
-                        color =
-                            MaterialTheme.colorScheme
-                                .error,
-                    )
-                }
+            onDelete = {
+                selectedSavedId = null
+                pendingRemoval = selectedItem.savedId
             },
         )
     }
