@@ -54,6 +54,7 @@ import com.chuahws.mayalanguageapp.domain.model.TranslationDirection
 import com.chuahws.mayalanguageapp.integration.ml_kit_ocr.MlKitOcrService
 import com.chuahws.mayalanguageapp.presentation.components.AccentIcon
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
+import com.chuahws.mayalanguageapp.presentation.components.TranslationGuidanceCard
 import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
 import com.chuahws.mayalanguageapp.presentation.theme.MayaPink
 import kotlinx.coroutines.launch
@@ -501,6 +502,18 @@ fun ImageTranslationScreen(
                         }
                     },
                 onSaveAlternative = onSaveEntry,
+                approximate = state.approximate,
+                needsReview = state.needsReview,
+            )
+
+            TranslationGuidanceCard(
+                advice = state.advice,
+                unknownTerms = state.unknownTerms,
+                ambiguousTerms = state.ambiguousTerms,
+                unreliableSegments = state.unreliableSegments,
+                suggestions = state.suggestions,
+                direction = state.direction,
+                onSuggestionSelected = viewModel::updateInput,
             )
         }
     }
