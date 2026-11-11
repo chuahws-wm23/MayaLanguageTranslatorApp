@@ -51,6 +51,14 @@ class MlKitOcrService {
         }
     }
 
+    // Use the same orientation-aware decoder for the preview and OCR.
+    suspend fun loadPreviewBitmap(
+        context: Context,
+        imageUri: Uri,
+    ): Bitmap = withContext(Dispatchers.IO) {
+        prepareBitmap(context, imageUri)
+    }
+
     private fun prepareBitmap(
         context: Context,
         imageUri: Uri,
@@ -63,17 +71,19 @@ class MlKitOcrService {
                 inJustDecodeBounds = true
             }
 
-        resolver.openInputStream(imageUri)
-            ?.use {
-                BitmapFactory.decodeStream(
-                    it,
-                    null,
-                    bounds,
-                )
-            }
+        // Decoding only the image bounds deliberately returns null,
+        // so check whether the stream opened instead of the bitmap result.
+        val boundsStream = resolver.openInputStream(imageUri)
             ?: throw IllegalArgumentException(
                 "Could not open the selected image."
             )
+        boundsStream.use { stream ->
+            BitmapFactory.decodeStream(
+                stream,
+                null,
+                bounds,
+            )
+        }
 
         if (
             bounds.outWidth <= 0 ||
