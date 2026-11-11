@@ -1071,7 +1071,17 @@ private fun FeedbackContent(
                                 item.userEmail,
                         fontWeight = FontWeight.SemiBold,
                     )
-                    Text(item.comment)
+                    Text(
+                        text = item.comment.ifBlank {
+                            "Rating only — no written comment"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (item.comment.isBlank()) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                    )
                     Text(
                         text =
                             if (item.status == "new") {
