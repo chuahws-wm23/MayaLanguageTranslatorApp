@@ -107,7 +107,7 @@ class TranslationServiceTest {
     }
 
     @Test
-    fun partialSentence_keepsKnownWordsAndMarksUnknownTerms() = runTest {
+    fun partialSentence_reportsMissingTermsWithoutCodeMarkers() = runTest {
         val service = TranslationService(
             InMemoryDictionaryRepository(
                 DevelopmentDictionaryData.entries()
@@ -123,7 +123,7 @@ class TranslationServiceTest {
         result as TranslationResult.Composed
 
         assertEquals(
-            "jaʼ [unknown: mystery]",
+            "jaʼ —",
             result.output,
         )
         assertEquals(
@@ -131,6 +131,7 @@ class TranslationServiceTest {
             result.unknownTerms,
         )
         assertEquals(1, result.matchedEntryCount)
+        assertTrue(result.ambiguousTerms.isEmpty())
     }
 
     @Test
@@ -198,11 +199,8 @@ class TranslationServiceTest {
             direction = TranslationDirection.MAYA_TO_ENGLISH,
         )
 
-        assertTrue(result is TranslationResult.Composed)
-        assertEquals(
-            "Bix a k'aaba' in wiinik? → [No reliable phrase translation available]",
-            (result as TranslationResult.Composed).output,
-        )
+        // A single matching pronoun cannot justify a full translation.
+        assertTrue(result is TranslationResult.NoMatch)
     }
 
     @Test
@@ -392,4 +390,116 @@ class TranslationServiceTest {
 
         assertTrue(result is TranslationResult.NoMatch)
     }
+    @Test
+    fun punctuationFromOcr_doesNotJoinDistinctDictionaryWords() = runTest {
+        val service = TranslationService(
+            InMemoryDictionaryRepository(
+                DevelopmentDictionaryData.entries()
+            )
+        )
+
+        val result = service.translate(
+            rawInput = "water,house",
+            direction = TranslationDirection.ENGLISH_TO_MAYA,
+        )
+
+        assertTrue(result is TranslationResult.Composed)
+        assertEquals(
+            "jaʼ naaj",
+            (result as TranslationResult.Composed).output,
+        )
+        assertTrue(result.unknownTerms.isEmpty())
+    }
+
+    @Test
+    fun ambiguousPartialPhrase_isNotSilentlyAssignedFirstMeaning() = runTest {
+        val entries = listOf(
+            DictionaryEntry(
+                entryId = "broom-a",
+                mayaText = "MAYA-A",
+                mayaNormalized = "maya-a",
+                englishText = "broom",
+                englishNormalized = "broom",
+                active = true,
+            ),
+            DictionaryEntry(
+                entryId = "broom-b",
+                mayaText = "MAYA-B",
+                mayaNormalized = "maya-b",
+                englishText = "broom",
+                englishNormalized = "broom",
+                active = true,
+            ),
+            DictionaryEntry(
+                entryId = "water",
+                mayaText = "WATER",
+                mayaNormalized = "water",
+                englishText = "water",
+                englishNormalized = "water",
+                active = true,
+            ),
+        )
+        val result = TranslationService(
+            InMemoryDictionaryRepository(entries)
+        ).translate("broom water", TranslationDirection.ENGLISH_TO_MAYA)
+
+        assertTrue(result is TranslationResult.Composed)
+        result as TranslationResult.Composed
+        assertEquals("— WATER", result.output)
+        assertEquals(listOf("broom"), result.ambiguousTerms)
+        assertEquals(1, result.matchedEntryCount)
+    }
+
+    @Test
+    fun duplicateTranslation_prefersVerifiedSource() = runTest {
+        val first = DictionaryEntry(
+            entryId = "unverified",
+            mayaText = "source",
+            mayaNormalized = "source",
+            englishText = "water",
+            englishNormalized = "water",
+            verified = false,
+            active = true,
+        )
+        val second = first.copy(entryId = "verified", verified = true)
+        val result = TranslationService(
+            InMemoryDictionaryRepository(listOf(first, second))
+        ).translate("water", TranslationDirection.ENGLISH_TO_MAYA)
+
+        assertTrue(result is TranslationResult.Success)
+        assertTrue((result as TranslationResult.Success).entry.verified)
+    }
+
+    @Test
+    fun misspelling_offersDictionarySuggestionsWithoutAutoTranslating() = runTest {
+        val service = TranslationService(
+            InMemoryDictionaryRepository(DevelopmentDictionaryData.entries())
+        )
+
+        assertTrue(
+            service.translate(
+                "watwr",
+                TranslationDirection.ENGLISH_TO_MAYA
+            ) is TranslationResult.NoMatch
+        )
+
+        val suggestions = service.suggestCorrections(
+            "watwr",
+            TranslationDirection.ENGLISH_TO_MAYA,
+        )
+        assertTrue(suggestions.any { it.englishText == "water" })
+    }
+
+    @Test
+    fun unsupportedSentence_doesNotProduceMisleadingPartialTranslation() = runTest {
+        val service = TranslationService(
+            InMemoryDictionaryRepository(DevelopmentDictionaryData.entries())
+        )
+        val result = service.translate(
+            "water mystery impossible",
+            TranslationDirection.ENGLISH_TO_MAYA,
+        )
+        assertTrue(result is TranslationResult.NoMatch)
+    }
+
 }
