@@ -1,7 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -210,11 +209,7 @@ fun ImageTranslationScreen(
     ) {
         value = imageUri?.let { uri ->
             runCatching {
-                context.contentResolver
-                    .openInputStream(uri)
-                    ?.use(
-                        BitmapFactory::decodeStream
-                    )
+                ocrService.loadPreviewBitmap(context, uri)
             }.getOrNull()
         }
     }
