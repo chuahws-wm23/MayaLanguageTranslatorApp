@@ -37,6 +37,13 @@ class TranslationViewModel(
                 matchedEntry = null,
                 alternativeEntries = emptyList(),
                 message = null,
+                advice = null,
+                approximate = false,
+                needsReview = false,
+                unknownTerms = emptyList(),
+                ambiguousTerms = emptyList(),
+                unreliableSegments = emptyList(),
+                suggestions = emptyList(),
             )
         }
     }
@@ -51,7 +58,15 @@ class TranslationViewModel(
                 direction = direction,
                 output = "",
                 matchedEntry = null,
+                alternativeEntries = emptyList(),
                 message = null,
+                advice = null,
+                approximate = false,
+                needsReview = false,
+                unknownTerms = emptyList(),
+                ambiguousTerms = emptyList(),
+                unreliableSegments = emptyList(),
+                suggestions = emptyList(),
             )
         }
     }
@@ -103,6 +118,13 @@ class TranslationViewModel(
             it.copy(
                 loading = true,
                 message = null,
+                advice = null,
+                approximate = false,
+                needsReview = false,
+                unknownTerms = emptyList(),
+                ambiguousTerms = emptyList(),
+                unreliableSegments = emptyList(),
+                suggestions = emptyList(),
                 inputType = inputType,
             )
         }
@@ -204,22 +226,10 @@ class TranslationViewModel(
                 }
 
                 is TranslationResult.Composed -> {
-                    val warning =
-                        if (result.unknownTerms.isEmpty()) {
-                            null
-                        } else {
-                            val preview = result.unknownTerms
-                                .distinct()
-                                .take(3)
-                                .joinToString(", ")
-
-                            "Partial translation. Unknown terms are shown in brackets" +
-                                if (preview.isBlank()) {
-                                    "."
-                                } else {
-                                    ": $preview."
-                                }
-                        }
+                    val incomplete =
+                        result.unknownTerms.isNotEmpty() ||
+                            result.ambiguousTerms.isNotEmpty() ||
+                            result.unreliableSegments.isNotEmpty()
 
                     _uiState.update {
                         it.copy(
@@ -227,21 +237,47 @@ class TranslationViewModel(
                             output = result.output,
                             matchedEntry = null,
                             alternativeEntries = emptyList(),
-                            message = warning,
+                            message = null,
+                            approximate = true,
+                            needsReview = incomplete,
+                            advice =
+                                if (incomplete) {
+                                    "Only part of this text matched the dictionary. " +
+                                        "Please check the words below and correct the text " +
+                                        "before trying again."
+                                } else {
+                                    "This result combines dictionary words or phrases. " +
+                                        "It may not follow natural sentence grammar."
+                                },
+                            unknownTerms = result.unknownTerms,
+                            ambiguousTerms = result.ambiguousTerms,
+                            unreliableSegments = result.unreliableSegments,
                             inputType = inputType,
                         )
                     }
 
-                    recordSuccess(
-                        source = state.input,
-                        translated = result.output,
-                        entryId = null,
-                        direction = state.direction,
-                        inputType = inputType,
-                    )
+                    // The report requires history/analytics for successful
+                    // translations, not incomplete OCR or unmatched phrases.
+                    if (!incomplete) {
+                        recordSuccess(
+                            source = state.input,
+                            translated = result.output,
+                            entryId = null,
+                            direction = state.direction,
+                            inputType = inputType,
+                        )
+                    }
                 }
 
-                is TranslationResult.NoMatch ->
+                is TranslationResult.NoMatch -> {
+                    // Optional suggestions are never applied automatically.
+                    val suggestions = runCatching {
+                        translationService.suggestCorrections(
+                            state.input,
+                            state.direction,
+                        )
+                    }.getOrDefault(emptyList())
+
                     _uiState.update {
                         it.copy(
                             loading = false,
@@ -249,9 +285,13 @@ class TranslationViewModel(
                             matchedEntry = null,
                             alternativeEntries = emptyList(),
                             message =
-                                "This word or phrase is not in the dictionary yet.",
+                                "No reliable translation found. Check the recognised text " +
+                                    "or try a shorter phrase.",
+                            suggestions = suggestions,
+                            inputType = inputType,
                         )
                     }
+                }
 
                 is TranslationResult.InvalidInput ->
                     _uiState.update {
