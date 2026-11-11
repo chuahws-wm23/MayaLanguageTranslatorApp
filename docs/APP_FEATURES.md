@@ -22,7 +22,10 @@
 - Capture a photo with the device camera
 - Choose an image from the gallery
 - Extract Latin-script text using Google ML Kit
-- Review and edit detected text before translation
+- Switch the full-width English ↔ Yucatec Maya photo direction bar
+- Show supported source-language words and phrases in a **read-only** detected-text field
+- Correct OCR mistakes separately using the Review OCR dialog before translation
+- Show possible Yucatec spelling matches for review; do not automatically convert other Maya varieties
 - Save successful vocabulary entries
 
 ### Voice
