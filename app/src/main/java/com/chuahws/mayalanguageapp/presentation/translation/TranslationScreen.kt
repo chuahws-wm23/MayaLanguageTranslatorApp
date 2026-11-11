@@ -274,7 +274,7 @@ fun TranslationScreen(
                 unreliableSegments = state.unreliableSegments,
                 suggestions = state.suggestions,
                 direction = state.direction,
-                onSuggestionSelected = viewModel::updateInput,
+                onSuggestionSelected = viewModel::applySuggestion,
             )
         }
     }
