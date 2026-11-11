@@ -497,7 +497,7 @@ private fun friendlyLanguage(
     value.contains(
         "maya",
         ignoreCase = true,
-    ) -> "Maya"
+    ) -> "Yucatec Maya"
 
     value.contains(
         "english",
