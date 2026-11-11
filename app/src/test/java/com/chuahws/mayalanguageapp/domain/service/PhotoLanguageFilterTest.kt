@@ -112,6 +112,41 @@ class PhotoLanguageFilterTest {
     }
 
     @Test
+    fun switchingDirection_reusesDictionaryWithinShortInterval() = runTest {
+        val entries = listOf(
+            DictionaryEntry(
+                entryId = "water",
+                mayaText = "jaʼ",
+                mayaNormalized = "jaʼ",
+                englishText = "water",
+                englishNormalized = "water",
+                active = true,
+            )
+        )
+        val delegate = InMemoryDictionaryRepository(entries)
+        var reads = 0
+        val repository =
+            object : com.chuahws.mayalanguageapp.domain.repository.DictionaryRepository
+                by delegate {
+                override suspend fun browseEntries(limit: Int): List<DictionaryEntry> {
+                    reads++
+                    return delegate.browseEntries(limit)
+                }
+            }
+
+        val languageFilter = PhotoLanguageFilter(repository)
+        languageFilter.filter(
+            "water jaʼ",
+            TranslationDirection.MAYA_TO_ENGLISH,
+        )
+        languageFilter.filter(
+            "water jaʼ",
+            TranslationDirection.ENGLISH_TO_MAYA,
+        )
+        assertEquals(1, reads)
+    }
+
+    @Test
     fun largeInput_isFlaggedAndNeverExceedsTranslationLimit() = runTest {
         val result = filter().filter(
             "water ".repeat(450),
