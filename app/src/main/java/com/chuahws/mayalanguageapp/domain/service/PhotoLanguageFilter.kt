@@ -134,6 +134,6 @@ class PhotoLanguageFilter(
         const val MAX_TRANSLATABLE_LENGTH = 500
         const val MAX_DICTIONARY_ROWS = 3_000
         const val MAX_PHRASE_WORDS = 4
-        val TOKEN_PATTERN = Regex("[\\p{L}\\p{M}]+(?:[ʼ'’ʻʹ-][\\p{L}\\p{M}]+)*")
+        val TOKEN_PATTERN = Regex("[\\p{L}\\p{M}]+(?:[ʼ'’ʻʹ-][\\p{L}\\p{M}]+)*(?:[ʼ'’ʻʹ])?")
     }
 }
