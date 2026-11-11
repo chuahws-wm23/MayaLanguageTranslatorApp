@@ -22,9 +22,9 @@ performance testing for the final Results chapter.
 | FR11 | Speech-to-Text Conversion | Recognised English speech is displayed as editable text. |
 | FR12 | Pronunciation Support | Implemented through device TTS with an explicit unavailable-audio state when the requested voice is not installed. |
 | FR13 | Translation History | Successful translations are stored with input type and timestamp. |
-| FR14 | History Management | View, search/filter, 10-record pages with arrows and numeric jump, selectable details and confirmed deletion are implemented. Firestore deletion is owner-scoped. Current history retrieval loads at most 100 recent records. |
+| FR14 | History Management | View, search/filter, 10-record pages with inline editable page number above the list, polished details and Translate again in the original Text/Photo/Voice mode are implemented. Confirmed deletion remains owner-scoped. Current history retrieval loads at most 100 recent records. |
 | FR15 | Dictionary Access | User-facing Maya/English search, sorting/sections and progressive Load More browsing are implemented. |
-| FR16 | Saved Vocabulary | Save, duplicate prevention, search/filter, 10-entry pages with arrow and page-number navigation, selectable details/pronunciation and confirmed removal are implemented. |
+| FR16 | Saved Vocabulary | Save, duplicate prevention, search/filter, 10-entry pages with inline editable page number above the list, polished details/pronunciation, Translate again (Maya to English), and confirmed removal are implemented. |
 | FR17 | Usage Analytics | Text, image and voice counters and activity summaries are implemented. |
 | FR18 | Feedback Submission | A 1–5 star rating is required; written comments are optional. The registered account email is displayed read-only and submissions are stored in Firestore with pending status. |
 | FR19 | User Management | Administrators can search users and suspend/reactivate permitted accounts. Suspended accounts are blocked at login and signed out when status is loaded. |
@@ -65,6 +65,14 @@ measured/manual evidence rather than code inspection alone.
 - Try unsupported dialect words: no invented translation should appear, and Yucatec spelling matches must require explicit review.
 - Verify that an unrecognised photo produces a helpful message and disables Translate.
 - Verify a long scan is limited with clear crop/shorten guidance; evaluate OCR accuracy separately from dictionary filtering.
+
+## Detail and replay acceptance checks
+
+- Tap a History record from Text, Photo, and Voice respectively. Verify the correct translation screen opens, the exact original source text and direction are restored, and translation runs automatically.
+- History photo replay uses saved detected text because the image URI/photo is not stored in history; the photo screen must keep it read-only.
+- Tap a Saved Word and choose Translate again. Verify it opens Text Translation with the exact saved Yucatec Maya word and Maya-to-English direction.
+- Verify the details dialog remains readable for long text and shows action buttons without overflowing smaller screens.
+- Test the back arrow after replay and confirm it returns to the original History or Saved Words list.
 
 ## Pagination acceptance checks
 
