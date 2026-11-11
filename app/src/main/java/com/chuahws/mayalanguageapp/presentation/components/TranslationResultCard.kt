@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BookmarkAdd
@@ -16,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
@@ -280,15 +282,21 @@ fun TranslationResultCard(
                 }
             }
 
+            // Keep the two primary actions equally sized. Audio gets its
+            // own row so the controls stay readable on narrow phones and
+            // when Android's font size is increased.
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 FilledTonalButton(
                     onClick = {
                         clipboard.setText(AnnotatedString(output))
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 52.dp),
                 ) {
                     Icon(
                         Icons.Rounded.ContentCopy,
@@ -296,15 +304,9 @@ fun TranslationResultCard(
                     )
                     Text(
                         text = "Copy",
-                        modifier = Modifier.padding(start = 6.dp),
-                    )
-                }
-
-                if (alternatives.isEmpty()) {
-                    SpeakButton(
-                        text = output,
-                        languageTag = outputLanguageTag,
-                        showUnavailableLabel = true,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.padding(start = 8.dp),
                     )
                 }
 
@@ -315,7 +317,9 @@ fun TranslationResultCard(
                 ) {
                     FilledTonalButton(
                         onClick = onSave,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 52.dp),
                     ) {
                         Icon(
                             Icons.Rounded.BookmarkAdd,
@@ -323,10 +327,21 @@ fun TranslationResultCard(
                         )
                         Text(
                             text = "Save",
-                            modifier = Modifier.padding(start = 6.dp),
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.padding(start = 8.dp),
                         )
                     }
                 }
+            }
+
+            if (alternatives.isEmpty()) {
+                SpeakButton(
+                    text = output,
+                    languageTag = outputLanguageTag,
+                    showUnavailableLabel = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }
