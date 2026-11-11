@@ -49,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -64,6 +65,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.chuahws.mayalanguageapp.R
+import com.chuahws.mayalanguageapp.domain.model.InputType
+import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
+import com.chuahws.mayalanguageapp.domain.model.SavedVocabularyItem
 import com.chuahws.mayalanguageapp.presentation.admin.AdminScreen
 import com.chuahws.mayalanguageapp.presentation.analytics.AnalyticsScreen
 import com.chuahws.mayalanguageapp.presentation.app.AppDataViewModel
@@ -79,6 +83,7 @@ import com.chuahws.mayalanguageapp.presentation.profile.ProfileScreen
 import com.chuahws.mayalanguageapp.presentation.saved.SavedScreen
 import com.chuahws.mayalanguageapp.presentation.translation.ImageTranslationScreen
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationScreen
+import com.chuahws.mayalanguageapp.presentation.translation.TranslationReplay
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationViewModel
 import com.chuahws.mayalanguageapp.presentation.translation.VoiceTranslationScreen
 import kotlinx.coroutines.launch
@@ -295,6 +300,27 @@ private fun MainShell(
     var adminUserView by rememberSaveable {
         mutableStateOf(false)
     }
+    var replayRequest by remember {
+        mutableStateOf<TranslationReplay?>(null)
+    }
+    var replaySequence by remember { mutableLongStateOf(0L) }
+
+    fun openHistoryTranslation(record: TranslationRecord) {
+        replaySequence += 1
+        val request = TranslationReplay.history(record, replaySequence)
+        replayRequest = request
+        page = when (request.mode) {
+            InputType.IMAGE -> AppPage.IMAGE_TRANSLATION
+            InputType.VOICE -> AppPage.VOICE_TRANSLATION
+            else -> AppPage.TEXT_TRANSLATION
+        }
+    }
+
+    fun openSavedTranslation(item: SavedVocabularyItem) {
+        replaySequence += 1
+        replayRequest = TranslationReplay.saved(item, replaySequence)
+        page = AppPage.TEXT_TRANSLATION
+    }
 
     fun openDrawer() {
         scope.launch {
@@ -303,6 +329,7 @@ private fun MainShell(
     }
 
     fun goTo(destination: AppPage) {
+        replayRequest = null
         page = destination
         scope.launch {
             drawerState.close()
@@ -470,6 +497,7 @@ private fun MainShell(
             drawerState.isClosed &&
                 page != AppPage.HOME,
     ) {
+        replayRequest = null
         page = AppPage.HOME
     }
 
@@ -694,6 +722,7 @@ private fun MainShell(
                             selected =
                                 page == itemPage,
                             onClick = {
+                                replayRequest = null
                                 page = itemPage
                             },
                             icon = {
@@ -767,19 +796,16 @@ private fun MainShell(
                                     ?.displayName
                                     .orEmpty(),
                             onTextTranslation = {
-                                page =
-                                    AppPage
-                                        .TEXT_TRANSLATION
+                                replayRequest = null
+                                page = AppPage.TEXT_TRANSLATION
                             },
                             onImageTranslation = {
-                                page =
-                                    AppPage
-                                        .IMAGE_TRANSLATION
+                                replayRequest = null
+                                page = AppPage.IMAGE_TRANSLATION
                             },
                             onVoiceTranslation = {
-                                page =
-                                    AppPage
-                                        .VOICE_TRANSLATION
+                                replayRequest = null
+                                page = AppPage.VOICE_TRANSLATION
                             },
                             onSaved = {
                                 page = AppPage.SAVED
@@ -807,6 +833,8 @@ private fun MainShell(
                         TranslationScreen(
                             viewModel =
                                 translationViewModel,
+                            replay = replayRequest
+                                ?.takeIf { it.mode == InputType.TEXT },
                             onSaveEntry =
                                 appDataViewModel
                                     ::saveEntry,
@@ -816,6 +844,8 @@ private fun MainShell(
                         ImageTranslationScreen(
                             viewModel =
                                 translationViewModel,
+                            replay = replayRequest
+                                ?.takeIf { it.mode == InputType.IMAGE },
                             onSaveEntry =
                                 appDataViewModel
                                     ::saveEntry,
@@ -825,6 +855,8 @@ private fun MainShell(
                         VoiceTranslationScreen(
                             viewModel =
                                 translationViewModel,
+                            replay = replayRequest
+                                ?.takeIf { it.mode == InputType.VOICE },
                             onSaveEntry =
                                 appDataViewModel
                                     ::saveEntry,
@@ -860,6 +892,7 @@ private fun MainShell(
                             onRemove =
                                 appDataViewModel
                                     ::removeSaved,
+                            onTranslate = ::openSavedTranslation,
                         )
 
                     AppPage.HISTORY ->
@@ -868,6 +901,7 @@ private fun MainShell(
                             onDelete =
                                 appDataViewModel
                                     ::deleteHistory,
+                            onTranslate = ::openHistoryTranslation,
                         )
 
                     AppPage.ANALYTICS ->
