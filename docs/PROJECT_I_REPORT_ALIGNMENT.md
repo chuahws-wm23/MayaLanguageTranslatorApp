@@ -27,9 +27,9 @@ can be claimed.
 | FR11 | Speech-to-Text Conversion | PASS — Android Speech Recognition result is shown as editable text before translation; cancellation/silence/denial have controlled states. |
 | FR12 | Pronunciation Support | PASS — device TTS is used for supported output/saved vocabulary, with visible unavailable state when the required voice is not installed. |
 | FR13 | Translation History | PASS — successful translation records store source/target text, languages, input method and timestamp. |
-| FR14 | History Management | PASS — own history can be viewed, searched, filtered, opened for complete details and deleted with confirmation. |
+| FR14 | History Management | CODE ALIGNED — own history can be searched, filtered, viewed in 10-entry pages, opened for details and deleted with confirmation. Page navigation supports arrows and numeric jumps. Currently, the user list loads up to 100 recent history records. |
 | FR15 | Dictionary Access | PASS — Maya/English search, browsing, sorting, sections and progressive Load More support. |
-| FR16 | Saved Vocabulary | PASS — save, duplicate prevention, browse/search/filter, select for details/pronunciation and confirmed removal. |
+| FR16 | Saved Vocabulary | CODE ALIGNED — saved words have search/filter, 10-entry pages, previous/next arrows, direct page-number navigation, details/pronunciation and confirmed removal. |
 | FR17 | Usage Analytics | PASS — text/photo/voice totals, numeric summaries, 7-day activity and charts. |
 | FR18 | Feedback Submission | CODE ALIGNED — selected 1–5 star rating is mandatory; written feedback is optional. The signed-in account email is shown without an editable field, and valid submissions are saved as `pending`. |
 | FR19 | User Management | PASS — authorised admin user list/search and suspend/reactivate operations; own admin account cannot be suspended. |
@@ -73,7 +73,7 @@ The implemented process order now matches the Project I process diagrams:
 - **Typed translation:** input → direction → validation → dictionary translation → result → history + analytics → optional pronunciation/save.
 - **Image translation:** camera/gallery → image validation/down-sizing → Latin OCR → direction-specific Yucatec/English dictionary filtering → read-only detected text → optional Review OCR correction → translation → history + analytics.
 - **Voice translation:** microphone permission → Android speech recognition → editable recognised text → English-to-Maya translation → history + analytics.
-- **History / vocabulary:** load user-owned records → select/details → delete/remove with confirmation where applicable.
+- **History / vocabulary:** load user-owned records → search/filter → navigate 10-item pages (arrows or page number) → select/details → delete/remove with confirmation. Search/filter changes reset to page 1, while deletion clamps invalid pages.
 - **Administrator:** role gate → manage users / dictionary / feedback / reports.
 - **Sequence flow:** UI → ViewModel/service → repository/Firebase/ML Kit/speech/TTS → UI response follows the same high-level interaction order.
 
@@ -148,6 +148,14 @@ The final implementation focuses on **Yucatec Maya** (ISO language tag `yua`). M
 ## Feedback requirement clarification
 
 The final feedback interface requires a star rating but accepts a blank written comment. The signed-in email is displayed as account information, rather than as an editable form field. Update the UC-12 main/alternative flow and FR18 test cases in the final report if an earlier draft states that a written comment is mandatory. Physical-device and live Firestore submission still need manual evidence.
+
+## History and Saved Words pagination acceptance
+
+- Save or create at least 21 entries and confirm each page lists no more than ten.
+- Check previous/next arrow disable states on first/last page and enter an exact page number using Go or the keyboard.
+- Confirm search/type/category filters reset to page 1 and apply before page slicing.
+- Delete the last item on the final page and verify the UI navigates to a valid page.
+- Current History loading is limited to the 100 most recent records; navigating beyond that requires future backend cursor pagination. The interface shows this limit when applicable.
 
 ## Final manual acceptance gate
 
