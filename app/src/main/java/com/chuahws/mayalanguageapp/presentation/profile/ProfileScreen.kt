@@ -301,229 +301,229 @@ private fun ProfileOverview(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape =
-                    MaterialTheme.shapes.extraLarge,
-                colors = CardDefaults.cardColors(
-                    containerColor =
-                        Color.Transparent,
-                ),
-                elevation =
-                    CardDefaults.cardElevation(
-                        defaultElevation = 4.dp,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape =
+                        MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(
+                        containerColor =
+                            Color.Transparent,
                     ),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            Brush.linearGradient(
-                                listOf(
-                                    MaterialTheme
-                                        .colorScheme.primary,
-                                    MaterialTheme
-                                        .colorScheme.primary
-                                        .copy(alpha = 0.88f),
-                                    MaterialTheme
-                                        .colorScheme.secondary,
+                    elevation =
+                        CardDefaults.cardElevation(
+                            defaultElevation = 4.dp,
+                        ),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        MaterialTheme
+                                            .colorScheme.primary,
+                                        MaterialTheme
+                                            .colorScheme.primary
+                                            .copy(alpha = 0.88f),
+                                        MaterialTheme
+                                            .colorScheme.secondary,
+                                    )
                                 )
                             )
-                        )
-                        .padding(24.dp),
-                    contentAlignment =
-                        Alignment.Center,
-                ) {
-                    Column(
-                        horizontalAlignment =
-                            Alignment.CenterHorizontally,
-                        verticalArrangement =
-                            Arrangement.spacedBy(8.dp),
+                            .padding(24.dp),
+                        contentAlignment =
+                            Alignment.Center,
                     ) {
-                        Box {
-                            ProfilePhoto(
-                                uri = photoUri,
-                                context = context,
-                            )
-
-                            Surface(
-                                modifier = Modifier
-                                    .align(
-                                        Alignment.BottomEnd
-                                    )
-                                    .size(36.dp)
-                                    .clickable(
-                                        onClick =
-                                            onOpenPhoto
-                                    ),
-                                shape = CircleShape,
-                                color = Color.White,
-                                shadowElevation = 3.dp,
-                            ) {
-                                Box(
-                                    contentAlignment =
-                                        Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector =
-                                            Icons.Rounded
-                                                .PhotoCamera,
-                                        contentDescription =
-                                            "Profile photo settings",
-                                        tint =
-                                            MaterialTheme
-                                                .colorScheme.primary,
-                                        modifier =
-                                            Modifier.size(
-                                                18.dp
-                                            ),
-                                    )
-                                }
-                            }
-                        }
-
-                        Text(
-                            text =
-                                profile?.displayName
-                                    ?.ifBlank { email }
-                                    ?: email,
-                            color = Color.White,
-                            style =
-                                MaterialTheme
-                                    .typography.titleLarge,
-                            fontWeight =
-                                FontWeight.Bold,
-                        )
-
-                        Text(
-                            text = email,
-                            color = Color.White
-                                .copy(alpha = 0.84f),
-                            style =
-                                MaterialTheme
-                                    .typography.bodyMedium,
-                        )
-
-                        Row(
-                            horizontalArrangement =
+                        Column(
+                            horizontalAlignment =
+                                Alignment.CenterHorizontally,
+                            verticalArrangement =
                                 Arrangement.spacedBy(8.dp),
                         ) {
-                            SoftBadge(
-                                text =
-                                    if (
-                                        profile?.role ==
-                                            "admin"
+                            Box {
+                                ProfilePhoto(
+                                    uri = photoUri,
+                                    context = context,
+                                )
+
+                                Surface(
+                                    modifier = Modifier
+                                        .align(
+                                            Alignment.BottomEnd
+                                        )
+                                        .size(36.dp)
+                                        .clickable(
+                                            onClick =
+                                                onOpenPhoto
+                                        ),
+                                    shape = CircleShape,
+                                    color = Color.White,
+                                    shadowElevation = 3.dp,
+                                ) {
+                                    Box(
+                                        contentAlignment =
+                                            Alignment.Center,
                                     ) {
-                                        "Administrator"
-                                    } else {
-                                        "Learner"
-                                    },
+                                        Icon(
+                                            imageVector =
+                                                Icons.Rounded
+                                                    .PhotoCamera,
+                                            contentDescription =
+                                                "Profile photo settings",
+                                            tint =
+                                                MaterialTheme
+                                                    .colorScheme.primary,
+                                            modifier =
+                                                Modifier.size(
+                                                    18.dp
+                                                ),
+                                        )
+                                    }
+                                }
+                            }
+
+                            Text(
+                                text =
+                                    profile?.displayName
+                                        ?.ifBlank { email }
+                                        ?: email,
                                 color = Color.White,
+                                style =
+                                    MaterialTheme
+                                        .typography.titleLarge,
+                                fontWeight =
+                                    FontWeight.Bold,
                             )
 
-                            SoftBadge(
-                                text = accountStatus,
-                                color = Color.White,
+                            Text(
+                                text = email,
+                                color = Color.White
+                                    .copy(alpha = 0.84f),
+                                style =
+                                    MaterialTheme
+                                        .typography.bodyMedium,
                             )
+
+                            Row(
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(8.dp),
+                            ) {
+                                SoftBadge(
+                                    text =
+                                        if (
+                                            profile?.role ==
+                                                "admin"
+                                        ) {
+                                            "Administrator"
+                                        } else {
+                                            "Learner"
+                                        },
+                                    color = Color.White,
+                                )
+
+                                SoftBadge(
+                                    text = accountStatus,
+                                    color = Color.White,
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            ProfileAction(
-                icon = Icons.Rounded.PhotoCamera,
-                title =
-                    if (photoUri == null) {
-                        "Add profile photo"
-                    } else {
-                        "Change profile photo"
-                    },
-                subtitle =
-                    "Manage your profile picture",
-                onClick = onOpenPhoto,
-            )
-
-            ProfileAction(
-                icon = Icons.Rounded.Edit,
-                title = "Edit profile",
-                subtitle =
-                    "Update your display name",
-                onClick = onOpenEdit,
-            )
-
-            ProfileAction(
-                icon = Icons.Rounded.LockReset,
-                title = "Change password",
-                subtitle =
-                    "Manage password recovery",
-                onClick = onOpenPassword,
-            )
-
-            ProfileInfo(
-                icon = Icons.Rounded.Person,
-                title = "Member since",
-                subtitle =
-                    "Account creation date",
-                value = memberSince,
-            )
-
-            ProfileAction(
-                icon = Icons.Rounded.Language,
-                title = "App language",
-                subtitle =
-                    "English",
-                onClick = onOpenLanguage,
-            )
-
-            ProfileAction(
-                icon = Icons.Rounded.Info,
-                title = "About app",
-                subtitle =
-                    "Project information and scope",
-                onClick = onOpenAbout,
-            )
-
-            if (profile?.role == "admin") {
                 ProfileAction(
-                    icon =
-                        Icons.Rounded
-                            .AdminPanelSettings,
+                    icon = Icons.Rounded.PhotoCamera,
                     title =
-                        "Admin dashboard",
+                        if (photoUri == null) {
+                            "Add profile photo"
+                        } else {
+                            "Change profile photo"
+                        },
                     subtitle =
-                        "Manage users, words, feedback & reports",
-                    onClick = onOpenAdmin,
+                        "Manage your profile picture",
+                    onClick = onOpenPhoto,
                 )
-            }
 
-            OutlinedButton(
-                onClick = onSignOut,
-                modifier =
-                    Modifier.fillMaxWidth(),
-                contentPadding =
-                    PaddingValues(
-                        vertical = 14.dp
-                    ),
-            ) {
-                Icon(
-                    Icons.Rounded.Logout,
-                    contentDescription = null,
-                    tint =
-                        MaterialTheme
-                            .colorScheme.error,
+                ProfileAction(
+                    icon = Icons.Rounded.Edit,
+                    title = "Edit profile",
+                    subtitle =
+                        "Update your display name",
+                    onClick = onOpenEdit,
                 )
-                Text(
-                    text = "Logout",
-                    color =
-                        MaterialTheme
-                            .colorScheme.error,
+
+                ProfileAction(
+                    icon = Icons.Rounded.LockReset,
+                    title = "Change password",
+                    subtitle =
+                        "Manage password recovery",
+                    onClick = onOpenPassword,
+                )
+
+                ProfileInfo(
+                    icon = Icons.Rounded.Person,
+                    title = "Member since",
+                    subtitle =
+                        "Account creation date",
+                    value = memberSince,
+                )
+
+                ProfileAction(
+                    icon = Icons.Rounded.Language,
+                    title = "App language",
+                    subtitle =
+                        "English",
+                    onClick = onOpenLanguage,
+                )
+
+                ProfileAction(
+                    icon = Icons.Rounded.Info,
+                    title = "About app",
+                    subtitle =
+                        "Project information and scope",
+                    onClick = onOpenAbout,
+                )
+
+                if (profile?.role == "admin") {
+                    ProfileAction(
+                        icon =
+                            Icons.Rounded
+                                .AdminPanelSettings,
+                        title =
+                            "Admin dashboard",
+                        subtitle =
+                            "Manage users, words, feedback & reports",
+                        onClick = onOpenAdmin,
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = onSignOut,
                     modifier =
-                        Modifier.padding(
-                            start = 8.dp
+                        Modifier.fillMaxWidth(),
+                    contentPadding =
+                        PaddingValues(
+                            vertical = 14.dp
                         ),
-                    fontWeight =
-                        FontWeight.SemiBold,
-                )
-            }
+                ) {
+                    Icon(
+                        Icons.Rounded.Logout,
+                        contentDescription = null,
+                        tint =
+                            MaterialTheme
+                                .colorScheme.error,
+                    )
+                    Text(
+                        text = "Logout",
+                        color =
+                            MaterialTheme
+                                .colorScheme.error,
+                        modifier =
+                            Modifier.padding(
+                                start = 8.dp
+                            ),
+                        fontWeight =
+                            FontWeight.SemiBold,
+                    )
+                }
             }
         }
     }
