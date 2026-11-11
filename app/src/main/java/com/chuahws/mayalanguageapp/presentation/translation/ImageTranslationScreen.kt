@@ -72,6 +72,7 @@ import kotlinx.coroutines.launch
 fun ImageTranslationScreen(
     viewModel: TranslationViewModel,
     onSaveEntry: (DictionaryEntry) -> Unit,
+    replay: TranslationReplay? = null,
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -113,10 +114,29 @@ fun ImageTranslationScreen(
         )
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.setDirection(
-            TranslationDirection.MAYA_TO_ENGLISH
-        )
+    LaunchedEffect(replay?.requestId) {
+        if (replay != null) {
+            // History stores the exact OCR-derived text, not the photo URI.
+            // Display it in the read-only field and translate it again.
+            scanVersion += 1
+            imageUri = null
+            scannedText = replay.sourceText
+            reviewedText = null
+            filteredText = null
+            readingImage = false
+            filteringImage = false
+            imageMessage =
+                "Reopened detected text from History. The original photo was not saved."
+            viewModel.replayStoredTranslation(
+                replay.sourceText,
+                replay.direction,
+                InputType.IMAGE,
+            )
+        } else {
+            viewModel.setDirection(
+                TranslationDirection.MAYA_TO_ENGLISH
+            )
+        }
     }
 
     fun readImage(uri: Uri) {
@@ -165,6 +185,11 @@ fun ImageTranslationScreen(
     // The chosen language controls which supported OCR words are displayed.
     // The original scan is retained even when no words match this direction.
     LaunchedEffect(reviewedText, state.direction) {
+        // Do not overwrite an exact replay with a fresh dictionary filter.
+        if (replay != null && reviewedText == null) {
+            filteringImage = false
+            return@LaunchedEffect
+        }
         filteredText = null
         yucatecSuggestions = emptyList()
         viewModel.updateInput("")
@@ -463,6 +488,10 @@ fun ImageTranslationScreen(
                 onSwitch = {
                     viewModel.swapDirection()
                     viewModel.clear()
+                    if (replay != null && reviewedText == null) {
+                        // A direction switch requests a new language filter.
+                        reviewedText = scannedText
+                    }
                 },
             )
 
