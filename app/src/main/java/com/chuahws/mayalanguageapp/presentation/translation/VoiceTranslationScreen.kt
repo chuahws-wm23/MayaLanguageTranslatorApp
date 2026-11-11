@@ -48,6 +48,7 @@ import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.InputType
 import com.chuahws.mayalanguageapp.domain.model.TranslationDirection
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
+import com.chuahws.mayalanguageapp.presentation.components.TranslationGuidanceCard
 import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
 
 @Composable
@@ -378,6 +379,18 @@ fun VoiceTranslationScreen(
                         }
                     },
                 onSaveAlternative = onSaveEntry,
+                approximate = state.approximate,
+                needsReview = state.needsReview,
+            )
+
+            TranslationGuidanceCard(
+                advice = state.advice,
+                unknownTerms = state.unknownTerms,
+                ambiguousTerms = state.ambiguousTerms,
+                unreliableSegments = state.unreliableSegments,
+                suggestions = state.suggestions,
+                direction = state.direction,
+                onSuggestionSelected = viewModel::updateInput,
             )
         }
     }
