@@ -16,8 +16,8 @@ performance testing for the final Results chapter.
 | FR05 | Text Input | Implemented for Maya and English text. |
 | FR06 | Text Translation | Implemented with dictionary/phrase lookup in both directions. |
 | FR07 | Image Selection | Implemented with CameraX capture and gallery selection. |
-| FR08 | OCR Text Extraction | Implemented with image validation/resizing/orientation handling and Google ML Kit Latin text recognition. |
-| FR09 | OCR Text Correction | Recognised text is editable before translation. |
+| FR08 | OCR Text Extraction | Google ML Kit recognises Latin-script photo text; a direction-specific dictionary filter displays supported English or Yucatec Maya words/phrases without inventing unsupported dialect translations. |
+| FR09 | OCR Text Correction | The detected-text field is read-only. A separate Review OCR dialog allows users to correct recognition mistakes before the filtered source-language text is translated. |
 | FR10 | Voice Input | Implemented with runtime microphone-permission handling and Android speech recognition. |
 | FR11 | Speech-to-Text Conversion | Recognised English speech is displayed as editable text. |
 | FR12 | Pronunciation Support | Implemented through device TTS with an explicit unavailable-audio state when the requested voice is not installed. |
@@ -56,6 +56,15 @@ measured/manual evidence rather than code inspection alone.
 - dictionary add/edit/search/delete behaviour
 - administrator account-status updates
 - system analytics aggregation across users
+
+## Photo translation acceptance checks
+
+- Scan a photo containing both English and Yucatec Maya and confirm the read-only text displays only matched words for the selected source direction.
+- Tap the full-width direction bar and verify the original scan is re-filtered without taking another photo or retaining the previous translation.
+- Verify the main OCR text field never opens the keyboard; use the separate Review OCR dialog to correct mistakes.
+- Try unsupported dialect words: no invented translation should appear, and Yucatec spelling matches must require explicit review.
+- Verify that an unrecognised photo produces a helpful message and disables Translate.
+- Verify a long scan is limited with clear crop/shorten guidance; evaluate OCR accuracy separately from dictionary filtering.
 
 ## Feedback acceptance checks
 
