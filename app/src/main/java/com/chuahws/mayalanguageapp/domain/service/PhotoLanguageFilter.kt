@@ -3,6 +3,7 @@ package com.chuahws.mayalanguageapp.domain.service
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.TranslationDirection
 import com.chuahws.mayalanguageapp.domain.repository.DictionaryRepository
+import kotlinx.coroutines.sync.Mutex
 
 /**
  * Filters Latin-script OCR against supported Yucatec Maya/English vocabulary.
@@ -15,6 +16,44 @@ import com.chuahws.mayalanguageapp.domain.repository.DictionaryRepository
 class PhotoLanguageFilter(
     private val dictionaryRepository: DictionaryRepository,
 ) {
+    private val cacheMutex = Mutex()
+    private var cachedForms: Pair<Set<String>, Set<String>>? = null
+    private var cacheTimeMillis: Long = 0L
+
+    // Switching the language bar should not download the same dictionary
+    // again. Refresh periodically so administrator updates become visible.
+    private suspend fun knownForms(): Pair<Set<String>, Set<String>> {
+        cacheMutex.lock()
+        try {
+            val now = System.currentTimeMillis()
+            val cached = cachedForms
+            if (
+                cached != null &&
+                now - cacheTimeMillis in 0 until CACHE_LIFETIME_MILLIS
+            ) return cached
+
+            val entries = dictionaryRepository
+                .browseEntries(MAX_DICTIONARY_ROWS)
+                .filter(DictionaryEntry::active)
+            val mayaForms = entries.mapNotNull { entry ->
+                TextNormalizer.normalize(entry.mayaNormalized)
+                    .takeIf(String::isNotBlank)
+            }.toSet()
+            val englishForms = entries.flatMap { entry ->
+                listOf(entry.englishNormalized) + entry.acceptedEnglishInputs
+            }.map(TextNormalizer::normalize)
+                .filter(String::isNotBlank)
+                .toSet()
+
+            return (mayaForms to englishForms).also {
+                cachedForms = it
+                cacheTimeMillis = now
+            }
+        } finally {
+            cacheMutex.unlock()
+        }
+    }
+
     data class Result(
         val text: String,
         val matchedWordCount: Int,
@@ -37,17 +76,8 @@ class PhotoLanguageFilter(
             return Result("", 0, 0, emptyList(), limitedByInput)
         }
 
-        // One bounded Firestore read rather than dozens of network queries
-        // per word. Firestore and built-in entries are combined by repository.
-        val entries = dictionaryRepository.browseEntries(MAX_DICTIONARY_ROWS)
-            .filter(DictionaryEntry::active)
-        val mayaForms = entries.mapNotNull { entry ->
-            TextNormalizer.normalize(entry.mayaNormalized)
-                .takeIf(String::isNotBlank)
-        }.toSet()
-        val englishForms = entries.flatMap { entry ->
-            listOf(entry.englishNormalized) + entry.acceptedEnglishInputs
-        }.map(TextNormalizer::normalize).filter(String::isNotBlank).toSet()
+        // Reuse a bounded dictionary snapshot across quick direction swaps.
+        val (mayaForms, englishForms) = knownForms()
 
         val sourceForms = when (direction) {
             TranslationDirection.MAYA_TO_ENGLISH -> mayaForms
@@ -133,6 +163,7 @@ class PhotoLanguageFilter(
         const val MAX_SCANNED_WORDS = 100
         const val MAX_TRANSLATABLE_LENGTH = 500
         const val MAX_DICTIONARY_ROWS = 3_000
+        const val CACHE_LIFETIME_MILLIS = 60_000L
         const val MAX_PHRASE_WORDS = 4
         val TOKEN_PATTERN = Regex("[\\p{L}\\p{M}]+(?:[ʼ'’ʻʹ-][\\p{L}\\p{M}]+)*(?:[ʼ'’ʻʹ])?")
     }
