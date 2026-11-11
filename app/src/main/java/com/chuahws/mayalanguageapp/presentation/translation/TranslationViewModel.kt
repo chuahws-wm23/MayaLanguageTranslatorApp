@@ -7,6 +7,7 @@ import com.chuahws.mayalanguageapp.domain.model.TranslationDirection
 import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.domain.model.TranslationResult
 import com.chuahws.mayalanguageapp.domain.repository.UserDataRepository
+import com.chuahws.mayalanguageapp.domain.service.PhotoLanguageFilter
 import com.chuahws.mayalanguageapp.domain.service.TranslationService
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,20 @@ class TranslationViewModel(
         MutableStateFlow(TranslationUiState())
     val uiState: StateFlow<TranslationUiState> =
         _uiState.asStateFlow()
+
+    suspend fun filterPhotoText(
+        recognizedText: String,
+        direction: TranslationDirection,
+    ): PhotoLanguageFilter.Result =
+        translationService.filterPhotoText(recognizedText, direction)
+
+    suspend fun possibleYucatecSpelling(
+        recognizedWord: String,
+    ) = translationService.suggestCorrections(
+        recognizedWord,
+        TranslationDirection.MAYA_TO_ENGLISH,
+        limit = 3,
+    )
 
     fun updateInput(value: String) {
         if (_uiState.value.loading) return
