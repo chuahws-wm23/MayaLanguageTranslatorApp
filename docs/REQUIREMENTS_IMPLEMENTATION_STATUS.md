@@ -22,9 +22,9 @@ performance testing for the final Results chapter.
 | FR11 | Speech-to-Text Conversion | Recognised English speech is displayed as editable text. |
 | FR12 | Pronunciation Support | Implemented through device TTS with an explicit unavailable-audio state when the requested voice is not installed. |
 | FR13 | Translation History | Successful translations are stored with input type and timestamp. |
-| FR14 | History Management | View, search, filter, selectable detail view and confirmed deletion are implemented. Firestore deletion is restricted to the record owner. |
+| FR14 | History Management | View, search/filter, 10-record pages with arrows and numeric jump, selectable details and confirmed deletion are implemented. Firestore deletion is owner-scoped. Current history retrieval loads at most 100 recent records. |
 | FR15 | Dictionary Access | User-facing Maya/English search, sorting/sections and progressive Load More browsing are implemented. |
-| FR16 | Saved Vocabulary | Save, duplicate prevention, search/filter, selectable details/pronunciation and confirmed removal are implemented. |
+| FR16 | Saved Vocabulary | Save, duplicate prevention, search/filter, 10-entry pages with arrow and page-number navigation, selectable details/pronunciation and confirmed removal are implemented. |
 | FR17 | Usage Analytics | Text, image and voice counters and activity summaries are implemented. |
 | FR18 | Feedback Submission | A 1–5 star rating is required; written comments are optional. The registered account email is displayed read-only and submissions are stored in Firestore with pending status. |
 | FR19 | User Management | Administrators can search users and suspend/reactivate permitted accounts. Suspended accounts are blocked at login and signed out when status is loaded. |
@@ -65,6 +65,13 @@ measured/manual evidence rather than code inspection alone.
 - Try unsupported dialect words: no invented translation should appear, and Yucatec spelling matches must require explicit review.
 - Verify that an unrecognised photo produces a helpful message and disables Translate.
 - Verify a long scan is limited with clear crop/shorten guidance; evaluate OCR accuracy separately from dictionary filtering.
+
+## Pagination acceptance checks
+
+- Confirm History and Saved Words display a maximum of ten entries on any page.
+- Verify arrows and direct page input navigate correctly, including the last partial page.
+- Changing a search/filter must restart at page 1; removing a final-page entry must clamp to the previous valid page.
+- History currently retrieves at most 100 recent records; full archival pagination would require Firestore cursor-based loading.
 
 ## Feedback acceptance checks
 
