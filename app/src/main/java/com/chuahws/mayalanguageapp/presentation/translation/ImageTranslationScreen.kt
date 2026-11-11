@@ -21,6 +21,8 @@ import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.ImageSearch
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -28,6 +30,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -40,12 +44,14 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.chuahws.mayalanguageapp.domain.service.PhotoLanguageFilter
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
@@ -57,6 +63,9 @@ import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.TranslationGuidanceCard
 import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
 import com.chuahws.mayalanguageapp.presentation.theme.MayaPink
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @Composable
@@ -83,6 +92,20 @@ fun ImageTranslationScreen(
     var imageMessage by remember {
         mutableStateOf<String?>(null)
     }
+    // Preserve OCR from the photo so switching languages never translates
+    // stale words from the previously selected direction.
+    var scannedText by remember { mutableStateOf<String?>(null) }
+    var reviewedText by remember { mutableStateOf<String?>(null) }
+    var filteredText by remember {
+        mutableStateOf<PhotoLanguageFilter.Result?>(null)
+    }
+    var filteringImage by remember { mutableStateOf(false) }
+    var scanVersion by remember { mutableStateOf(0) }
+    var reviewingOcr by remember { mutableStateOf(false) }
+    var correctionDraft by remember { mutableStateOf("") }
+    var yucatecSuggestions by remember {
+        mutableStateOf<List<Pair<String, DictionaryEntry>>>(emptyList())
+    }
 
     val cameraAvailable = remember(context) {
         context.packageManager.hasSystemFeature(
@@ -97,49 +120,100 @@ fun ImageTranslationScreen(
     }
 
     fun readImage(uri: Uri) {
-        // A newly selected image starts a fresh OCR/translation attempt.
-        // This removes the previous extracted text and translation result
-        // only after the user actually chooses or captures a new image.
+        scanVersion += 1
+        val requestVersion = scanVersion
         viewModel.clear()
         imageUri = uri
+        scannedText = null
+        reviewedText = null
+        filteredText = null
+        yucatecSuggestions = emptyList()
         readingImage = true
         imageMessage = null
 
         scope.launch {
-            runCatching {
-                ocrService.readText(context, uri)
-            }.onSuccess { text ->
-                // Show the OCR result before applying any language
-                // assumptions. The user can review and correct the
-                // recognised text before requesting translation.
-                val extractedText = text
+            try {
+                val recognized = ocrService.readText(context, uri)
                     .lineSequence()
                     .map(String::trim)
                     .filter(String::isNotBlank)
                     .joinToString("\n")
 
-                readingImage = false
-
-                if (text.isBlank()) {
-                    imageMessage =
-                        "No text was found. Try a clearer image."
-                } else if (extractedText.isBlank()) {
-                    viewModel.updateInput("")
-                    imageMessage =
-                        "No readable text was found. Try a clearer image or type the text instead."
-                } else {
-                    viewModel.updateInput(extractedText)
+                if (requestVersion == scanVersion) {
+                    scannedText = recognized
+                    reviewedText = recognized
+                    if (recognized.isBlank()) {
+                        imageMessage =
+                            "No readable text found. Try a clearer photo or crop closer to the words."
+                    }
                 }
-            }.onFailure { error ->
-                readingImage = false
-                imageMessage =
-                    error.message
-                        ?.takeIf {
-                            it.isNotBlank()
-                        }
-                        ?: "Couldn’t read this image. Try another one."
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                if (requestVersion == scanVersion) {
+                    imageMessage =
+                        "This image could not be read. Try another photo."
+                }
+            } finally {
+                if (requestVersion == scanVersion) {
+                    readingImage = false
+                }
             }
         }
+    }
+
+    // The chosen language controls which supported OCR words are displayed.
+    // The original scan is retained even when no words match this direction.
+    LaunchedEffect(reviewedText, state.direction) {
+        filteredText = null
+        yucatecSuggestions = emptyList()
+        viewModel.updateInput("")
+        imageMessage = null
+        val raw = reviewedText.orEmpty()
+        if (raw.isBlank()) {
+            filteringImage = false
+            return@LaunchedEffect
+        }
+        filteringImage = true
+        try {
+            val result = viewModel.filterPhotoText(raw, state.direction)
+            filteredText = result
+            viewModel.updateInput(result.text)
+
+            if (
+                state.direction == TranslationDirection.MAYA_TO_ENGLISH &&
+                result.skippedWords.isNotEmpty()
+            ) {
+                val possible = mutableListOf<Pair<String, DictionaryEntry>>()
+                for (term in result.skippedWords.take(3)) {
+                    val matches = runCatching {
+                        viewModel.possibleYucatecSpelling(term)
+                    }.getOrDefault(emptyList())
+                    matches.take(2).forEach { match ->
+                        possible += term to match
+                    }
+                }
+                yucatecSuggestions = possible
+                    .distinctBy { it.second.entryId }
+                    .take(3)
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            filteredText = null
+            viewModel.updateInput("")
+            imageMessage =
+                "Couldn't check the photo words against the dictionary. Check your connection and try again."
+        } finally {
+            if (currentCoroutineContext().isActive) {
+                filteringImage = false
+            }
+        }
+    }
+
+    fun showReview(original: String = reviewedText.orEmpty()) {
+        correctionDraft = original.take(2500)
+        reviewingOcr = true
     }
 
     val galleryLauncher =
@@ -218,17 +292,56 @@ fun ImageTranslationScreen(
     val source =
         if (state.direction ==
             TranslationDirection.MAYA_TO_ENGLISH
-        ) "Maya" else "English"
+        ) "Yucatec Maya" else "English"
 
     val target =
         if (state.direction ==
             TranslationDirection.MAYA_TO_ENGLISH
-        ) "English" else "Maya"
+        ) "English" else "Yucatec Maya"
 
     val outputLanguageTag =
         if (state.direction ==
             TranslationDirection.MAYA_TO_ENGLISH
         ) "en-US" else "yua"
+
+    if (reviewingOcr) {
+        AlertDialog(
+            onDismissRequest = { reviewingOcr = false },
+            title = { Text("Review photo recognition") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Correct recognition mistakes here. The detected-text area on the photo screen stays read-only.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    OutlinedTextField(
+                        value = correctionDraft,
+                        onValueChange = { text ->
+                            if (text.length <= 2500) correctionDraft = text
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 4,
+                        maxLines = 9,
+                        label = { Text("Text recognised in photo") },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        reviewingOcr = false
+                        viewModel.clear()
+                        reviewedText = correctionDraft
+                    }
+                ) { Text("Apply correction") }
+            },
+            dismissButton = {
+                TextButton(onClick = { reviewingOcr = false }) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
 
     AppGradientBackground {
         Column(
@@ -331,6 +444,15 @@ fun ImageTranslationScreen(
                 }
             }
 
+            PhotoDirectionBar(
+                direction = state.direction,
+                enabled = !readingImage && !filteringImage && !state.loading,
+                onSwitch = {
+                    viewModel.swapDirection()
+                    viewModel.clear()
+                },
+            )
+
             if (!cameraAvailable) {
                 Surface(
                     shape = MaterialTheme.shapes.medium,
@@ -417,52 +539,108 @@ fun ImageTranslationScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Row(
+                    Text(
+                        text = "Detected $source words",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Only words or phrases supported by the $source dictionary are shown.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedTextField(
+                        value = state.input,
+                        onValueChange = {},
+                        readOnly = true,
+                        enabled = true,
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement =
-                            Arrangement.SpaceBetween,
-                    ) {
-                        Column {
-                            Text(
-                                text = "Text from photo",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                            Text(
-                                text = "From $source · To $target",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        minLines = 3,
+                        maxLines = 8,
+                        placeholder = {
+                            Text("Recognised $source text will appear here")
+                        },
+                        supportingText = {
+                            Text("Read-only text extracted from this photo")
+                        },
+                    )
 
-                        FilledTonalIconButton(
-                            onClick = viewModel::swapDirection,
-                            enabled = !state.loading,
+                    if (scannedText?.isNotBlank() == true) {
+                        OutlinedButton(
+                            onClick = { showReview() },
+                            enabled = !readingImage && !filteringImage && !state.loading,
                         ) {
                             Icon(
-                                Icons.Rounded.SwapHoriz,
-                                contentDescription =
-                                    "Swap languages",
+                                Icons.Rounded.Edit,
+                                contentDescription = null,
+                            )
+                            Text(
+                                text = "Review OCR",
+                                modifier = Modifier.padding(start = 8.dp),
                             )
                         }
                     }
+                }
+            }
 
-                    OutlinedTextField(
-                        value = state.input,
-                        onValueChange = viewModel::updateInput,
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !readingImage &&
-                            !state.loading,
-                        placeholder = {
-                            Text("Text from your photo will appear here")
-                        },
-                        supportingText = {
+            filteredText?.let { result ->
+                val explanation = when {
+                    result.matchedWordCount == 0 ->
+                        "No supported $source words found in this photo. Try the other direction, review OCR, or take a clearer picture."
+                    result.skippedWordCount > 0 ->
+                        "Found ${result.matchedWordCount} supported $source word(s). ${result.skippedWordCount} other word(s) were left out because their language or dictionary match was uncertain."
+                    else ->
+                        "Found ${result.matchedWordCount} supported $source word(s) in the photo."
+                }
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = explanation,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        if (result.limited) {
                             Text(
-                                "Check the recognised text and correct anything that looks wrong before translating."
+                                text = "Only part of the scan was checked. Crop the photo to a shorter section for better results.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
                             )
-                        },
-                        minLines = 4,
-                    )
+                        }
+                        if (
+                            state.direction == TranslationDirection.MAYA_TO_ENGLISH &&
+                            yucatecSuggestions.isNotEmpty()
+                        ) {
+                            Text(
+                                text = "Possible Yucatec Maya spellings (check before using):",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            yucatecSuggestions.forEach { (original, match) ->
+                                OutlinedButton(
+                                    onClick = {
+                                        val raw = reviewedText.orEmpty()
+                                        val corrected = raw.replace(
+                                            original,
+                                            match.mayaText,
+                                            ignoreCase = true,
+                                        )
+                                        showReview(corrected)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text(
+                                        text = "${original} → ${match.mayaText}",
+                                        maxLines = 2,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -473,6 +651,7 @@ fun ImageTranslationScreen(
                 enabled =
                     !state.loading &&
                         !readingImage &&
+                        !filteringImage &&
                         state.input.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(vertical = 15.dp),
@@ -513,8 +692,89 @@ fun ImageTranslationScreen(
                 unreliableSegments = state.unreliableSegments,
                 suggestions = state.suggestions,
                 direction = state.direction,
-                onSuggestionSelected = viewModel::applySuggestion,
+                onSuggestionSelected = { suggestion ->
+                    val original = state.unknownTerms.singleOrNull()
+                    val reviewed = reviewedText.orEmpty()
+                    val corrected = if (original != null) {
+                        reviewed.replace(
+                            original,
+                            suggestion,
+                            ignoreCase = true,
+                        )
+                    } else {
+                        reviewed
+                    }
+                    showReview(corrected)
+                },
             )
+        }
+    }
+}
+
+@Composable
+private fun PhotoDirectionBar(
+    direction: TranslationDirection,
+    enabled: Boolean,
+    onSwitch: () -> Unit,
+) {
+    val from = if (direction == TranslationDirection.MAYA_TO_ENGLISH) {
+        "Yucatec Maya"
+    } else {
+        "English"
+    }
+    val to = if (direction == TranslationDirection.MAYA_TO_ENGLISH) {
+        "English"
+    } else {
+        "Yucatec Maya"
+    }
+    FilledTonalButton(
+        onClick = onSwitch,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(
+            horizontal = 12.dp,
+            vertical = 12.dp,
+        ),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "FROM",
+                    style = MaterialTheme.typography.labelSmall,
+                )
+                Text(
+                    text = from,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                )
+            }
+            Icon(
+                imageVector = Icons.Rounded.SwapHoriz,
+                contentDescription = null,
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "TO",
+                    style = MaterialTheme.typography.labelSmall,
+                )
+                Text(
+                    text = to,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                )
+            }
         }
     }
 }
