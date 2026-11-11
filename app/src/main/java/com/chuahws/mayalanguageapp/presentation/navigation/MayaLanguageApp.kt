@@ -54,6 +54,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -308,6 +309,7 @@ private fun MainShell(
         mutableStateOf<AppPage?>(null)
     }
     var replaySequence by remember { mutableLongStateOf(0L) }
+    val screenStateHolder = rememberSaveableStateHolder()
 
     fun openHistoryTranslation(record: TranslationRecord) {
         replaySequence += 1
@@ -815,6 +817,7 @@ private fun MainShell(
                     innerPadding
                 ),
             ) {
+                screenStateHolder.SaveableStateProvider(page.name) {
                 when (page) {
                     AppPage.HOME ->
                         HomeScreen(
@@ -986,6 +989,7 @@ private fun MainShell(
                                     .signOut()
                             },
                         )
+                }
                 }
             }
         }
