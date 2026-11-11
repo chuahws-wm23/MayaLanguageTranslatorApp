@@ -2,6 +2,7 @@ package com.chuahws.mayalanguageapp.presentation.translation
 
 import android.content.Context
 import android.net.Uri
+import android.view.Surface
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -119,6 +120,9 @@ fun CameraCaptureScreen(
                 .setCaptureMode(
                     ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
                 )
+                .setTargetRotation(
+                    previewView.display?.rotation ?: Surface.ROTATION_0
+                )
                 .build()
 
             runCatching {
@@ -162,6 +166,10 @@ fun CameraCaptureScreen(
 
         capturing = true
         cameraMessage = null
+
+        // Match the saved photo's EXIF orientation to the current display.
+        capture.targetRotation =
+            previewView.display?.rotation ?: Surface.ROTATION_0
 
         val outputFile =
             createTemporaryImageFile(context)
