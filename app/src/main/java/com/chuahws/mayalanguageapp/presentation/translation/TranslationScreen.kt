@@ -49,14 +49,21 @@ import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
 fun TranslationScreen(
     viewModel: TranslationViewModel,
     onSaveEntry: (com.chuahws.mayalanguageapp.domain.model.DictionaryEntry) -> Unit,
+    replay: TranslationReplay? = null,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(Unit) {
-        viewModel.setDirection(
-            TranslationDirection.ENGLISH_TO_MAYA
-        )
+    LaunchedEffect(replay?.requestId) {
+        if (replay != null) {
+            viewModel.replayStoredTranslation(
+                replay.sourceText,
+                replay.direction,
+                InputType.TEXT,
+            )
+        } else {
+            viewModel.setDirection(TranslationDirection.ENGLISH_TO_MAYA)
+        }
     }
 
     val source =
