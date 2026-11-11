@@ -121,22 +121,18 @@ fun SavedScreen(
                             )
                         }
 
-                    Row(
-                        verticalAlignment =
-                            Alignment.CenterVertically,
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
-                            text = "Listen",
-                            modifier =
-                                Modifier.weight(1f),
-                            fontWeight =
-                                FontWeight.SemiBold,
+                            text = "Pronunciation audio",
+                            fontWeight = FontWeight.SemiBold,
                         )
                         SpeakButton(
-                            text =
-                                selectedItem.mayaText,
+                            text = selectedItem.mayaText,
                             languageTag = "yua",
                             showUnavailableLabel = true,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
