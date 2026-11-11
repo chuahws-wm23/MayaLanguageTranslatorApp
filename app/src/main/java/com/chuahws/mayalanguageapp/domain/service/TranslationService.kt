@@ -32,13 +32,19 @@ class TranslationService(
             )
         }
 
-        // Exact dictionary matches can legitimately have several senses or
-        // several target-language forms. Never hide that ambiguity by taking
-        // an arbitrary first Firestore document.
-        val exactEntries = distinctTranslations(
-            findEntries(normalized, direction),
-            direction,
-        )
+        // Reuse matching dictionary lookups within one translation.
+        // Photo OCR often contains repeated words, and repeated Firestore
+        // requests would otherwise slow down the full translation.
+        val lookupCache = mutableMapOf<String, List<DictionaryEntry>>()
+        val matchesFor: suspend (String) -> List<DictionaryEntry> = { key ->
+            lookupCache[key] ?: distinctTranslations(
+                findEntries(key, direction),
+                direction,
+            ).also { lookupCache[key] = it }
+        }
+
+        // Exact dictionary matches may have several distinct meanings.
+        val exactEntries = matchesFor(normalized)
 
         if (exactEntries.size == 1) {
             val entry = exactEntries.first()
@@ -78,10 +84,7 @@ class TranslationService(
                 continue
             }
 
-            val exactMatches = distinctTranslations(
-                findEntries(segmentNormalized, direction),
-                direction,
-            )
+            val exactMatches = matchesFor(segmentNormalized)
 
             if (exactMatches.size == 1) {
                 translatedSegments += translatedText(
@@ -102,6 +105,7 @@ class TranslationService(
             val fallback = translateSegmentByPhrases(
                 segment = segment,
                 direction = direction,
+                matchesFor = matchesFor,
             )
 
             if (
@@ -141,6 +145,7 @@ class TranslationService(
     private suspend fun translateSegmentByPhrases(
         segment: String,
         direction: TranslationDirection,
+        matchesFor: suspend (String) -> List<DictionaryEntry>,
     ): SegmentTranslation {
         val words = segment
             .trim()
@@ -184,10 +189,7 @@ class TranslationService(
                     continue
                 }
 
-                val candidates = distinctTranslations(
-                    findEntries(candidateNormalized, direction),
-                    direction,
-                )
+                val candidates = matchesFor(candidateNormalized)
                 if (candidates.size == 1) {
                     matchedEntry = candidates.first()
                     matchedLength = length
