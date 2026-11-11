@@ -26,7 +26,7 @@ performance testing for the final Results chapter.
 | FR15 | Dictionary Access | User-facing Maya/English search, sorting/sections and progressive Load More browsing are implemented. |
 | FR16 | Saved Vocabulary | Save, duplicate prevention, search/filter, selectable details/pronunciation and confirmed removal are implemented. |
 | FR17 | Usage Analytics | Text, image and voice counters and activity summaries are implemented. |
-| FR18 | Feedback Submission | Rating/comment validation and Firestore submission with pending status are implemented. |
+| FR18 | Feedback Submission | A 1–5 star rating is required; written comments are optional. The registered account email is displayed read-only and submissions are stored in Firestore with pending status. |
 | FR19 | User Management | Administrators can search users and suspend/reactivate permitted accounts. Suspended accounts are blocked at login and signed out when status is loaded. |
 | FR20 | Dictionary Management | Administrators can search, add, edit, delete and CSV bulk-import Firestore dictionary entries with duplicate/invalid-row validation. Built-in fallback entries are intentionally read-only. |
 | FR21 | Feedback Management | Administrators can review feedback and mark it reviewed. |
@@ -56,6 +56,14 @@ measured/manual evidence rather than code inspection alone.
 - dictionary add/edit/search/delete behaviour
 - administrator account-status updates
 - system analytics aggregation across users
+
+## Feedback acceptance checks
+
+- Submit with no star selected: the submit button must remain disabled.
+- Select a star and leave the comment blank: submission should succeed and store an empty comment.
+- Select a star and write a comment: the comment should be stored with the rating.
+- Verify that the email is shown as non-editable registered-account information.
+- Verify that administrators can review rating-only feedback without a missing-content issue.
 
 ## Manual acceptance checks still required
 
