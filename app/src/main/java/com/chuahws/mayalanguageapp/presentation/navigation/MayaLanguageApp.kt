@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Analytics
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Feedback
@@ -303,12 +304,16 @@ private fun MainShell(
     var replayRequest by remember {
         mutableStateOf<TranslationReplay?>(null)
     }
+    var replayReturnPage by remember {
+        mutableStateOf<AppPage?>(null)
+    }
     var replaySequence by remember { mutableLongStateOf(0L) }
 
     fun openHistoryTranslation(record: TranslationRecord) {
         replaySequence += 1
         val request = TranslationReplay.history(record, replaySequence)
         replayRequest = request
+        replayReturnPage = AppPage.HISTORY
         page = when (request.mode) {
             InputType.IMAGE -> AppPage.IMAGE_TRANSLATION
             InputType.VOICE -> AppPage.VOICE_TRANSLATION
@@ -319,6 +324,7 @@ private fun MainShell(
     fun openSavedTranslation(item: SavedVocabularyItem) {
         replaySequence += 1
         replayRequest = TranslationReplay.saved(item, replaySequence)
+        replayReturnPage = AppPage.SAVED
         page = AppPage.TEXT_TRANSLATION
     }
 
@@ -330,6 +336,7 @@ private fun MainShell(
 
     fun goTo(destination: AppPage) {
         replayRequest = null
+        replayReturnPage = null
         page = destination
         scope.launch {
             drawerState.close()
@@ -492,13 +499,18 @@ private fun MainShell(
         }
     }
 
+    fun returnFromTranslation() {
+        page = replayReturnPage ?: AppPage.HOME
+        replayRequest = null
+        replayReturnPage = null
+    }
+
     BackHandler(
         enabled =
             drawerState.isClosed &&
                 page != AppPage.HOME,
     ) {
-        replayRequest = null
-        page = AppPage.HOME
+        returnFromTranslation()
     }
 
     val pageTitle = when (page) {
@@ -658,13 +670,27 @@ private fun MainShell(
                             },
                             navigationIcon = {
                                 IconButton(
-                                    onClick = ::openDrawer,
+                                    onClick = {
+                                        if (replayReturnPage != null) {
+                                            returnFromTranslation()
+                                        } else {
+                                            openDrawer()
+                                        }
+                                    },
                                 ) {
                                     Icon(
                                         imageVector =
-                                            Icons.Rounded.Menu,
+                                            if (replayReturnPage != null) {
+                                                Icons.Rounded.ArrowBack
+                                            } else {
+                                                Icons.Rounded.Menu
+                                            },
                                         contentDescription =
-                                            "Open menu",
+                                            if (replayReturnPage != null) {
+                                                "Back to saved or history"
+                                            } else {
+                                                "Open menu"
+                                            },
                                     )
                                 }
                             },
@@ -723,6 +749,7 @@ private fun MainShell(
                                 page == itemPage,
                             onClick = {
                                 replayRequest = null
+                                replayReturnPage = null
                                 page = itemPage
                             },
                             icon = {
@@ -797,14 +824,17 @@ private fun MainShell(
                                     .orEmpty(),
                             onTextTranslation = {
                                 replayRequest = null
+                                replayReturnPage = null
                                 page = AppPage.TEXT_TRANSLATION
                             },
                             onImageTranslation = {
                                 replayRequest = null
+                                replayReturnPage = null
                                 page = AppPage.IMAGE_TRANSLATION
                             },
                             onVoiceTranslation = {
                                 replayRequest = null
+                                replayReturnPage = null
                                 page = AppPage.VOICE_TRANSLATION
                             },
                             onSaved = {
