@@ -21,13 +21,15 @@ sealed interface TranslationResult {
     /**
      * Translation assembled from more than one dictionary match.
      *
-     * Unknown terms are kept explicitly in the output rather than causing the
-     * whole request to fail.
+     * Unsupported or ambiguous terms are tracked separately so the UI can
+     * explain a partial result without showing developer-style markers.
      */
     data class Composed(
         val input: String,
         val output: String,
         val unknownTerms: List<String> = emptyList(),
+        val ambiguousTerms: List<String> = emptyList(),
+        val unreliableSegments: List<String> = emptyList(),
         val matchedEntryCount: Int,
     ) : TranslationResult
 
