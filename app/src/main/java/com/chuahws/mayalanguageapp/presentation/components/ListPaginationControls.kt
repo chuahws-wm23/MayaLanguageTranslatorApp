@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardActions
@@ -77,10 +78,11 @@ fun ListPaginationControls(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
+            // Keep navigation spacious on smaller phone screens.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 IconButton(
                     onClick = { onPageSelected(page - 1) },
@@ -92,6 +94,29 @@ fun ListPaginationControls(
                     )
                 }
 
+                Text(
+                    text = "Page $page of $pages",
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+
+                IconButton(
+                    onClick = { onPageSelected(page + 1) },
+                    enabled = page < pages,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronRight,
+                        contentDescription = "Next page",
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 OutlinedTextField(
                     value = pageNumber,
                     onValueChange = { input ->
@@ -100,7 +125,7 @@ fun ListPaginationControls(
                         }
                     },
                     modifier = Modifier.weight(1f),
-                    label = { Text("Page") },
+                    label = { Text("Jump to page") },
                     singleLine = true,
                     maxLines = 1,
                     isError = pageNumber.isNotEmpty() && !validInput,
@@ -113,26 +138,11 @@ fun ListPaginationControls(
                     ),
                 )
 
-                Text(
-                    text = "of $pages",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-
                 TextButton(
                     onClick = ::goToEnteredPage,
-                    enabled = validInput && pageNumber.toIntOrNull() != page,
+                    enabled = validInput && enteredPage != page,
                 ) {
                     Text("Go")
-                }
-
-                IconButton(
-                    onClick = { onPageSelected(page + 1) },
-                    enabled = page < pages,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ChevronRight,
-                        contentDescription = "Next page",
-                    )
                 }
             }
         }
