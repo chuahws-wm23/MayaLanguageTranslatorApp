@@ -8,6 +8,14 @@ import com.chuahws.mayalanguageapp.domain.repository.DictionaryRepository
 class TranslationService(
     private val dictionaryRepository: DictionaryRepository
 ) {
+    private val photoLanguageFilter = PhotoLanguageFilter(dictionaryRepository)
+
+    suspend fun filterPhotoText(
+        recognizedText: String,
+        direction: TranslationDirection,
+    ): PhotoLanguageFilter.Result =
+        photoLanguageFilter.filter(recognizedText, direction)
+
     suspend fun translate(
         rawInput: String,
         direction: TranslationDirection,
