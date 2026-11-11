@@ -34,6 +34,8 @@ fun TranslationResultCard(
     outputLanguageTag: String,
     onSave: (() -> Unit)?,
     onSaveAlternative: ((DictionaryEntry) -> Unit)? = null,
+    approximate: Boolean = false,
+    needsReview: Boolean = false,
 ) {
     if (output.isBlank()) return
 
@@ -62,10 +64,11 @@ fun TranslationResultCard(
                 )
                 Column {
                     Text(
-                        text = if (alternatives.isEmpty()) {
-                            "Your translation"
-                        } else {
-                            "Other meanings"
+                        text = when {
+                            alternatives.isNotEmpty() -> "Other meanings"
+                            needsReview -> "Partial dictionary matches"
+                            approximate -> "Dictionary-based result"
+                            else -> "Your translation"
                         },
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
@@ -87,6 +90,14 @@ fun TranslationResultCard(
                         )
                     }
                 }
+            }
+
+            if (needsReview) {
+                Text(
+                    text = "A dash (—) marks a part that could not be translated reliably.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             if (alternatives.isNotEmpty()) {
@@ -282,6 +293,8 @@ fun TranslationResultCard(
                 }
             }
 
+            // Never copy or pronounce incomplete text as a finished result.
+            if (!needsReview) {
             // Keep the two primary actions equally sized. Audio gets its
             // own row so the controls stay readable on narrow phones and
             // when Android's font size is increased.
@@ -342,6 +355,7 @@ fun TranslationResultCard(
                     showUnavailableLabel = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
             }
         }
     }
