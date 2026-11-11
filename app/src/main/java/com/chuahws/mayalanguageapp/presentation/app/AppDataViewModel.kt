@@ -2,6 +2,7 @@ package com.chuahws.mayalanguageapp.presentation.app
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chuahws.mayalanguageapp.domain.service.FeedbackValidator
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.FeedbackItem
 import com.chuahws.mayalanguageapp.domain.model.SavedVocabularyItem
@@ -332,25 +333,19 @@ class AppDataViewModel(
         val userId = _uiState.value.userId ?: return
         val cleanComment = comment.trim()
 
-        if (rating !in 1..5) {
+        // Always require a star rating, but allow rating-only feedback.
+        val validationError =
+            FeedbackValidator.validate(rating, cleanComment)
+        if (validationError != null) {
             _uiState.update {
-                it.copy(
-                    message =
-                        "Choose a rating first."
-                )
+                it.copy(message = validationError)
             }
             return
         }
 
-        if (cleanComment.length < 4) {
-            _uiState.update {
-                it.copy(
-                    message =
-                        "Tell us a little more."
-                )
-            }
-            return
-        }
+        // The account email comes from the signed-in profile, not the UI.
+        val accountEmail = _uiState.value.profile?.email
+            ?.takeIf(String::isNotBlank) ?: email
 
         _uiState.update {
             it.copy(feedbackSubmitting = true)
@@ -361,7 +356,7 @@ class AppDataViewModel(
                 feedbackId =
                     UUID.randomUUID().toString(),
                 userId = userId,
-                userEmail = email,
+                userEmail = accountEmail,
                 rating = rating,
                 comment = cleanComment,
                 status = "pending",
