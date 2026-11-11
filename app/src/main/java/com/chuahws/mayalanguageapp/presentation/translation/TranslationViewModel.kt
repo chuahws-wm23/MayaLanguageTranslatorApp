@@ -10,6 +10,9 @@ import com.chuahws.mayalanguageapp.domain.repository.UserDataRepository
 import com.chuahws.mayalanguageapp.domain.service.PhotoLanguageFilter
 import com.chuahws.mayalanguageapp.domain.service.TranslationService
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +30,25 @@ class TranslationViewModel(
         MutableStateFlow(TranslationUiState())
     val uiState: StateFlow<TranslationUiState> =
         _uiState.asStateFlow()
+
+    private var translationJob: Job? = null
+
+    fun replayStoredTranslation(
+        exactSourceText: String,
+        direction: TranslationDirection,
+        mode: InputType,
+    ) {
+        // Discard any ongoing request from another screen.
+        translationJob?.cancel()
+        _uiState.value = TranslationUiState(
+            input = exactSourceText,
+            direction = direction,
+            inputType = mode,
+        )
+        if (exactSourceText.isNotBlank()) {
+            translate(mode)
+        }
+    }
 
     suspend fun filterPhotoText(
         recognizedText: String,
@@ -167,13 +189,14 @@ class TranslationViewModel(
             )
         }
 
-        viewModelScope.launch {
+        translationJob = viewModelScope.launch {
             val result = runCatching {
                 translationService.translate(
                     state.input,
                     state.direction,
                 )
             }.getOrElse { error ->
+                if (error is CancellationException) return@launch
                 _uiState.update {
                     it.copy(
                         loading = false,
@@ -197,6 +220,8 @@ class TranslationViewModel(
                 }
                 return@launch
             }
+
+            if (!isActive) return@launch
 
             when (result) {
                 is TranslationResult.Success -> {
