@@ -31,7 +31,7 @@ can be claimed.
 | FR15 | Dictionary Access | PASS — Maya/English search, browsing, sorting, sections and progressive Load More support. |
 | FR16 | Saved Vocabulary | PASS — save, duplicate prevention, browse/search/filter, select for details/pronunciation and confirmed removal. |
 | FR17 | Usage Analytics | PASS — text/photo/voice totals, numeric summaries, 7-day activity and charts. |
-| FR18 | Feedback Submission | PASS — rating/comment validation and Firestore submission with `pending` status. |
+| FR18 | Feedback Submission | CODE ALIGNED — selected 1–5 star rating is mandatory; written feedback is optional. The signed-in account email is shown without an editable field, and valid submissions are saved as `pending`. |
 | FR19 | User Management | PASS — authorised admin user list/search and suspend/reactivate operations; own admin account cannot be suspended. |
 | FR20 | Dictionary Management | PASS — authorised admin search/add/edit/delete, duplicate validation, deletion confirmation and CSV bulk import with invalid/duplicate row reporting. |
 | FR21 | Feedback Management | PASS — authorised admin review and status update with confirmation. |
@@ -52,7 +52,7 @@ can be claimed.
 | UC-09 View Translation History | PASS | List → select record → detail view, plus empty/error states. |
 | UC-10 Manage Saved Vocabulary | PASS | Save → browse → select → pronounce/remove, duplicate and confirmation paths. |
 | UC-11 View Usage Analytics | PASS | Numeric values and charts with zero state. |
-| UC-12 Submit Feedback | PASS | Validated rating/comment stored as pending. |
+| UC-12 Submit Feedback | CODE ALIGNED | Star-only or star-plus-comment feedback is saved with pending status; rating must be selected. |
 | UC-13 Manage Users | PASS | Admin-only search/select/status management. |
 | UC-14 Manage Dictionary Entries | PASS | Search/add/edit/delete/bulk import, validation and duplicate handling. |
 | UC-15 Review Feedback | PASS | List/rating/comment/status review. |
@@ -140,6 +140,10 @@ treated as conceptual unless they are updated to the final code:
 Do not add unused classes only to make the source code resemble a diagram.
 Either describe those diagrams as conceptual design, or revise the final report
 diagrams to mirror the implemented model.
+
+## Feedback requirement clarification
+
+The final feedback interface requires a star rating but accepts a blank written comment. The signed-in email is displayed as account information, rather than as an editable form field. Update the UC-12 main/alternative flow and FR18 test cases in the final report if an earlier draft states that a written comment is mandatory. Physical-device and live Firestore submission still need manual evidence.
 
 ## Final manual acceptance gate
 
