@@ -1,39 +1,48 @@
 package com.chuahws.mayalanguageapp.presentation.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.domain.service.ListPaging
 
 /**
- * A shared accessible pager: 10 results per page, previous/next arrows
- * and direct numeric navigation with either the Go key or the Go button.
+ * Single-row pagination above each list. The current number in
+ * "Page [2] of 4" is directly editable; no extra Go bar is needed.
+ * Press keyboard Done or tap outside to apply the entered page.
  */
 @Composable
 fun ListPaginationControls(
@@ -45,106 +54,98 @@ fun ListPaginationControls(
     if (totalItems <= ListPaging.PAGE_SIZE) return
 
     val page = ListPaging.safePage(currentPage, totalItems)
-    val pages = ListPaging.pageCount(totalItems)
-    var pageNumber by rememberSaveable(page, pages) {
+    val pageCount = ListPaging.pageCount(totalItems)
+    var pageInput by rememberSaveable(page, pageCount) {
         mutableStateOf(page.toString())
     }
+    var wasFocused by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    fun goToEnteredPage() {
-        val target = pageNumber.toIntOrNull()
-        if (target != null && target in 1..pages) {
-            focusManager.clearFocus()
+    fun submitPage() {
+        val target = pageInput.toIntOrNull()
+        if (target != null && target in 1..pageCount) {
             onPageSelected(target)
+        } else {
+            // Reject invalid numbers and restore the actual selected page.
+            pageInput = page.toString()
         }
     }
 
-    val enteredPage = pageNumber.toIntOrNull()
-    val validInput = enteredPage != null && enteredPage in 1..pages
-
-    Surface(
+    Row(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        IconButton(
+            onClick = { onPageSelected(page - 1) },
+            enabled = page > 1,
         ) {
-            Text(
-                text = "Showing ${ListPaging.firstVisibleIndex(page, totalItems)}–" +
-                    "${ListPaging.lastVisibleIndex(page, totalItems)} of $totalItems",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Icon(
+                imageVector = Icons.Rounded.ChevronLeft,
+                contentDescription = "Previous page",
             )
+        }
 
-            // Keep navigation spacious on smaller phone screens.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                IconButton(
-                    onClick = { onPageSelected(page - 1) },
-                    enabled = page > 1,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ChevronLeft,
-                        contentDescription = "Previous page",
-                    )
+        Text(
+            text = "Page",
+            style = MaterialTheme.typography.labelLarge,
+        )
+        Spacer(Modifier.width(8.dp))
+
+        BasicTextField(
+            value = pageInput,
+            onValueChange = { typed ->
+                if (typed.length <= 5 && typed.all(Char::isDigit)) {
+                    pageInput = typed
                 }
-
-                Text(
-                    text = "Page $page of $pages",
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelLarge,
-                )
-
-                IconButton(
-                    onClick = { onPageSelected(page + 1) },
-                    enabled = page < pages,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ChevronRight,
-                        contentDescription = "Next page",
-                    )
+            },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.titleMedium.copy(
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done,
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    submitPage()
+                    focusManager.clearFocus()
                 }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedTextField(
-                    value = pageNumber,
-                    onValueChange = { input ->
-                        if (input.length <= 6 && input.all(Char::isDigit)) {
-                            pageNumber = input
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Jump to page") },
-                    singleLine = true,
-                    maxLines = 1,
-                    isError = pageNumber.isNotEmpty() && !validInput,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Go,
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onGo = { goToEnteredPage() },
-                    ),
-                )
-
-                TextButton(
-                    onClick = ::goToEnteredPage,
-                    enabled = validInput && enteredPage != page,
-                ) {
-                    Text("Go")
+            ),
+            modifier = Modifier
+                .width(48.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .onFocusChanged { focus ->
+                    if (wasFocused && !focus.isFocused) {
+                        submitPage()
+                    }
+                    wasFocused = focus.isFocused
                 }
-            }
+                .semantics {
+                    contentDescription = "Page number, from 1 to $pageCount"
+                }
+                .padding(vertical = 8.dp, horizontal = 5.dp),
+        )
+
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = "of $pageCount",
+            style = MaterialTheme.typography.labelLarge,
+        )
+
+        IconButton(
+            onClick = { onPageSelected(page + 1) },
+            enabled = page < pageCount,
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight,
+                contentDescription = "Next page",
+            )
         }
     }
 }
