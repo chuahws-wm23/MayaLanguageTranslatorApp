@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Close
@@ -25,7 +26,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -37,6 +40,8 @@ import com.chuahws.mayalanguageapp.domain.model.SavedVocabularyItem
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.SoftBadge
 import com.chuahws.mayalanguageapp.presentation.components.SpeakButton
+import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
+import com.chuahws.mayalanguageapp.domain.service.ListPaging
 
 @Composable
 fun SavedScreen(
@@ -55,6 +60,10 @@ fun SavedScreen(
     var selectedSavedId by rememberSaveable {
         mutableStateOf<String?>(null)
     }
+    var currentPage by rememberSaveable {
+        mutableIntStateOf(1)
+    }
+    val listState = rememberLazyListState()
 
     val selectedItem = items.firstOrNull {
         it.savedId == selectedSavedId
@@ -182,6 +191,17 @@ fun SavedScreen(
         matchesQuery && matchesCategory
     }
 
+    val displayPage = ListPaging.safePage(currentPage, filtered.size)
+    val visibleItems = ListPaging.pageItems(filtered, displayPage)
+
+    // Keep navigation valid when a saved word is removed.
+    LaunchedEffect(filtered.size) {
+        currentPage = ListPaging.safePage(currentPage, filtered.size)
+    }
+    LaunchedEffect(displayPage, query, category) {
+        listState.scrollToItem(0)
+    }
+
     val itemToRemove = items.firstOrNull {
         it.savedId == pendingRemoval
     }
@@ -229,6 +249,7 @@ fun SavedScreen(
                 value = query,
                 onValueChange = {
                     query = it
+                    currentPage = 1
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -252,6 +273,7 @@ fun SavedScreen(
                         IconButton(
                             onClick = {
                                 query = ""
+                                currentPage = 1
                             },
                         ) {
                             Icon(
@@ -282,6 +304,7 @@ fun SavedScreen(
                         selected = category == item,
                         onClick = {
                             category = item
+                            currentPage = 1
                         },
                         label = {
                             Text(item)
@@ -324,6 +347,7 @@ fun SavedScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     contentPadding = PaddingValues(
                         start = 18.dp,
                         end = 18.dp,
@@ -332,7 +356,7 @@ fun SavedScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     items(
-                        items = filtered,
+                        items = visibleItems,
                         key = {
                             it.savedId
                         },
@@ -395,6 +419,22 @@ fun SavedScreen(
                                     )
                                 }
                             }
+                        }
+                    }
+
+                    if (filtered.size > ListPaging.PAGE_SIZE) {
+                        item(key = "saved_pagination") {
+                            ListPaginationControls(
+                                totalItems = filtered.size,
+                                currentPage = displayPage,
+                                onPageSelected = { selected ->
+                                    currentPage = ListPaging.safePage(
+                                        selected,
+                                        filtered.size,
+                                    )
+                                },
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
                         }
                     }
                 }
