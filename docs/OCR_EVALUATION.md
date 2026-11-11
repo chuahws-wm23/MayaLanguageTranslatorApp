@@ -29,7 +29,7 @@ and fill:
 - `image_file`
 - `ground_truth_text`
 - `ocr_output` — exactly what ML Kit returned before manual correction
-- `corrected_text` — what the user corrected in the editable field
+- `corrected_text` — what the user corrected in the separate Review OCR dialog (the detected-text field is read-only)
 - `final_translation`
 - `ocr_rating`
 - `translation_rating`
@@ -62,7 +62,7 @@ Report at least two different results:
 
 1. **raw OCR performance** — how closely ML Kit reproduced the labelled text
 2. **end-to-end task performance** — whether the final translation was correct
-   after the app allowed the user to review/edit OCR text
+   after the app allowed the user to correct OCR text in Review OCR (measure dictionary-filter coverage separately; do not treat excluded words as OCR detection errors)
 
 This distinction is important because a correct translation after user
 correction should not be presented as perfect raw OCR.
