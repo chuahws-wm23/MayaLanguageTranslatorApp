@@ -313,6 +313,22 @@ fun SavedScreen(
                 }
             }
 
+            if (filtered.size > ListPaging.PAGE_SIZE) {
+                ListPaginationControls(
+                    totalItems = filtered.size,
+                    currentPage = displayPage,
+                    onPageSelected = { selected ->
+                        currentPage = ListPaging.safePage(
+                            selected, filtered.size,
+                        )
+                    },
+                    modifier = Modifier.padding(
+                        horizontal = 18.dp,
+                        vertical = 4.dp,
+                    ),
+                )
+            }
+
             if (filtered.isEmpty()) {
                 Column(
                     modifier = Modifier
@@ -422,21 +438,7 @@ fun SavedScreen(
                         }
                     }
 
-                    if (filtered.size > ListPaging.PAGE_SIZE) {
-                        item(key = "saved_pagination") {
-                            ListPaginationControls(
-                                totalItems = filtered.size,
-                                currentPage = displayPage,
-                                onPageSelected = { selected ->
-                                    currentPage = ListPaging.safePage(
-                                        selected,
-                                        filtered.size,
-                                    )
-                                },
-                                modifier = Modifier.padding(top = 8.dp),
-                            )
-                        }
-                    }
+
                 }
             }
         }
