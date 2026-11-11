@@ -55,6 +55,7 @@ import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
 fun VoiceTranslationScreen(
     viewModel: TranslationViewModel,
     onSaveEntry: (DictionaryEntry) -> Unit,
+    replay: TranslationReplay? = null,
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -84,10 +85,16 @@ fun VoiceTranslationScreen(
             context.packageManager
         ) != null
 
-    LaunchedEffect(Unit) {
-        viewModel.setDirection(
-            TranslationDirection.ENGLISH_TO_MAYA
-        )
+    LaunchedEffect(replay?.requestId) {
+        if (replay != null) {
+            viewModel.replayStoredTranslation(
+                replay.sourceText,
+                replay.direction,
+                InputType.VOICE,
+            )
+        } else {
+            viewModel.setDirection(TranslationDirection.ENGLISH_TO_MAYA)
+        }
     }
 
     val speechLauncher =
