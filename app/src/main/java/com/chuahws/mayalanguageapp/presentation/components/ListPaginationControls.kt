@@ -58,7 +58,8 @@ fun ListPaginationControls(
         }
     }
 
-    val validInput = pageNumber.toIntOrNull() in 1..pages
+    val enteredPage = pageNumber.toIntOrNull()
+    val validInput = enteredPage != null && enteredPage in 1..pages
 
     Surface(
         modifier = modifier.fillMaxWidth(),
