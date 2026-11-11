@@ -297,11 +297,9 @@ fun ImageTranslationScreen(
                                 contentDescription = null,
                             )
                             Text(
-                                if (imageUri == null) {
-                                    "Camera"
-                                } else {
-                                    "Take photo"
-                                },
+                                text = "Camera",
+                                maxLines = 1,
+                                softWrap = false,
                                 modifier =
                                     Modifier.padding(start = 8.dp),
                             )
@@ -321,11 +319,9 @@ fun ImageTranslationScreen(
                                 contentDescription = null,
                             )
                             Text(
-                                if (imageUri == null) {
-                                    "Gallery"
-                                } else {
-                                    "Choose another"
-                                },
+                                text = "Gallery",
+                                maxLines = 1,
+                                softWrap = false,
                                 modifier =
                                     Modifier.padding(start = 8.dp),
                             )
