@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Close
@@ -28,7 +29,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -41,6 +44,8 @@ import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.presentation.components.AccentIcon
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.SoftBadge
+import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
+import com.chuahws.mayalanguageapp.domain.service.ListPaging
 import com.chuahws.mayalanguageapp.presentation.theme.MayaBlue
 import com.chuahws.mayalanguageapp.presentation.theme.MayaGreen
 import com.chuahws.mayalanguageapp.presentation.theme.MayaOrange
@@ -65,6 +70,10 @@ fun HistoryScreen(
     var selectedRecordId by rememberSaveable {
         mutableStateOf<String?>(null)
     }
+    var currentPage by rememberSaveable {
+        mutableIntStateOf(1)
+    }
+    val listState = rememberLazyListState()
 
     val selectedRecord = history.firstOrNull {
         it.translationId == selectedRecordId
@@ -236,6 +245,17 @@ fun HistoryScreen(
         matchesQuery && matchesType
     }
 
+    val displayPage = ListPaging.safePage(currentPage, filtered.size)
+    val visibleRecords = ListPaging.pageItems(filtered, displayPage)
+
+    // Keep the selected page valid when a record is deleted.
+    LaunchedEffect(filtered.size) {
+        currentPage = ListPaging.safePage(currentPage, filtered.size)
+    }
+    LaunchedEffect(displayPage, query, typeFilter) {
+        listState.scrollToItem(0)
+    }
+
     AppGradientBackground {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -244,6 +264,7 @@ fun HistoryScreen(
                 value = query,
                 onValueChange = {
                     query = it
+                    currentPage = 1
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -268,6 +289,7 @@ fun HistoryScreen(
                             IconButton(
                                 onClick = {
                                     query = ""
+                                    currentPage = 1
                                 },
                             ) {
                                 Icon(
@@ -301,6 +323,7 @@ fun HistoryScreen(
                             typeFilter == filter,
                         onClick = {
                             typeFilter = filter
+                            currentPage = 1
                         },
                         label = {
                             Text(
@@ -362,6 +385,7 @@ fun HistoryScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     contentPadding = PaddingValues(
                         start = 18.dp,
                         end = 18.dp,
@@ -371,7 +395,7 @@ fun HistoryScreen(
                         Arrangement.spacedBy(10.dp),
                 ) {
                     items(
-                        items = filtered,
+                        items = visibleRecords,
                         key = {
                             it.translationId
                         },
@@ -387,6 +411,32 @@ fun HistoryScreen(
                                     item.translationId
                             },
                         )
+                    }
+
+                    if (filtered.size > ListPaging.PAGE_SIZE) {
+                        item(key = "history_pagination") {
+                            ListPaginationControls(
+                                totalItems = filtered.size,
+                                currentPage = displayPage,
+                                onPageSelected = { selected ->
+                                    currentPage = ListPaging.safePage(
+                                        selected,
+                                        filtered.size,
+                                    )
+                                },
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                        }
+                    }
+
+                    if (history.size >= 100) {
+                        item(key = "history_limit_notice") {
+                            Text(
+                                text = "Only the latest 100 history records are loaded.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }
