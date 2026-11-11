@@ -21,8 +21,8 @@ can be claimed.
 | FR05 | Text Input | PASS — Maya or English manual input, editable before translation. |
 | FR06 | Text Translation | PASS — Maya/English bidirectional dictionary/phrase translation, ambiguity handling and no-match state. |
 | FR07 | Image Selection | PASS — CameraX capture and Android document/gallery selection. |
-| FR08 | OCR Text Extraction | PASS — selected image is validated, resized/orientation-corrected and processed with ML Kit. The recognised visible text is shown without dictionary filtering. |
-| FR09 | OCR Text Correction | PASS — OCR result remains editable before translation. |
+| FR08 | OCR Text Extraction | CODE ALIGNED — ML Kit recognises Latin-script photo text; the selected English/Yucatec source direction filters displayed words against supported dictionary vocabulary. Full OCR remains available in Review OCR. |
+| FR09 | OCR Text Correction | CODE ALIGNED — the detected-text display is read-only; a separate Review OCR dialog corrects the original recognition before source-language filtering and translation. |
 | FR10 | Voice Input | PASS — microphone permission is checked/requested and English speech input is launched only when available. |
 | FR11 | Speech-to-Text Conversion | PASS — Android Speech Recognition result is shown as editable text before translation; cancellation/silence/denial have controlled states. |
 | FR12 | Pronunciation Support | PASS — device TTS is used for supported output/saved vocabulary, with visible unavailable state when the required voice is not installed. |
@@ -46,7 +46,7 @@ can be claimed.
 | UC-03 Reset Password | PASS | Firebase reset email flow. |
 | UC-04 Manage Profile | PASS | View/edit permitted account information. |
 | UC-05 Translate Typed Text | PASS | Input → validation → translation → result → optional pronunciation/history/analytics. |
-| UC-06 Translate Image | PASS | Select/capture → validate/resize → OCR → review/edit → validate → translate. |
+| UC-06 Translate Image | CODE ALIGNED | Capture/select → OCR → select English/Yucatec direction → filter supported words → read-only display → optional Review OCR correction → translate. |
 | UC-07 Translate Voice | PASS | Permission → speech recognition → review/edit → validate → translate. |
 | UC-08 Play Pronunciation | PASS | Language availability check → TTS or unavailable state. |
 | UC-09 View Translation History | PASS | List → select record → detail view, plus empty/error states. |
@@ -60,7 +60,7 @@ can be claimed.
 | UC-17 Log Out | PASS | Firebase session ends, local app state clears and protected screens return to sign-in. |
 | UC-18 Validate Translation Input | PASS | Blank, >500-character and non-letter input are rejected before processing. Direction is always represented by a valid enum. |
 | UC-19 Process Translation | PASS | Repository lookup, success/alternatives/composed/no-match states; service errors do not create history. |
-| UC-20 Extract Image Text | PASS | Image preparation/resizing → ML Kit → recognised text → user review. |
+| UC-20 Extract Image Text | CODE ALIGNED | Image preparation → Latin OCR → preserve raw recognition → source-language dictionary filtering; separate correction dialog. |
 | UC-21 Recognise Speech | PASS | Microphone/recognizer flow returns editable recognised English or a retryable error state. |
 | UC-22 Save Translation History | PASS | Result is displayed first; history failure does not remove the result. |
 | UC-23 Update Usage Analytics | PASS | Analytics update follows successful history save and is best-effort; analytics failure does not remove result/history. |
@@ -71,7 +71,7 @@ The implemented process order now matches the Project I process diagrams:
 
 - **Authentication:** register/login/reset → Firebase → profile/role → correct dashboard.
 - **Typed translation:** input → direction → validation → dictionary translation → result → history + analytics → optional pronunciation/save.
-- **Image translation:** camera/gallery → image validation/down-sizing → OCR → editable recognised text → translation → history + analytics.
+- **Image translation:** camera/gallery → image validation/down-sizing → Latin OCR → direction-specific Yucatec/English dictionary filtering → read-only detected text → optional Review OCR correction → translation → history + analytics.
 - **Voice translation:** microphone permission → Android speech recognition → editable recognised text → English-to-Maya translation → history + analytics.
 - **History / vocabulary:** load user-owned records → select/details → delete/remove with confirmation where applicable.
 - **Administrator:** role gate → manage users / dictionary / feedback / reports.
@@ -140,6 +140,10 @@ treated as conceptual unless they are updated to the final code:
 Do not add unused classes only to make the source code resemble a diagram.
 Either describe those diagrams as conceptual design, or revise the final report
 diagrams to mirror the implemented model.
+
+## Photo OCR and dialect scope clarification
+
+The final implementation focuses on **Yucatec Maya** (ISO language tag `yua`). ML Kit's Latin recogniser can read Latin characters but cannot reliably identify Yucatec Maya or separate Maya varieties. The source-language selection filters OCR against current English/Yucatec Maya dictionary entries, which means unlisted valid words may be omitted. Similar-looking Yucatec spellings are suggestions only and must never be treated as verified conversions from another Maya variety. This is a practical usability refinement, not a claim of full language identification or broad Maya-dialect support. Keep the original OCR output available in the Review OCR dialog to meet the intent of FR09.
 
 ## Feedback requirement clarification
 
