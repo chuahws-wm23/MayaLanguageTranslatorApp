@@ -48,6 +48,29 @@ class TranslationViewModel(
         }
     }
 
+    fun applySuggestion(sourceText: String) {
+        if (_uiState.value.loading) return
+        val state = _uiState.value
+        val unknownWord = state.unknownTerms.singleOrNull()
+        val correction = if (unknownWord != null) {
+            val index = state.input.indexOf(unknownWord, ignoreCase = true)
+            if (index >= 0) {
+                state.input.replaceRange(
+                    index,
+                    index + unknownWord.length,
+                    sourceText,
+                )
+            } else {
+                sourceText
+            }
+        } else {
+            sourceText
+        }
+
+        // Let the user check the corrected text before translating.
+        updateInput(correction)
+    }
+
     fun setDirection(
         direction: TranslationDirection,
     ) {
@@ -266,18 +289,33 @@ class TranslationViewModel(
                             direction = state.direction,
                             inputType = inputType,
                         )
+                    } else {
+                        // Look up correction candidates after the partial
+                        // result is already visible, so the UI responds fast.
+                        val unrecognised = result.unknownTerms.singleOrNull()
+                        if (unrecognised != null) {
+                            val suggestions = runCatching {
+                                translationService.suggestCorrections(
+                                    unrecognised,
+                                    state.direction,
+                                )
+                            }.getOrDefault(emptyList())
+                            if (
+                                _uiState.value.input == state.input &&
+                                _uiState.value.direction == state.direction &&
+                                !_uiState.value.loading
+                            ) {
+                                _uiState.update {
+                                    it.copy(suggestions = suggestions)
+                                }
+                            }
+                        }
                     }
                 }
 
                 is TranslationResult.NoMatch -> {
-                    // Optional suggestions are never applied automatically.
-                    val suggestions = runCatching {
-                        translationService.suggestCorrections(
-                            state.input,
-                            state.direction,
-                        )
-                    }.getOrDefault(emptyList())
-
+                    // Show the result immediately. Suggestions may require
+                    // separate Firestore queries and should not block the UI.
                     _uiState.update {
                         it.copy(
                             loading = false,
@@ -287,9 +325,25 @@ class TranslationViewModel(
                             message =
                                 "No reliable translation found. Check the recognised text " +
                                     "or try a shorter phrase.",
-                            suggestions = suggestions,
+                            suggestions = emptyList(),
                             inputType = inputType,
                         )
+                    }
+
+                    val suggestions = runCatching {
+                        translationService.suggestCorrections(
+                            state.input,
+                            state.direction,
+                        )
+                    }.getOrDefault(emptyList())
+                    if (
+                        _uiState.value.input == state.input &&
+                        _uiState.value.direction == state.direction &&
+                        !_uiState.value.loading
+                    ) {
+                        _uiState.update {
+                            it.copy(suggestions = suggestions)
+                        }
                     }
                 }
 
