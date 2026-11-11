@@ -27,9 +27,9 @@ can be claimed.
 | FR11 | Speech-to-Text Conversion | PASS — Android Speech Recognition result is shown as editable text before translation; cancellation/silence/denial have controlled states. |
 | FR12 | Pronunciation Support | PASS — device TTS is used for supported output/saved vocabulary, with visible unavailable state when the required voice is not installed. |
 | FR13 | Translation History | PASS — successful translation records store source/target text, languages, input method and timestamp. |
-| FR14 | History Management | CODE ALIGNED — own history can be searched, filtered, viewed in 10-entry pages, opened for details and deleted with confirmation. Page navigation supports arrows and numeric jumps. Currently, the user list loads up to 100 recent history records. |
+| FR14 | History Management | CODE ALIGNED — own history supports filtering, ten-entry pages with top-positioned inline editable page number, polished details, replay to the original input method and deletion confirmation. The list currently loads up to 100 recent records. |
 | FR15 | Dictionary Access | PASS — Maya/English search, browsing, sorting, sections and progressive Load More support. |
-| FR16 | Saved Vocabulary | CODE ALIGNED — saved words have search/filter, 10-entry pages, previous/next arrows, direct page-number navigation, details/pronunciation and confirmed removal. |
+| FR16 | Saved Vocabulary | CODE ALIGNED — saved words support search/filter, ten-entry pages with inline editable page number above results, pronunciation/details, Translate again (Yucatec Maya to English) and confirmed removal. |
 | FR17 | Usage Analytics | PASS — text/photo/voice totals, numeric summaries, 7-day activity and charts. |
 | FR18 | Feedback Submission | CODE ALIGNED — selected 1–5 star rating is mandatory; written feedback is optional. The signed-in account email is shown without an editable field, and valid submissions are saved as `pending`. |
 | FR19 | User Management | PASS — authorised admin user list/search and suspend/reactivate operations; own admin account cannot be suspended. |
@@ -49,8 +49,8 @@ can be claimed.
 | UC-06 Translate Image | CODE ALIGNED | Capture/select → OCR → select English/Yucatec direction → filter supported words → read-only display → optional Review OCR correction → translate. |
 | UC-07 Translate Voice | PASS | Permission → speech recognition → review/edit → validate → translate. |
 | UC-08 Play Pronunciation | PASS | Language availability check → TTS or unavailable state. |
-| UC-09 View Translation History | PASS | List → select record → detail view, plus empty/error states. |
-| UC-10 Manage Saved Vocabulary | PASS | Save → browse → select → pronounce/remove, duplicate and confirmation paths. |
+| UC-09 View Translation History | CODE ALIGNED | List → open improved details → optionally replay original source in Text, Photo or Voice mode → back to history. Empty/error and deletion states remain. |
+| UC-10 Manage Saved Vocabulary | CODE ALIGNED | Save → browse → select enhanced details → pronounce, remove or replay exact Maya word in Text Translation. |
 | UC-11 View Usage Analytics | PASS | Numeric values and charts with zero state. |
 | UC-12 Submit Feedback | CODE ALIGNED | Star-only or star-plus-comment feedback is saved with pending status; rating must be selected. |
 | UC-13 Manage Users | PASS | Admin-only search/select/status management. |
@@ -150,6 +150,10 @@ The final implementation focuses on **Yucatec Maya** (ISO language tag `yua`). M
 The final feedback interface requires a star rating but accepts a blank written comment. The signed-in email is displayed as account information, rather than as an editable form field. Update the UC-12 main/alternative flow and FR18 test cases in the final report if an earlier draft states that a written comment is mandatory. Physical-device and live Firestore submission still need manual evidence.
 
 ## History and Saved Words pagination acceptance
+
+The pager is placed above each record list and allows editing the number directly in **Page N of M**. A separate jump bar is not used. Press Done on the number keyboard or move focus away to submit a valid page number. Test this on physical screens as well as in unit-level pagination logic.
+
+History replay preserves recorded Text/Image/Voice method, exact source text, and source language. The photo and microphone raw media are not stored; replay uses the saved recognised text instead. Saved vocabulary has no original input-direction field, so replay uses the saved Yucatec Maya word with Maya-to-English direction.
 
 - Save or create at least 21 entries and confirm each page lists no more than ten.
 - Check previous/next arrow disable states on first/last page and enter an exact page number using Go or the keyboard.
