@@ -37,9 +37,9 @@
 
 ## Personal data
 
-- Translation history with search, input-type filtering, 10 entries per page, previous/next arrows, page-number jump and user-controlled deletion (currently up to 100 recently loaded records)
+- Translation history with search, input-type filtering, ten entries per page, inline editable **Page N of M** controls above the list and user-controlled deletion (currently up to 100 recently loaded records); tapping a record opens polished details with **Translate again** in the original Text/Photo/Voice mode
 - Browseable/searchable Maya-English dictionary
-- Saved vocabulary with 10 entries per page, previous/next arrows and direct page-number navigation
+- Saved vocabulary with ten entries per page, inline editable **Page N of M** controls above the list, detailed word view with pronunciation, and **Translate again** (exact saved Yucatec Maya text to English)
 - Usage totals for text, image and voice translation
 - Feedback form
 - Profile screen
