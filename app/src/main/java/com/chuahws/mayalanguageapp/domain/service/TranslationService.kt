@@ -67,6 +67,8 @@ class TranslationService(
 
         val translatedSegments = mutableListOf<String>()
         val unknownTerms = mutableListOf<String>()
+        val ambiguousTerms = mutableListOf<String>()
+        val unreliableSegments = mutableListOf<String>()
         var matchedEntryCount = 0
 
         for (segment in segments) {
@@ -76,17 +78,24 @@ class TranslationService(
                 continue
             }
 
-            val exactEntry = findEntry(
-                segmentNormalized,
+            val exactMatches = distinctTranslations(
+                findEntries(segmentNormalized, direction),
                 direction,
             )
 
-            if (exactEntry != null) {
+            if (exactMatches.size == 1) {
                 translatedSegments += translatedText(
-                    exactEntry,
+                    exactMatches.first(),
                     direction,
                 )
                 matchedEntryCount += 1
+                continue
+            }
+
+            if (exactMatches.size > 1) {
+                // Do not silently choose one meaning without context.
+                translatedSegments += "—"
+                ambiguousTerms += segment.trim()
                 continue
             }
 
@@ -95,20 +104,19 @@ class TranslationService(
                 direction = direction,
             )
 
-            val segmentOutput =
-                if (
-                    fallback.totalWordCount > 1 &&
-                    fallback.coverage < MIN_SEGMENT_COVERAGE
-                ) {
-                    segment.trim() +
-                        " → [No reliable phrase translation available]"
-                } else {
-                    fallback.output
-                }
-
-            translatedSegments += segmentOutput
+            if (
+                fallback.totalWordCount > 1 &&
+                fallback.coverage < MIN_SEGMENT_COVERAGE
+            ) {
+                // One known word does not make a sentence translation.
+                translatedSegments += "—"
+                unreliableSegments += segment.trim()
+            } else {
+                translatedSegments += fallback.output
+                matchedEntryCount += fallback.matchedEntryCount
+            }
             unknownTerms += fallback.unknownTerms
-            matchedEntryCount += fallback.matchedEntryCount
+            ambiguousTerms += fallback.ambiguousTerms
         }
 
         // If not even one word/phrase could be matched, keep the original
@@ -123,7 +131,9 @@ class TranslationService(
             output = translatedSegments
                 .filter(String::isNotBlank)
                 .joinToString("\n"),
-            unknownTerms = unknownTerms,
+            unknownTerms = unknownTerms.distinct(),
+            ambiguousTerms = ambiguousTerms.distinct(),
+            unreliableSegments = unreliableSegments.distinct(),
             matchedEntryCount = matchedEntryCount,
         )
     }
@@ -134,6 +144,8 @@ class TranslationService(
     ): SegmentTranslation {
         val words = segment
             .trim()
+            // OCR sometimes omits the space after a comma or semicolon.
+            .replace(Regex("(?<=\\p{L})[,;:](?=\\p{L})"), " ")
             .split(Regex("\\s+"))
             .filter(String::isNotBlank)
 
@@ -143,6 +155,7 @@ class TranslationService(
 
         val outputParts = mutableListOf<String>()
         val unknownTerms = mutableListOf<String>()
+        val ambiguousTerms = mutableListOf<String>()
         var matches = 0
         var matchedWords = 0
         var index = 0
@@ -155,6 +168,7 @@ class TranslationService(
 
             var matchedEntry: DictionaryEntry? = null
             var matchedLength = 0
+            var ambiguousLength = 0
 
             // Longest phrase first. This prevents a known multi-word phrase
             // from being broken into less accurate individual word matches.
@@ -170,14 +184,18 @@ class TranslationService(
                     continue
                 }
 
-                val entry = findEntry(
-                    candidateNormalized,
+                val candidates = distinctTranslations(
+                    findEntries(candidateNormalized, direction),
                     direction,
                 )
-
-                if (entry != null) {
-                    matchedEntry = entry
+                if (candidates.size == 1) {
+                    matchedEntry = candidates.first()
                     matchedLength = length
+                    break
+                }
+                if (candidates.size > 1) {
+                    // This phrase has several valid meanings or forms.
+                    ambiguousLength = length
                     break
                 }
             }
@@ -190,16 +208,21 @@ class TranslationService(
                 matches += 1
                 matchedWords += matchedLength
                 index += matchedLength
+            } else if (ambiguousLength > 0) {
+                val uncertain = words
+                    .subList(index, index + ambiguousLength)
+                    .joinToString(" ")
+                outputParts += "—"
+                ambiguousTerms += uncertain
+                index += ambiguousLength
             } else {
-                val unknown = cleanDisplayToken(
-                    words[index]
-                )
-
+                val unknown = cleanDisplayToken(words[index])
                 if (unknown.isNotBlank()) {
-                    outputParts += "[unknown: $unknown]"
+                    // A dash is a visual placeholder, not a made-up
+                    // Maya word or an internal [unknown: ...] marker.
+                    outputParts += "—"
                     unknownTerms += unknown
                 }
-
                 index += 1
             }
         }
@@ -223,18 +246,12 @@ class TranslationService(
         return SegmentTranslation(
             output = output,
             unknownTerms = unknownTerms,
+            ambiguousTerms = ambiguousTerms,
             matchedEntryCount = matches,
             matchedWordCount = matchedWords,
             totalWordCount = words.size,
         )
     }
-
-    private suspend fun findEntry(
-        normalizedText: String,
-        direction: TranslationDirection,
-    ): DictionaryEntry? =
-        findEntries(normalizedText, direction)
-            .firstOrNull()
 
     private suspend fun findEntries(
         normalizedText: String,
@@ -252,11 +269,6 @@ class TranslationService(
         direction: TranslationDirection,
     ): List<DictionaryEntry> =
         entries
-            .distinctBy {
-                TextNormalizer.normalize(
-                    translatedText(it, direction)
-                )
-            }
             .sortedWith(
                 compareByDescending<DictionaryEntry> {
                     it.verified
@@ -264,6 +276,13 @@ class TranslationService(
                     translatedText(it, direction)
                 }
             )
+            // When identical translations exist, retain the verified
+            // entry instead of a random duplicate from the database.
+            .distinctBy {
+                TextNormalizer.normalize(
+                    translatedText(it, direction)
+                )
+            }
 
     private fun translatedText(
         entry: DictionaryEntry,
@@ -300,6 +319,7 @@ class TranslationService(
     private data class SegmentTranslation(
         val output: String,
         val unknownTerms: List<String> = emptyList(),
+        val ambiguousTerms: List<String> = emptyList(),
         val matchedEntryCount: Int = 0,
         val matchedWordCount: Int = 0,
         val totalWordCount: Int = 0,
@@ -312,6 +332,79 @@ class TranslationService(
                     matchedWordCount.toDouble() /
                         totalWordCount.toDouble()
                 }
+    }
+
+    /**
+     * Spelling suggestions are only drawn from existing dictionary entries.
+     * The caller must ask the user to confirm a suggestion; this method
+     * never silently replaces text extracted from a photograph.
+     */
+    suspend fun suggestCorrections(
+        rawInput: String,
+        direction: TranslationDirection,
+        limit: Int = 3,
+    ): List<DictionaryEntry> {
+        val input = TextNormalizer.normalize(rawInput)
+        if (input.length !in 4..45 || input.count { it == ' ' } > 3) {
+            return emptyList()
+        }
+
+        val prefix = input.take(if (input.length <= 5) 2 else 3)
+        val candidates = dictionaryRepository.searchEntries(prefix, 80)
+        val maxDistance = when {
+            input.length <= 5 -> 1
+            input.length <= 9 -> 2
+            else -> 3
+        }
+
+        return candidates.mapNotNull { entry ->
+            if (!entry.active) return@mapNotNull null
+            val sourceForms = when (direction) {
+                TranslationDirection.MAYA_TO_ENGLISH ->
+                    listOf(entry.mayaNormalized)
+                TranslationDirection.ENGLISH_TO_MAYA ->
+                    listOf(entry.englishNormalized) +
+                        entry.acceptedEnglishInputs
+            }
+            val bestDistance = sourceForms
+                .map(TextNormalizer::normalize)
+                .filter { kotlin.math.abs(it.length - input.length) <= maxDistance }
+                .minOfOrNull { editDistance(input, it) }
+                ?: return@mapNotNull null
+
+            if (bestDistance == 0 || bestDistance > maxDistance) {
+                null
+            } else {
+                entry to bestDistance
+            }
+        }.sortedWith(
+            compareBy<Pair<DictionaryEntry, Int>> { it.second }
+                .thenByDescending { it.first.verified }
+                .thenBy { it.first.mayaText }
+        ).distinctBy { (entry, _) ->
+            when (direction) {
+                TranslationDirection.MAYA_TO_ENGLISH -> entry.mayaNormalized
+                TranslationDirection.ENGLISH_TO_MAYA -> entry.englishNormalized
+            }
+        }.take(limit.coerceIn(1, 3)).map { it.first }
+    }
+
+    private fun editDistance(a: String, b: String): Int {
+        var previous = IntArray(b.length + 1) { it }
+        for (i in a.indices) {
+            val current = IntArray(b.length + 1)
+            current[0] = i + 1
+            for (j in b.indices) {
+                val cost = if (a[i] == b[j]) 0 else 1
+                current[j + 1] = minOf(
+                    current[j] + 1,
+                    previous[j + 1] + 1,
+                    previous[j] + cost,
+                )
+            }
+            previous = current
+        }
+        return previous[b.length]
     }
 
     private companion object {
