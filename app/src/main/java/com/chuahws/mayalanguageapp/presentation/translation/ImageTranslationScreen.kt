@@ -180,23 +180,6 @@ fun ImageTranslationScreen(
             filteredText = result
             viewModel.updateInput(result.text)
 
-            if (
-                state.direction == TranslationDirection.MAYA_TO_ENGLISH &&
-                result.skippedWords.isNotEmpty()
-            ) {
-                val possible = mutableListOf<Pair<String, DictionaryEntry>>()
-                for (term in result.skippedWords.take(3)) {
-                    val matches = runCatching {
-                        viewModel.possibleYucatecSpelling(term)
-                    }.getOrDefault(emptyList())
-                    matches.take(2).forEach { match ->
-                        possible += term to match
-                    }
-                }
-                yucatecSuggestions = possible
-                    .distinctBy { it.second.entryId }
-                    .take(3)
-            }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
@@ -209,6 +192,35 @@ fun ImageTranslationScreen(
                 filteringImage = false
             }
         }
+    }
+
+    // Optional Yucatec spelling hints are loaded after filtering, so a
+    // slow dictionary query cannot hold up the photo or Translate button.
+    LaunchedEffect(filteredText, state.direction) {
+        yucatecSuggestions = emptyList()
+        val result = filteredText
+        if (
+            result == null ||
+            state.direction != TranslationDirection.MAYA_TO_ENGLISH ||
+            result.skippedWords.isEmpty()
+        ) return@LaunchedEffect
+
+        val possible = mutableListOf<Pair<String, DictionaryEntry>>()
+        for (term in result.skippedWords.take(3)) {
+            val candidates = try {
+                viewModel.possibleYucatecSpelling(term)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                emptyList()
+            }
+            candidates.take(2).forEach { entry ->
+                possible += term to entry
+            }
+        }
+        yucatecSuggestions = possible
+            .distinctBy { it.second.entryId }
+            .take(3)
     }
 
     fun showReview(original: String = reviewedText.orEmpty()) {
