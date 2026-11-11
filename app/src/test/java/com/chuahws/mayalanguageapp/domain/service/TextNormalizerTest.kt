@@ -11,4 +11,12 @@ class TextNormalizerTest {
             TextNormalizer.normalize("  BA'AX   K'IIN  ")
         )
     }
+    @Test
+    fun punctuationBetweenOcrWords_isTreatedAsASeparator() {
+        assertEquals(
+            "hello world",
+            TextNormalizer.normalize("Hello,World!")
+        )
+    }
+
 }
