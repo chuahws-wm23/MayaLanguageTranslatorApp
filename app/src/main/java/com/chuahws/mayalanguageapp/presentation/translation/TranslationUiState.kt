@@ -13,5 +13,12 @@ data class TranslationUiState(
     val alternativeEntries: List<DictionaryEntry> = emptyList(),
     val inputType: InputType = InputType.TEXT,
     val message: String? = null,
+    val advice: String? = null,
+    val approximate: Boolean = false,
+    val needsReview: Boolean = false,
+    val unknownTerms: List<String> = emptyList(),
+    val ambiguousTerms: List<String> = emptyList(),
+    val unreliableSegments: List<String> = emptyList(),
+    val suggestions: List<DictionaryEntry> = emptyList(),
     val loading: Boolean = false,
 )
