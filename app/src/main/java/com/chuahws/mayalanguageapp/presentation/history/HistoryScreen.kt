@@ -45,6 +45,7 @@ import com.chuahws.mayalanguageapp.presentation.components.AccentIcon
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.SoftBadge
 import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
+import com.chuahws.mayalanguageapp.presentation.components.TranslationDetailsDialog
 import com.chuahws.mayalanguageapp.domain.service.ListPaging
 import com.chuahws.mayalanguageapp.presentation.theme.MayaBlue
 import com.chuahws.mayalanguageapp.presentation.theme.MayaGreen
@@ -57,6 +58,7 @@ import java.util.Locale
 fun HistoryScreen(
     history: List<TranslationRecord>,
     onDelete: (TranslationRecord) -> Unit,
+    onTranslate: (TranslationRecord) -> Unit,
 ) {
     var query by rememberSaveable {
         mutableStateOf("")
@@ -80,105 +82,23 @@ fun HistoryScreen(
     }
 
     if (selectedRecord != null) {
-        AlertDialog(
-            onDismissRequest = {
+        TranslationDetailsDialog(
+            title = "Translation details",
+            sourceLabel = friendlyLanguage(selectedRecord.sourceLanguage),
+            sourceText = selectedRecord.sourceText,
+            translationLabel = friendlyLanguage(selectedRecord.targetLanguage),
+            translationText = selectedRecord.translatedText,
+            metadata = selectedRecord.inputType.lowercase()
+                .replaceFirstChar { it.uppercase() } +
+                " • " + formatDate(selectedRecord.createdAtMillis),
+            onDismiss = { selectedRecordId = null },
+            onTranslate = {
                 selectedRecordId = null
+                onTranslate(selectedRecord)
             },
-            title = {
-                Text("Translation details")
-            },
-            text = {
-                Column(
-                    verticalArrangement =
-                        Arrangement.spacedBy(10.dp),
-                ) {
-                    Text(
-                        text = "Original",
-                        style =
-                            MaterialTheme.typography
-                                .labelMedium,
-                        color =
-                            MaterialTheme.colorScheme
-                                .onSurfaceVariant,
-                    )
-                    Text(
-                        text = selectedRecord.sourceText,
-                        style =
-                            MaterialTheme.typography
-                                .titleMedium,
-                    )
-
-                    Text(
-                        text = "Translation",
-                        style =
-                            MaterialTheme.typography
-                                .labelMedium,
-                        color =
-                            MaterialTheme.colorScheme
-                                .onSurfaceVariant,
-                    )
-                    Text(
-                        text =
-                            selectedRecord.translatedText,
-                        style =
-                            MaterialTheme.typography
-                                .titleMedium,
-                        color =
-                            MaterialTheme.colorScheme
-                                .primary,
-                    )
-
-                    Text(
-                        text =
-                            friendlyLanguage(
-                                selectedRecord
-                                    .sourceLanguage
-                            ) +
-                                " to " +
-                                friendlyLanguage(
-                                    selectedRecord
-                                        .targetLanguage
-                                ),
-                        style =
-                            MaterialTheme.typography
-                                .bodySmall,
-                        color =
-                            MaterialTheme.colorScheme
-                                .onSurfaceVariant,
-                    )
-                    Text(
-                        text =
-                            "Method: " +
-                                selectedRecord.inputType
-                                    .lowercase()
-                                    .replaceFirstChar {
-                                        it.uppercase()
-                                    },
-                        style =
-                            MaterialTheme.typography
-                                .bodySmall,
-                    )
-                    Text(
-                        text =
-                            "Date: " +
-                                formatDate(
-                                    selectedRecord
-                                        .createdAtMillis
-                                ),
-                        style =
-                            MaterialTheme.typography
-                                .bodySmall,
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selectedRecordId = null
-                    },
-                ) {
-                    Text("Close")
-                }
+            onDelete = {
+                selectedRecordId = null
+                pendingDeleteId = selectedRecord.translationId
             },
         )
     }
