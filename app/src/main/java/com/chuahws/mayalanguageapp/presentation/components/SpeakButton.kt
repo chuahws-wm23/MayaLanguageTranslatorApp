@@ -1,7 +1,8 @@
 package com.chuahws.mayalanguageapp.presentation.components
 
 import android.speech.tts.TextToSpeech
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.VolumeUp
@@ -16,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 
@@ -24,6 +26,7 @@ fun SpeakButton(
     text: String,
     languageTag: String,
     showUnavailableLabel: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     var tts by remember {
@@ -83,9 +86,10 @@ fun SpeakButton(
             ready &&
             supported
 
-    Column(
-        horizontalAlignment =
-            Alignment.CenterHorizontally,
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
         IconButton(
             onClick = {
