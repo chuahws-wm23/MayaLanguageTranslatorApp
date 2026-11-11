@@ -273,31 +273,34 @@ private fun ProfileOverview(
             ?: "Active"
 
     AppGradientBackground {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(
-                    rememberScrollState()
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Keep navigation visible while the profile content scrolls.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                ProfilePageTitle(
+                    title = "Profile",
+                    onMenu = onOpenMenu,
                 )
-                .padding(
-                    PaddingValues(
-                        start = 18.dp,
-                        top = 16.dp,
-                        end = 18.dp,
-                        bottom = 112.dp,
-                    )
-                ),
-            horizontalAlignment =
-                Alignment.CenterHorizontally,
-            verticalArrangement =
-                Arrangement.spacedBy(14.dp),
-        ) {
-            ProfilePageTitle(
-                title = "Profile",
-                onMenu = onOpenMenu,
-            )
+            }
 
-            Card(
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        PaddingValues(
+                            start = 18.dp,
+                            top = 16.dp,
+                            end = 18.dp,
+                            bottom = 112.dp,
+                        )
+                    ),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape =
                     MaterialTheme.shapes.extraLarge,
@@ -520,6 +523,7 @@ private fun ProfileOverview(
                     fontWeight =
                         FontWeight.SemiBold,
                 )
+            }
             }
         }
     }
@@ -988,31 +992,40 @@ private fun ProfileDetailScaffold(
     content: @Composable () -> Unit,
 ) {
     AppGradientBackground {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(
-                    rememberScrollState()
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Detail headers remain visible when editing a long form.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                ProfilePageTitle(
+                    title = title,
+                    onBack = onBack,
                 )
-                .imePadding()
-                .padding(
-                    PaddingValues(
-                        start = 18.dp,
-                        top = 12.dp,
-                        end = 18.dp,
-                        bottom = 112.dp,
-                    )
-                ),
-            verticalArrangement =
-                Arrangement.spacedBy(18.dp),
-        ) {
-            ProfilePageTitle(
-                title = title,
-                subtitle = subtitle,
-                onBack = onBack,
-            )
+            }
 
-            content()
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .imePadding()
+                    .padding(
+                        PaddingValues(
+                            start = 18.dp,
+                            top = 12.dp,
+                            end = 18.dp,
+                            bottom = 112.dp,
+                        )
+                    ),
+                verticalArrangement = Arrangement.spacedBy(18.dp),
+            ) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                content()
+            }
         }
     }
 }
@@ -1020,84 +1033,47 @@ private fun ProfileDetailScaffold(
 @Composable
 private fun ProfilePageTitle(
     title: String,
-    subtitle: String? = null,
     onBack: (() -> Unit)? = null,
     onMenu: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp),
-        verticalAlignment =
-            Alignment.CenterVertically,
+            .height(64.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         when {
             onBack != null -> {
-                IconButton(
-                    onClick = onBack,
-                ) {
+                IconButton(onClick = onBack) {
                     Icon(
-                        imageVector =
-                            Icons.Rounded.ArrowBack,
-                        contentDescription =
-                            "Back to profile",
+                        imageVector = Icons.Rounded.ArrowBack,
+                        contentDescription = "Back to profile",
                     )
                 }
             }
-
             onMenu != null -> {
-                IconButton(
-                    onClick = onMenu,
-                ) {
+                IconButton(onClick = onMenu) {
                     Icon(
-                        imageVector =
-                            Icons.Rounded.Menu,
-                        contentDescription =
-                            "Open menu",
+                        imageVector = Icons.Rounded.Menu,
+                        contentDescription = "Open menu",
                     )
                 }
             }
-
             else -> {
-                Spacer(
-                    modifier =
-                        Modifier.size(48.dp)
-                )
+                Spacer(modifier = Modifier.size(48.dp))
             }
         }
 
-        Column(
+        Text(
+            text = title,
             modifier = Modifier.weight(1f),
-            horizontalAlignment =
-                Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = title,
-                style =
-                    MaterialTheme
-                        .typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
-
-            subtitle?.let {
-                Text(
-                    text = it,
-                    style =
-                        MaterialTheme
-                            .typography.bodySmall,
-                    color =
-                        MaterialTheme
-                            .colorScheme
-                            .onSurfaceVariant,
-                    textAlign =
-                        TextAlign.Center,
-                )
-            }
-        }
-
-        Spacer(
-            modifier = Modifier.size(48.dp)
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
         )
+
+        Spacer(modifier = Modifier.size(48.dp))
     }
 }
 
