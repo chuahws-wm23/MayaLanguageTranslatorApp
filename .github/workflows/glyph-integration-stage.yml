@@ -1,0 +1,72 @@
+name: Glyph integration staging checks
+on:
+  push:
+    branches: [glyph-integration-check-20261114]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - name: Import and verify the supplied model
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os, json, urllib.request, base64, hashlib
+          from pathlib import Path
+          p = Path('app/src/main/assets/maya_glyph_v1.mgl')
+          expected = 'd4ed697fbb7dd3552f6efac0e58e6c29e872b9b60832dba8d5f6a19bd94a4094'
+          if not p.exists():
+              url = 'https://api.github.com/repos/' + os.environ['GITHUB_REPOSITORY'] + '/git/blobs/612801062372da51c94bacbf9d2ca2fda5ef48b4'
+              request = urllib.request.Request(url, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  payload = json.load(response)
+              encoded = ''.join(payload['content'].split())
+              # Correct four transmission insertions; the original model hash is mandatory.
+              for old, new in [('ELskTNB4s', 'ELskTB4s'), ('AFgBWDkJNS9', 'AFgB+kJNS9'), ('DkX5DLzR7z6Lsk', 'DkX5DLz6Lsk'), ('ENzkXRw45GcrGiex', 'ENzkXRwcrGiex')]:
+                  assert encoded.count(old) == 1, 'Unexpected transfer encoding'
+                  encoded = encoded.replace(old, new)
+              data = base64.b64decode(encoded, validate=True)
+              assert len(data) == 29420 and hashlib.sha256(data).hexdigest() == expected, 'Model does not match the supplied original'
+              p.parent.mkdir(parents=True, exist_ok=True)
+              p.write_bytes(data)
+          assert p.stat().st_size == 29420 and hashlib.sha256(p.read_bytes()).hexdigest() == expected
+          print('Verified original model: 29420 bytes, SHA-256 ' + expected)
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Compile app and run unit tests
+        run: gradle testDebugUnitTest assembleDebug --stacktrace
+      - name: Summarize tests
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as E, os
+          totals = dict(tests=0, failures=0, errors=0, skipped=0)
+          for path in Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml'):
+              root = E.parse(path).getroot()
+              for k in totals: totals[k] += int(root.attrib.get(k, 0))
+          print(totals)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as out:
+              out.write('JVM test totals: ' + str(totals) + '\n\nNo physical-device or independent recognition-accuracy test is claimed.\n')
+          PY
+      - name: Commit verified model to staging only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f app/src/main/assets/maya_glyph_v1.mgl
+          if ! git diff --cached --quiet; then
+            git commit -m 'Add integrity-checked TinyGlyphNet v1 model after Android checks'
+            git push origin HEAD:glyph-integration-check-20261114
+          fi
