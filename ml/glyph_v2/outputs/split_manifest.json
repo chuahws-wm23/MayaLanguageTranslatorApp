@@ -1,0 +1,239 @@
+{
+  "source": "tadad/twkm-maya-glyphs",
+  "revision": "73fe9da1d975a5f1e588c7d42c952dfda53cefd0",
+  "seed": 20261114,
+  "grouping": "exact unique source original image SHA256",
+  "labels": {
+    "32": "K'UH | god / deity",
+    "184": "K'INICH | resplendent",
+    "291": "SIIP | deity name",
+    "4": "NAAH | first / house",
+    "44": "TOK | cloud / mist"
+  },
+  "counts": {
+    "32": {
+      "train": 6,
+      "val": 1,
+      "test": 2
+    },
+    "184": {
+      "train": 5,
+      "val": 1,
+      "test": 2
+    },
+    "291": {
+      "train": 5,
+      "val": 1,
+      "test": 2
+    },
+    "4": {
+      "train": 4,
+      "val": 1,
+      "test": 2
+    },
+    "44": {
+      "train": 4,
+      "val": 1,
+      "test": 1
+    }
+  },
+  "cross_sign_duplicate_groups_excluded": 10,
+  "splits": {
+    "train": [
+      {
+        "sign": 32,
+        "graph": "32md",
+        "sha256": "f1b24a26e70eeda0ce6acb2c3b38e047e4aa38c81051ade2d10f7e2bd1d502c3"
+      },
+      {
+        "sign": 32,
+        "graph": "32va",
+        "sha256": "e94e0f3222ce3cc7642738ea6bc596a27c5013ccc7afe138c2b829030c11d3d5"
+      },
+      {
+        "sign": 32,
+        "graph": "32vc",
+        "sha256": "d7315b6480824c64eff5782d25b5fecdd372d4e5bb18b01e39dcc284b7d79c91"
+      },
+      {
+        "sign": 32,
+        "graph": "32vb",
+        "sha256": "82b33a0d8c542f9294583101754e804f2162dce82f64af1b4183c2963ee2fe5e"
+      },
+      {
+        "sign": 32,
+        "graph": "32vl",
+        "sha256": "5d38423fa4fa839a53eddca3566cb4e8ec2b381b8cb7b51cb352a8ca7ef5e136"
+      },
+      {
+        "sign": 32,
+        "graph": "32fc",
+        "sha256": "4f5add8aa74e8654c0edc28f1a3d43db69c48d0b6c619d5daf8a083e1d1c146b"
+      },
+      {
+        "sign": 184,
+        "graph": "184vt",
+        "sha256": "af19d67e8b61a8cc144ff3168d601b2a095284f68ef3f3b45525b8ee2aaa0b11"
+      },
+      {
+        "sign": 184,
+        "graph": "184ex",
+        "sha256": "7b2bd8065361d39ea8b6433cb2f45085ec9e0d8569daf1ddcbfb24ce873b3c42"
+      },
+      {
+        "sign": 184,
+        "graph": "184vd",
+        "sha256": "0628e6fd47094b12142b8c04d0a99a3d9fbc8ca7a9cf7c6ba70cad46c25558b0"
+      },
+      {
+        "sign": 184,
+        "graph": "184vl",
+        "sha256": "cba7ed3a2cec4c8ddca52c2dee8bf656f836c8548713ac123f4c7ad8deed6d47"
+      },
+      {
+        "sign": 184,
+        "graph": "184vs",
+        "sha256": "d26d636a3878c497d208e7af97c30d01042a0af493b0f7e680ba6d0ce3967eac"
+      },
+      {
+        "sign": 291,
+        "graph": "291vc",
+        "sha256": "227e7eed89b858effe814686dd036983358a922e65bfe98808c9d3de64bfe550"
+      },
+      {
+        "sign": 291,
+        "graph": "291vs",
+        "sha256": "4025f006f3e497d39095be3dafbbcdaa05c0620f967b12d75c692b682abcb1ac"
+      },
+      {
+        "sign": 291,
+        "graph": "291hc",
+        "sha256": "68ffcc48f8d63101c7983fb654d22de8e285e95f65bebcd81626182697817040"
+      },
+      {
+        "sign": 291,
+        "graph": "291vl",
+        "sha256": "4b273e497200569c0fe361e73a05c410ddcb35b106d850278974a26319f65322"
+      },
+      {
+        "sign": 291,
+        "graph": "291vr",
+        "sha256": "74796b0cd7244ae66532f0459f894229abe7271cbffd9b70c8b3e58fbd796afe"
+      },
+      {
+        "sign": 4,
+        "graph": "4vr",
+        "sha256": "fdbb5c187b5375a76fa3260810e1c9f02cf19618bf086f2bc50e70550cd15c08"
+      },
+      {
+        "sign": 4,
+        "graph": "4vt",
+        "sha256": "bf2b82e03efce1aaab9088b0d440518e33ac2144409fc69b0e37b1819fbfe309"
+      },
+      {
+        "sign": 4,
+        "graph": "4vs",
+        "sha256": "cb60a6245c5acaf6cb181908dadf39b4e6d34b699c231b183943749426ab7aff"
+      },
+      {
+        "sign": 4,
+        "graph": "4vc",
+        "sha256": "51c74a01dce7d848dde35891443d5a49e07e6663c7def28b671a04f02f419f8e"
+      },
+      {
+        "sign": 44,
+        "graph": "44do",
+        "sha256": "bc1c907a211f146746c1432a561b880b32d687f6306fe51242eb376c37963a32"
+      },
+      {
+        "sign": 44,
+        "graph": "44bt",
+        "sha256": "2351745d573c603ef83be806c022b660f9da14c02e3c0bfe4047267858f58d33"
+      },
+      {
+        "sign": 44,
+        "graph": "44hp",
+        "sha256": "c03b221c02e4bcfd78f06ba15447c77c03193457e8a5a9a8899e9e6ff83ec5aa"
+      },
+      {
+        "sign": 44,
+        "graph": "44dt",
+        "sha256": "57b4e4c473e3a2cf3dd80bfd26e6ff05529a08ef03f350ed4f882262f74d3109"
+      }
+    ],
+    "val": [
+      {
+        "sign": 32,
+        "graph": "32vr",
+        "sha256": "affaf5fc0923a9820202a72e6f610be9aa8d5b53c874bc618c3b01bdfeec8516"
+      },
+      {
+        "sign": 184,
+        "graph": "184vr",
+        "sha256": "01d58fe58e17d5c8aae0fb2f203fc085543c58771447b655748fa60fbc547cc2"
+      },
+      {
+        "sign": 291,
+        "graph": "291vt",
+        "sha256": "1d8f11f72d7a66eec3835cfd3f30c7ac8f11490e384631bf830f07b905ee9e8d"
+      },
+      {
+        "sign": 4,
+        "graph": "4vl",
+        "sha256": "77efde8c07a02087c0f12f4ed5f09e7f604ee78c591b49377ec9431bdbecadc5"
+      },
+      {
+        "sign": 44,
+        "graph": "44bv",
+        "sha256": "0e92f03b7eaf9c8449dcdbbccc5a2af3371d3acbcaaef01981fa842907c31b51"
+      }
+    ],
+    "test": [
+      {
+        "sign": 32,
+        "graph": "32mt",
+        "sha256": "5879867aee76920b193c0df6d398f997cd6ee3323383d1601e2f150c2bc07fc3"
+      },
+      {
+        "sign": 32,
+        "graph": "32vt",
+        "sha256": "06f735aeecb16e0e292f8881c643dc59f2625fd280881e7450ec2629ec6b09a1"
+      },
+      {
+        "sign": 184,
+        "graph": "184vi",
+        "sha256": "34c0782680fbc1d38fbaebc9a54111bb7d778a50ee8991e9a76dbe8986d7e5b6"
+      },
+      {
+        "sign": 184,
+        "graph": "184vb",
+        "sha256": "81ef4128eae213d8a6a7c292cc80eb170cbf98e789edc2e804e9206f7cf12343"
+      },
+      {
+        "sign": 291,
+        "graph": "291va",
+        "sha256": "6769d69567c077628e7d52136a5ec1e0979de25bdb78001cc4226fac086059e8"
+      },
+      {
+        "sign": 291,
+        "graph": "291fc",
+        "sha256": "bb5e629c303fef6156b6191169009f6f2b9ac6b4b2cfe781deb51950ab8b79ab"
+      },
+      {
+        "sign": 4,
+        "graph": "4va",
+        "sha256": "6ab6373194ae7ba9aa25303094f72066d7b9271546e03dc52172eb24ded0987e"
+      },
+      {
+        "sign": 4,
+        "graph": "4vb",
+        "sha256": "2076316f5ec66592a06906656ef16fa8ef0894fd5735a6e4a2f49647a8f17849"
+      },
+      {
+        "sign": 44,
+        "graph": "44bb",
+        "sha256": "1b50002eca7070c8cf47ea0a4d8525b8b8a1743e33232e8b108bda9b6900b2c4"
+      }
+    ]
+  }
+}

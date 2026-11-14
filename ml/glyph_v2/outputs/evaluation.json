@@ -1,0 +1,197 @@
+{
+  "experiment": "TWKM five-class original-drawing held-out v2",
+  "dataset": "tadad/twkm-maya-glyphs",
+  "revision": "73fe9da1d975a5f1e588c7d42c952dfda53cefd0",
+  "classes": [
+    {
+      "sign_no": 32,
+      "label": "K'UH | god / deity"
+    },
+    {
+      "sign_no": 184,
+      "label": "K'INICH | resplendent"
+    },
+    {
+      "sign_no": 291,
+      "label": "SIIP | deity name"
+    },
+    {
+      "sign_no": 4,
+      "label": "NAAH | first / house"
+    },
+    {
+      "sign_no": 44,
+      "label": "TOK | cloud / mist"
+    }
+  ],
+  "selection": "Validation-only comparison on five original drawings, stable method-order tie break",
+  "candidate_methods": [
+    {
+      "method": "linear_0.1",
+      "validation_accuracy": 0.2,
+      "correct": 1,
+      "total": 5
+    },
+    {
+      "method": "linear_1",
+      "validation_accuracy": 0.2,
+      "correct": 1,
+      "total": 5
+    },
+    {
+      "method": "rbf_1",
+      "validation_accuracy": 0.2,
+      "correct": 1,
+      "total": 5
+    },
+    {
+      "method": "rbf_10",
+      "validation_accuracy": 0.2,
+      "correct": 1,
+      "total": 5
+    },
+    {
+      "method": "knn_1",
+      "validation_accuracy": 0.4,
+      "correct": 2,
+      "total": 5
+    }
+  ],
+  "selected_model": "knn_1",
+  "heldout_test_original_count": 9,
+  "heldout_test_accuracy": 0.2222,
+  "heldout_correct": 2,
+  "heldout_confusion_matrix": [
+    [
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0
+    ]
+  ],
+  "heldout_by_class": {
+    "K'UH | god / deity": {
+      "precision": 0.16666666666666666,
+      "recall": 0.5,
+      "f1-score": 0.25,
+      "support": 2.0
+    },
+    "K'INICH | resplendent": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1-score": 0.6666666666666666,
+      "support": 2.0
+    },
+    "SIIP | deity name": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 2.0
+    },
+    "NAAH | first / house": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 2.0
+    },
+    "TOK | cloud / mist": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 1.0
+    }
+  },
+  "predictions": [
+    {
+      "graph": "32mt",
+      "true_sign": 32,
+      "predicted_sign": 32,
+      "correct": true
+    },
+    {
+      "graph": "32vt",
+      "true_sign": 32,
+      "predicted_sign": 44,
+      "correct": false
+    },
+    {
+      "graph": "184vi",
+      "true_sign": 184,
+      "predicted_sign": 32,
+      "correct": false
+    },
+    {
+      "graph": "184vb",
+      "true_sign": 184,
+      "predicted_sign": 184,
+      "correct": true
+    },
+    {
+      "graph": "291va",
+      "true_sign": 291,
+      "predicted_sign": 32,
+      "correct": false
+    },
+    {
+      "graph": "291fc",
+      "true_sign": 291,
+      "predicted_sign": 32,
+      "correct": false
+    },
+    {
+      "graph": "4va",
+      "true_sign": 4,
+      "predicted_sign": 32,
+      "correct": false
+    },
+    {
+      "graph": "4vb",
+      "true_sign": 4,
+      "predicted_sign": 32,
+      "correct": false
+    },
+    {
+      "graph": "44bb",
+      "true_sign": 44,
+      "predicted_sign": 4,
+      "correct": false
+    }
+  ],
+  "limitations": [
+    "Only five predefined sign classes",
+    "Standardized drawings, not phone photographs",
+    "Small test set, wide statistical uncertainty",
+    "Unknown/unsupported glyph rejection not evaluated",
+    "Augmentations exclusively from training originals"
+  ],
+  "runtime_seconds": 8.4
+}
