@@ -19,6 +19,8 @@ jobs:
         run: |
           git fetch --depth=1 origin glyph-model-v2-experiment
           mkdir -p ml/glyph_v2/outputs/transfer
+          git show "FETCH_HEAD:ml/glyph_v2/train.py" > ml/glyph_v2/train.py
+          git show "FETCH_HEAD:ml/glyph_v2/train_transfer.py" > ml/glyph_v2/train_transfer.py
           git show "FETCH_HEAD:ml/glyph_v2/outputs/transfer/mobilenet_v3_small_backbone.pt" > ml/glyph_v2/outputs/transfer/mobilenet_v3_small_backbone.pt
           test -s ml/glyph_v2/outputs/transfer/mobilenet_v3_small_backbone.pt
       - uses: actions/setup-python@v5
