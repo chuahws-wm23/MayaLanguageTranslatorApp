@@ -1,0 +1,22 @@
+10-SIGN RESEARCH V4: HELD-OUT TWKM DRAWINGS
+
+1. Pull the fyp-development branch once the v4 integration is merged.
+2. Open Photo translation > Maya glyph recognition.
+3. Choose Research v4 (10 signs) (NOT v1, v2 or v3).
+4. Gallery > select each numbered PNG.
+5. Crop the complete glyph with a small margin, then Recognise glyph.
+6. Compare the displayed TWKM sign no. with EXPECTED_RESULTS.csv.
+
+IMPORTANT:
+- These 10 originals were NOT used in v4 model training, validation, or rejection calibration.
+- They WERE ALREADY USED in the v4 research report's final test (7/10 correct).
+  Therefore repeating them on Android is a deployment regression/smoke test,
+  NOT a new independent estimate of accuracy.
+- Research v4 ALWAYS outputs one of ten categories for every accepted image,
+  including unsupported drawings; its rejected-sign filter failed on known
+  test drawings and was intentionally NOT enabled.
+- The app does not translate a full inscription.
+- The catalogue sign readings are provisional and context dependent.
+- The source gallery is from TWKM (University of Bonn), standardized
+  glyph drawings Christian Prager, CC BY 4.0.
+- Real phone-camera test accuracy remains unknown.
