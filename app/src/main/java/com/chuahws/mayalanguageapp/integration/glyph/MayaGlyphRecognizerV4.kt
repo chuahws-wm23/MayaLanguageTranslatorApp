@@ -135,12 +135,17 @@ class MayaGlyphRecognizerV4 private constructor(
      * The original top-1 needs support from another view to be presented as
      * a *possible* match. Unsupported signs may still be guessed incorrectly.
      */
-    fun recognize(bitmap: Bitmap): GlyphV4Result {
+    fun recognize(bitmap: Bitmap, singleSignMode: Boolean = true): GlyphV4Result {
         val standard = classify(GlyphV2Preprocessor.fromBitmap(bitmap, INPUT_SIDE))
         val adjusted = try {
             GlyphV2Preprocessor.fromBitmap(bitmap, INPUT_SIDE, photoCorrected = true)
         } catch (_: IllegalArgumentException) {
             null
+        }
+        // Keep the previous two-view behaviour for experimental multi-block
+        // scanning: extra denoising on every cell is unnecessarily expensive.
+        if (!singleSignMode) {
+            return reconcileLightingViews(standard, adjusted?.let { classify(it) })
         }
         val denoised = try {
             GlyphV2Preprocessor.fromBitmap(bitmap, INPUT_SIDE, medianDenoised = true)
