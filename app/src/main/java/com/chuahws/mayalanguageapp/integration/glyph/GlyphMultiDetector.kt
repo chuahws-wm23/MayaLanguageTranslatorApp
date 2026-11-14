@@ -163,7 +163,9 @@ object GlyphMultiDetector {
                 if (contrast > .12) stronglySupported++
             }
             if (seams.size != cells - 1) continue
-            if (stronglySupported.toDouble() / contrasts.size < .65) continue
+            // A single outlined glyph may have two strong edges; real panels need
+            // nearly every repeated seam, not just two of three.
+            if (stronglySupported.toDouble() / contrasts.size < .80) continue
 
             val meanPositive = contrasts.map { max(0.0, it) }.average()
             val coverage = stronglySupported.toDouble() / contrasts.size
