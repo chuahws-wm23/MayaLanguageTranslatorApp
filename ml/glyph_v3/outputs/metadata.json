@@ -1,0 +1,23 @@
+{
+  "num_reference_originals": 38,
+  "embedding_dim": 576,
+  "class_indices": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "class_sign_numbers": [
+    32,
+    184,
+    291,
+    4,
+    44
+  ],
+  "gallery_format": "uint32 LE count, uint32 LE dimension, uint8 class indices, float32 LE row-major unit vectors",
+  "threshold_min_similarity": 0.89,
+  "threshold_min_margin": 0.05,
+  "gallery_sha256": "84c93ee2d9c09ee99845895630a2710c1bab0c2b428c9d6a4e2d774311c1871e",
+  "accuracy_claim": "TWKM in-catalogue cross-validation only; no independent photo accuracy"
+}
