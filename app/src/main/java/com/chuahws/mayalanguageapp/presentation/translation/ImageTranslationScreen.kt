@@ -27,6 +27,7 @@ import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.InputType
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
 
@@ -100,9 +101,35 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     if (!hasCamera) Text("No camera found. Use Gallery instead.", style = MaterialTheme.typography.bodySmall)
                 }
             }
-            Text("Experimental model · 5 supported categories", style = MaterialTheme.typography.labelLarge)
-            Text("Deer, Hawk, Jaguar, Star and Cacao (KAKAW). Other drawings may be rejected or misidentified. " +
-                "This is not a full Maya inscription translator.", style = MaterialTheme.typography.bodySmall)
+            Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Choose recognition model", style = MaterialTheme.typography.titleMedium)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (state.model == GlyphModelMode.TINY_V1) {
+                            Button(onClick = { glyphModel.setModel(GlyphModelMode.TINY_V1) },
+                                enabled = !state.busy, modifier = Modifier.weight(1f)) { Text("Model v1", maxLines = 1) }
+                        } else {
+                            OutlinedButton(onClick = { glyphModel.setModel(GlyphModelMode.TINY_V1) },
+                                enabled = !state.busy, modifier = Modifier.weight(1f)) { Text("Model v1", maxLines = 1) }
+                        }
+                        if (state.model == GlyphModelMode.RESEARCH_V2) {
+                            Button(onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_V2) },
+                                enabled = !state.busy, modifier = Modifier.weight(1f)) { Text("Research v2", maxLines = 1) }
+                        } else {
+                            OutlinedButton(onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_V2) },
+                                enabled = !state.busy, modifier = Modifier.weight(1f)) { Text("Research v2", maxLines = 1) }
+                        }
+                    }
+                    Text(
+                        if (state.model == GlyphModelMode.TINY_V1)
+                            "v1: Deer, Hawk, Jaguar, Star, Cacao (KAKAW). Unknown drawings may be rejected."
+                        else
+                            "v2: God/deity, Resplendent, Siip deity, House/first, Cloud/mist. " +
+                                "Deer and Cacao are NOT included. It always chooses one of these five signs.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
             state.bitmap?.let { image ->
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -134,10 +161,20 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                 }
             }
             state.result?.let { GlyphResultCard(it) }
-            Text("TinyGlyphNet v1 · Offline recognition · 29 KB weights. " +
-                "Real-world accuracy is not established. Suggested readings need specialist review. " +
-                "Glyph scans are not automatically saved as verified dictionary translations.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            state.resultV2?.let { GlyphV2ResultCard(it) }
+            Text(
+                if (state.model == GlyphModelMode.TINY_V1)
+                    "TinyGlyphNet v1 · Offline recognition · 29 KB weights. " +
+                        "Real-world accuracy is not established."
+                else
+                    "Research v2 · Offline MobileNetV3 + SVM (ONNX). " +
+                        "35/38 original catalogue drawings correct in exploratory five-fold cross-validation; " +
+                        "phone-photo accuracy is NOT established.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text("All suggested readings require specialist review. Glyph scans are not saved as verified translations.",
+                style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(12.dp))
         }
     }
@@ -176,6 +213,34 @@ private fun GlyphResultCard(result: GlyphNetwork.Result) {
             }
             Text("A strong model score can still be wrong. No confidence percentage is shown.",
                 style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun GlyphV2ResultCard(result: GlyphV2Result) {
+    val clipboard = LocalClipboardManager.current
+    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Research v2 — experimental suggestion",
+                style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(result.englishGloss, style = MaterialTheme.typography.headlineSmall)
+            Text("Proposed reading: ${result.reading}")
+            Text("TWKM sign #${result.signNumber}", style = MaterialTheme.typography.bodySmall)
+            Surface(color = MaterialTheme.colorScheme.errorContainer,
+                shape = MaterialTheme.shapes.medium) {
+                Text("Not a verified translation. Model v2 ALWAYS picks one of five signs even when " +
+                    "your drawing is unknown. Do not use this result as evidence of an identified glyph. " +
+                    "No calibrated confidence or unknown-glyph detection is available.",
+                    Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall)
+            }
+            FilledTonalButton(
+                onClick = { clipboard.setText(AnnotatedString(
+                    "Unverified Maya glyph candidate: ${result.reading} — ${result.englishGloss} (TWKM sign ${result.signNumber}). " +
+                        "Experimental closed-set recognition; not a confirmed translation."
+                )) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Copy with disclaimer") }
         }
     }
 }
