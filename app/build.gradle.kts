@@ -18,7 +18,8 @@ android {
 
     defaultConfig {
         applicationId = "com.chuahws.mayalanguageapp"
-        minSdk = 23
+        // ONNX Runtime Android 1.31.1 requires API 24 or newer.
+        minSdk = 24
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
