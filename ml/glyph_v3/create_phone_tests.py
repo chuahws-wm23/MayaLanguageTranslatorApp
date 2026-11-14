@@ -41,10 +41,16 @@ for index,s in enumerate(NEGATIVE_SIGNS,1):
        "note":"Sign identity was excluded from BOTH supported model training and threshold calibration",
     })
 source=Path("ml/glyph_v2/test_pictures")
-known=[(32,"K'UH"),(184,"K'INICH"),(291,"SIIP"),(4,"NAAH"),(44,"TOK")]
-for sign,reading in known:
-    name=next(x for x in source.glob("*.png") if f"_{sign}" in x.name and
-              (x.name.split("_")[1][:-2].startswith(str(sign)) or str(sign) in x.name))
+known=[
+    (32,"K'UH","01_32mt_KUH.png"),
+    (184,"K'INICH","02_184vb_KINICH.png"),
+    (291,"SIIP","03_291va_SIIP.png"),
+    (4,"NAAH","04_4va_NAAH.png"),
+    (44,"TOK","05_44bb_TOK.png"),
+]
+for sign,reading,filename in known:
+    name=source/filename
+    assert name.is_file(), name
     dest=OUT/name.name
     shutil.copyfile(name,dest)
     manifest.append({
