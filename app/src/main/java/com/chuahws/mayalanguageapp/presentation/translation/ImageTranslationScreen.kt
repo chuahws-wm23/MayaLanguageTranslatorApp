@@ -57,6 +57,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
     var showCamera by remember { mutableStateOf(false) }
     var showAssistedGrid by remember { mutableStateOf(false) }
     var showAdvancedPanelTools by remember { mutableStateOf(false) }
+    var showResearchModelOptions by remember { mutableStateOf(false) }
     var gridRows by remember { mutableIntStateOf(9) }
     var gridColumns by remember { mutableIntStateOf(9) }
     var permissionMessage by remember { mutableStateOf<String?>(null) }
@@ -89,31 +90,42 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     Text("Choose a photo showing ONE Maya sign. Crop tightly around the complete sign, " +
                         "with a small margin. Research v4 compares normal and shadow-corrected photos; " +
                         "a suggested meaning is still unverified.")
-                    FilledTonalButton(
+                    Button(
+                        onClick = { gallery.launch("image/*") }, enabled = !state.busy,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
+                    ) {
+                        Icon(Icons.Rounded.PhotoLibrary, contentDescription = null)
+                        Spacer(Modifier.width(8.dp)); Text("Upload glyph image")
+                    }
+                    OutlinedButton(
                         onClick = {
                             permissionMessage = null
                             if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                                 showCamera = true
                             } else permission.launch(Manifest.permission.CAMERA)
                         }, enabled = hasCamera && !state.busy,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
                     ) {
                         Icon(Icons.Rounded.CameraAlt, contentDescription = null)
                         Spacer(Modifier.width(8.dp)); Text("Take a photo")
-                    }
-                    FilledTonalButton(
-                        onClick = { gallery.launch("image/*") }, enabled = !state.busy,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) {
-                        Icon(Icons.Rounded.PhotoLibrary, contentDescription = null)
-                        Spacer(Modifier.width(8.dp)); Text("Choose an image")
                     }
                     if (!hasCamera) Text("No camera found. Use Gallery instead.", style = MaterialTheme.typography.bodySmall)
                 }
             }
             Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Choose recognition model", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        if (state.model == GlyphModelMode.RESEARCH_V4)
+                            "Research v4 · 10 supported signs · offline"
+                        else "Experimental legacy recognition mode",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    TextButton(
+                        onClick = { showResearchModelOptions = !showResearchModelOptions },
+                        enabled = !state.busy,
+                    ) { Text(if (showResearchModelOptions) "Hide research options" else "Change research model (advanced)") }
+                    if (showResearchModelOptions) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (state.model == GlyphModelMode.TINY_V1) {
                             Button(onClick = { glyphModel.setModel(GlyphModelMode.TINY_V1) },
@@ -155,6 +167,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                             enabled = !state.busy,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                         ) { Text("Research v4 (10 signs)") }
+                    }
                     }
                     val modelDescription = when (state.model) {
                         GlyphModelMode.TINY_V1 ->
