@@ -1,0 +1,63 @@
+name: Verify offline Maya glyph v2 Android integration
+on:
+  push:
+    branches: [glyph-v2-android-integration]
+    paths:
+      - 'app/**'
+      - '.github/workflows/glyph-v2-android.yml'
+permissions:
+  contents: write
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: glyph-v2-android-integration
+          fetch-depth: 0
+      - name: Add integrity-checked ONNX exports from research experiment
+        run: |
+          git fetch origin glyph-model-v2-experiment
+          mkdir -p app/src/main/assets
+          for file in maya_mobilenet_v2.onnx maya_svm_v2.onnx; do
+            git show "origin/glyph-model-v2-experiment:ml/glyph_v2/outputs/android/$file" > "app/src/main/assets/$file"
+          done
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          import subprocess
+          data=subprocess.check_output(['git','show','origin/glyph-model-v2-experiment:ml/glyph_v2/outputs/android/maya_glyph_v2_metadata.json'])
+          info=json.loads(data)
+          assert info['onnx_svm_parity'] == 1.0
+          assert info['onnx_visual_parity_max_abs_delta'] < 1e-4
+          for name,details in info['assets'].items():
+              raw=(Path('app/src/main/assets')/name).read_bytes()
+              assert len(raw)==details['size_bytes'],name
+              assert hashlib.sha256(raw).hexdigest()==details['sha256'],name
+              print('Verified',name,len(raw),'bytes')
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Compile updated Android app and run JVM tests
+        run: gradle testDebugUnitTest assembleDebug --stacktrace
+      - name: Make installable test APK available
+        uses: actions/upload-artifact@v4
+        with:
+          name: MayaGlyphV2ExperimentalDebugAPK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+      - name: Commit checked ONNX files to integration branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/assets/maya_mobilenet_v2.onnx app/src/main/assets/maya_svm_v2.onnx
+          if ! git diff --cached --quiet; then
+            git commit -m 'Bundle parity-checked offline research v2 models in Android app'
+            git push origin HEAD:glyph-v2-android-integration
+          fi
