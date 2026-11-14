@@ -29,6 +29,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV3Result
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphV4Result
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
 
@@ -134,6 +135,19 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                         ) { Text("Research v3 (screened)") }
                     }
+                    if (state.model == GlyphModelMode.RESEARCH_V4) {
+                        Button(
+                            onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_V4) },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        ) { Text("Research v4 (10 signs)") }
+                    } else {
+                        OutlinedButton(
+                            onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_V4) },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        ) { Text("Research v4 (10 signs)") }
+                    }
                     val modelDescription = when (state.model) {
                         GlyphModelMode.TINY_V1 ->
                             "v1: Deer, Hawk, Jaguar, Star, Cacao (KAKAW). Unknown drawings may be rejected."
@@ -143,6 +157,10 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         GlyphModelMode.RESEARCH_V3 ->
                             "v3: Same five signs as v2, with experimental unknown-glyph screening. " +
                                 "It can reject valid drawings and still accept incorrect ones. Deer/Cacao NOT included."
+                        GlyphModelMode.RESEARCH_V4 ->
+                            "v4: Ten TWKM sign categories, including Gourd, Year, Fire, Name and K'AWIIL. " +
+                                "This mode is CLOSED SET: it ALWAYS guesses a supported sign, even for an unrelated picture. " +
+                                "Deer and Cacao are NOT included."
                     }
                     Text(modelDescription, style = MaterialTheme.typography.bodySmall)
                 }
@@ -180,6 +198,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             state.result?.let { GlyphResultCard(it) }
             state.resultV2?.let { GlyphV2ResultCard(it) }
             state.resultV3?.let { GlyphV3ResultCard(it) }
+            state.resultV4?.let { GlyphV4ResultCard(it) }
             val modelLimitations = when (state.model) {
                 GlyphModelMode.TINY_V1 ->
                     "TinyGlyphNet v1 · Offline model · Real-world accuracy is not established."
@@ -191,6 +210,11 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         "24/38 catalog originals correctly accepted; 90.6% mean rejection on " +
                         "100 unknown sign drawings tested over five fold models. " +
                         "NOT independent phone-photo accuracy."
+                GlyphModelMode.RESEARCH_V4 ->
+                    "Research v4 · Fine-tuned MobileNetV3, 10 sign categories. " +
+                        "7/10 on held-out TWKM reference drawings (small sample). " +
+                        "The v4 rejection filter failed its usability test and is NOT enabled. " +
+                        "Not evaluated for independent phone-photo accuracy."
             }
             Text(
                 modelLimitations, style = MaterialTheme.typography.bodySmall,
@@ -313,6 +337,46 @@ private fun GlyphV3ResultCard(result: GlyphV3Result) {
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun GlyphV4ResultCard(result: GlyphV4Result) {
+    val clipboard = LocalClipboardManager.current
+    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                "Research v4 — unverified guess",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(result.englishGloss, style = MaterialTheme.typography.headlineSmall)
+            Text("Proposed reading: ${result.reading}")
+            Text("TWKM sign #${result.signNumber}", style = MaterialTheme.typography.bodySmall)
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Text(
+                    "Research demo only. The model ALWAYS chooses one of ten signs, including " +
+                        "when the picture is unfamiliar or incorrect. Its 70% test result came " +
+                        "from just ten held-out catalogue drawings, NOT phone photographs. " +
+                        "Do not treat this as a verified reading or translation.",
+                    Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            FilledTonalButton(
+                onClick = {
+                    clipboard.setText(AnnotatedString(
+                        "Unverified Maya glyph suggestion: ${result.reading} — ${result.englishGloss}, " +
+                            "TWKM sign ${result.signNumber}. Experimental closed-set v4; " +
+                            "not confirmed and may be incorrect.",
+                    ))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Copy with disclaimer") }
         }
     }
 }
