@@ -10,6 +10,10 @@ import kotlin.math.roundToInt
 
 /** Reads an app capture or a granted gallery URI. Does not invoke text OCR. */
 object GlyphImageLoader {
+    /** Keep a readable picture even when the content provider has broken EXIF. */
+    internal fun safeExifOrientation(read: () -> Int): Int =
+        runCatching(read).getOrDefault(ExifInterface.ORIENTATION_NORMAL)
+
     fun load(context: Context, uri: Uri, ownedCapture: Boolean = false): Bitmap {
         val resolver = context.contentResolver
         try {
@@ -39,9 +43,17 @@ object GlyphImageLoader {
                     if (small !== current) current.recycle()
                     current = small
                 }
-                val orientation = resolver.openInputStream(uri)?.use {
-                    ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
-                } ?: ExifInterface.ORIENTATION_NORMAL
+                // A valid bitmap may have missing, malformed or inaccessible EXIF.
+                // Do not discard a successfully decoded image just because optional
+                // orientation metadata cannot be opened/read by its content provider.
+                val orientation = safeExifOrientation {
+                    resolver.openInputStream(uri)?.use {
+                        ExifInterface(it).getAttributeInt(
+                            ExifInterface.TAG_ORIENTATION,
+                            ExifInterface.ORIENTATION_NORMAL,
+                        )
+                    } ?: ExifInterface.ORIENTATION_NORMAL
+                }
                 val matrix = Matrix().apply {
                     when (orientation) {
                         ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> setScale(-1f, 1f)
