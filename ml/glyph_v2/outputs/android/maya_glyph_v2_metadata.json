@@ -1,0 +1,54 @@
+{
+  "model_name": "MayaGlyphResearchV2",
+  "model_type": "ONNX MobileNetV3-Small + ONNX RBF SVM",
+  "input": "one 224x224 RGB ImageNet-normalized image obtained by converting a 64x64 normalized glyph crop to 224x224",
+  "v2_model_is_closed_set": true,
+  "unknown_rejection_validated": false,
+  "original_model_file": "mobilenet_v3_small_backbone.pt",
+  "svm_model_file": "mobilenet_v3_small_head.joblib",
+  "signs": [
+    {
+      "index": 0,
+      "twkm_sign": 32,
+      "reading": "K'UH",
+      "gloss": "God / deity"
+    },
+    {
+      "index": 1,
+      "twkm_sign": 184,
+      "reading": "K'INICH",
+      "gloss": "Resplendent / sunny"
+    },
+    {
+      "index": 2,
+      "twkm_sign": 291,
+      "reading": "SIIP",
+      "gloss": "Deity name"
+    },
+    {
+      "index": 3,
+      "twkm_sign": 4,
+      "reading": "NAAH",
+      "gloss": "First / house"
+    },
+    {
+      "index": 4,
+      "twkm_sign": 44,
+      "reading": "TOK",
+      "gloss": "Cloud / mist"
+    }
+  ],
+  "evaluation": "Exploratory 5-fold cross-validation 35/38 on TWKM reference drawings; not phone-photo accuracy",
+  "onnx_visual_parity_max_abs_delta": 6.854534149169922e-07,
+  "onnx_svm_parity": 1.0,
+  "assets": {
+    "maya_mobilenet_v2.onnx": {
+      "size_bytes": 3719210,
+      "sha256": "e2887dae439a9cc39d0035d31bf55c7deeee7c1002b81d59ecc7f1e6171fc6de"
+    },
+    "maya_svm_v2.onnx": {
+      "size_bytes": 320397,
+      "sha256": "b0b42ebd42d955063f93b492a88be06bf9d6d12461b7edb9e739e21a1cd4811b"
+    }
+  }
+}
