@@ -2,10 +2,12 @@ package com.chuahws.mayalanguageapp.presentation.translation
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,6 +18,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -444,6 +448,13 @@ private fun GlyphV3ResultCard(result: GlyphV3Result) {
 @Composable
 private fun GlyphV4ResultCard(result: GlyphV4Result, onTryAnother: () -> Unit) {
     val context = LocalContext.current
+    val reference = remember(context, result.signNumber) {
+        runCatching {
+            context.assets.open("research_v4_ref_${result.signNumber}.png").use {
+                BitmapFactory.decodeStream(it)
+            }
+        }.getOrNull()
+    }
     val clipboard = LocalClipboardManager.current
     var showCorrection by remember(result) { mutableStateOf(false) }
     var selectedCorrection by remember(result) { mutableStateOf("UNKNOWN_OR_OTHER") }
@@ -485,6 +496,36 @@ private fun GlyphV4ResultCard(result: GlyphV4Result, onTryAnother: () -> Unit) {
                     fontWeight = FontWeight.SemiBold)
                 Text(result.englishGloss, style = MaterialTheme.typography.bodyLarge)
                 Text("TWKM sign #${result.signNumber}", style = MaterialTheme.typography.labelMedium)
+                if (reference != null) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text("Catalogue reference drawing",
+                                style = MaterialTheme.typography.labelLarge)
+                            Image(
+                                bitmap = reference.asImageBitmap(),
+                                contentDescription = "TWKM catalogue example for sign #${result.signNumber}",
+                                modifier = Modifier.size(140.dp),
+                                contentScale = ContentScale.Fit,
+                            )
+                            Text(
+                                "For visual comparison only — not proof of an identification.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            Text(
+                                "TWKM / University of Bonn, Christian Prager · CC BY 4.0",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
             }
 
             if (result.alternatives.isNotEmpty()) {
