@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageLoader
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphSampleStore
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV3Result
@@ -37,11 +38,17 @@ internal data class GlyphUiState(
     val model: GlyphModelMode = GlyphModelMode.TINY_V1,
     val busy: Boolean = false,
     val message: String? = null,
+    val imageSource: String = "gallery",
+    val sampleBusy: Boolean = false,
+    val sampleCount: Int = 0,
+    val sampleMessage: String? = null,
 )
 
 /** Keeps unverified glyph predictions out of the modern-Yucatec dictionary/history pipeline. */
 internal class GlyphRecognitionViewModel(application: Application) : AndroidViewModel(application) {
-    private val mutable = MutableStateFlow(GlyphUiState())
+    private val mutable = MutableStateFlow(
+        GlyphUiState(sampleCount = GlyphSampleStore.count(application))
+    )
     val state = mutable.asStateFlow()
     private var work: Job? = null
     private var version = 0
@@ -50,12 +57,13 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         version++
         work?.cancel()
         val chosenModel = mutable.value.model
-        mutable.value = GlyphUiState(model = chosenModel)
+        val samples = mutable.value.sampleCount
+        mutable.value = GlyphUiState(model = chosenModel, sampleCount = samples)
         // Never recycle a Bitmap that might still be rendered by Compose.
     }
 
     fun setModel(model: GlyphModelMode) {
-        if (mutable.value.busy || mutable.value.model == model) return
+        if (mutable.value.busy || mutable.value.sampleBusy || mutable.value.model == model) return
         version++
         mutable.value = mutable.value.copy(
             model = model, result = null, resultV2 = null, resultV3 = null, message = null,
@@ -66,20 +74,22 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         clear()
         val request = version
         val chosenModel = mutable.value.model
-        mutable.value = GlyphUiState(model = chosenModel, busy = true)
+        val saved = mutable.value.sampleCount
+        val source = if (ownedCapture) "camera" else "gallery"
+        mutable.value = GlyphUiState(model = chosenModel, busy = true, imageSource = source, sampleCount = saved)
         work = viewModelScope.launch {
             try {
                 val image = withContext(Dispatchers.IO) {
                     GlyphImageLoader.load(getApplication(), uri, ownedCapture)
                 }
                 if (request == version) mutable.value = GlyphUiState(
-                    bitmap = image, model = chosenModel,
+                    bitmap = image, model = chosenModel, imageSource = source, sampleCount = saved,
                 )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
                 if (request == version) mutable.value = GlyphUiState(
-                    model = chosenModel,
+                    model = chosenModel, imageSource = source, sampleCount = saved,
                     message = "Could not read this image. Choose a clear JPG or PNG, or take another photo.",
                 )
             }
@@ -87,7 +97,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
     }
 
     fun setCrop(crop: GlyphCrop) {
-        if (mutable.value.busy) return
+        if (mutable.value.busy || mutable.value.sampleBusy) return
         mutable.value = mutable.value.copy(
             crop = crop, result = null, resultV2 = null, resultV3 = null, message = null,
         )
@@ -95,7 +105,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
 
     fun rotate() {
         val image = mutable.value.bitmap ?: return
-        if (mutable.value.busy) return
+        if (mutable.value.busy || mutable.value.sampleBusy) return
         val request = ++version
         val model = mutable.value.model
         mutable.value = mutable.value.copy(
@@ -111,6 +121,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                 }
                 if (request == version) mutable.value = GlyphUiState(
                     bitmap = rotated, model = model,
+                    imageSource = mutable.value.imageSource,
+                    sampleCount = mutable.value.sampleCount,
                 )
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -123,10 +135,108 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         }
     }
 
+    /** Explicit opt-in only. Save a crop and UNVERIFIED user annotation locally. */
+    fun saveExample(
+        label: String,
+        drawingGroup: String,
+        sourceReference: String,
+        rightsConfirmed: Boolean,
+    ) {
+        val snapshot = mutable.value
+        val bitmap = snapshot.bitmap ?: return
+        if (snapshot.busy || snapshot.sampleBusy) return
+        val token = ++version
+        mutable.value = snapshot.copy(sampleBusy = true, sampleMessage = null)
+        work = viewModelScope.launch {
+            try {
+                val modelId = when (snapshot.model) {
+                    GlyphModelMode.TINY_V1 -> "v1"
+                    GlyphModelMode.RESEARCH_V2 -> "v2"
+                    GlyphModelMode.RESEARCH_V3 -> "v3"
+                }
+                withContext(Dispatchers.IO) {
+                    GlyphSampleStore.save(
+                        getApplication(), bitmap, snapshot.crop,
+                        GlyphSampleStore.Annotation(
+                            label = label, drawingGroup = drawingGroup,
+                            sourceReference = sourceReference,
+                            permissionConfirmed = rightsConfirmed,
+                            inputSource = snapshot.imageSource, modelUsed = modelId,
+                        ),
+                    )
+                }
+                if (token == version) {
+                    mutable.value = mutable.value.copy(
+                        sampleBusy = false,
+                        sampleCount = GlyphSampleStore.count(getApplication()),
+                        sampleMessage = "Saved locally as an unverified research example. Nothing was uploaded.",
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                if (token == version) {
+                    mutable.value = mutable.value.copy(
+                        sampleBusy = false,
+                        sampleMessage = error.message ?: "Couldn't save this cropped sample.",
+                    )
+                }
+            }
+        }
+    }
+
+    fun exportExamples(uri: Uri) {
+        if (mutable.value.busy || mutable.value.sampleBusy) return
+        val token = ++version
+        mutable.value = mutable.value.copy(sampleBusy = true, sampleMessage = null)
+        work = viewModelScope.launch {
+            try {
+                val exported = withContext(Dispatchers.IO) {
+                    GlyphSampleStore.exportZip(getApplication(), uri)
+                }
+                if (token == version) mutable.value = mutable.value.copy(
+                    sampleBusy = false,
+                    sampleMessage = "Exported " + exported + " annotated samples to your selected ZIP file.",
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                if (token == version) mutable.value = mutable.value.copy(
+                    sampleBusy = false,
+                    sampleMessage = error.message ?: "Could not export research examples.",
+                )
+            }
+        }
+    }
+
+    fun deleteExamples() {
+        if (mutable.value.busy || mutable.value.sampleBusy) return
+        val token = ++version
+        mutable.value = mutable.value.copy(sampleBusy = true, sampleMessage = null)
+        work = viewModelScope.launch {
+            try {
+                val removed = withContext(Dispatchers.IO) {
+                    GlyphSampleStore.deleteAll(getApplication())
+                }
+                if (token == version) mutable.value = mutable.value.copy(
+                    sampleBusy = false, sampleCount = 0,
+                    sampleMessage = "Deleted " + removed + " local research samples.",
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                if (token == version) mutable.value = mutable.value.copy(
+                    sampleBusy = false,
+                    sampleMessage = error.message ?: "Could not clear research samples.",
+                )
+            }
+        }
+    }
+
     fun recognize() {
         val snapshot = mutable.value
         val image = snapshot.bitmap ?: return
-        if (snapshot.busy) return
+        if (snapshot.busy || snapshot.sampleBusy) return
         val request = ++version
         mutable.value = snapshot.copy(
             busy = true, result = null, resultV2 = null, resultV3 = null, message = null,
