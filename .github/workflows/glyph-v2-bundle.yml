@@ -1,0 +1,40 @@
+name: Package independently evaluated Maya glyph research model
+on:
+  push:
+    branches: [glyph-model-v2-experiment]
+    paths:
+      - 'ml/glyph_v2/README.md'
+      - '.github/workflows/glyph-v2-bundle.yml'
+permissions:
+  contents: write
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package model and reproducible scripts without training images
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile,hashlib
+          base=Path('ml/glyph_v2')
+          names=['README.md','train.py','train_transfer.py','predict_transfer.py','audit.py','audit.json','outputs/evaluation.json','outputs/split_manifest.json','outputs/transfer/evaluation.json','outputs/transfer/mobilenet_v3_small_backbone.pt','outputs/transfer/mobilenet_v3_small_head.joblib']
+          dst=base/'releases/Maya_Glyph_Model_v2_Research.zip'
+          dst.parent.mkdir(exist_ok=True,parents=True)
+          with zipfile.ZipFile(dst,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              for name in names:
+                  f=base/name
+                  assert f.is_file(),f'Missing {f}'
+                  z.write(f,arcname=f.as_posix())
+          with zipfile.ZipFile(dst) as z:
+              assert z.testzip() is None
+              print('ZIP files',len(z.namelist()))
+          print('Package size',dst.stat().st_size,'sha256',hashlib.sha256(dst.read_bytes()).hexdigest())
+          PY
+      - name: Publish research-only download on experiment branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ml/glyph_v2/releases/Maya_Glyph_Model_v2_Research.zip
+          git commit -m 'Publish evaluated Maya glyph v2 research model bundle' || exit 0
+          git push origin HEAD:glyph-model-v2-experiment
