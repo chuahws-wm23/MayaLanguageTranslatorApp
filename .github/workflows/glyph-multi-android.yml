@@ -1,0 +1,47 @@
+name: Validate automatic multi-glyph Android scanning
+on:
+  push:
+    branches: [glyph-multi-block-detection]
+    paths:
+      - 'app/**'
+      - '.github/workflows/glyph-multi-android.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Compile Android app and run glyph grid tests plus existing tests
+        run: gradle testDebugUnitTest assembleDebug --stacktrace
+      - name: Summarize JVM tests
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          totals={x:0 for x in ('tests','failures','errors','skipped')}
+          files=list(Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
+          assert files
+          for file in files:
+            root=ET.parse(file).getroot()
+            for key in totals:totals[key]+=int(root.attrib.get(key,0))
+          assert totals['failures']==0 and totals['errors']==0
+          assert totals['tests']>=82
+          print(totals)
+          open(os.environ['GITHUB_STEP_SUMMARY'],'a').write('Automatic multi-glyph panel regression: '+str(totals)+'\n')
+          PY
+      - name: Save experimental multi-glyph APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MultiGlyphScanDebugAPK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7

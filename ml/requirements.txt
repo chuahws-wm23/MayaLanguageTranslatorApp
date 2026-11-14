@@ -1,0 +1,8 @@
+torch>=2.4,<3
+transformers==4.45.2
+datasets>=3.0,<4
+accelerate>=1.0,<2
+sentencepiece>=0.2,<1
+sacrebleu>=2.4,<3
+numpy>=1.26,<3
+requests>=2.32,<3

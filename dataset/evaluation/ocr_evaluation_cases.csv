@@ -1,0 +1,29 @@
+case_id,condition,image_file,ground_truth_text,ocr_output,corrected_text,final_translation,ocr_rating,translation_rating,notes
+OCR-001,clean_digital,OCR-001_clean_digital.png,"jaʼ
+kʼiin
+tuunich",,,,,,Synthetic controlled OCR benchmark image
+OCR-002,printed_text,OCR-002_printed_text.png,"kʼaabaʼ
+luʼum
+uj",,,,,,Synthetic controlled OCR benchmark image
+OCR-003,small_font,OCR-003_small_font.png,"áakʼab
+xikin
+nej",,,,,,Synthetic controlled OCR benchmark image
+OCR-004,angled,OCR-004_angled.png,"cheʼ
+paal
+peekʼ",,,,,,Synthetic controlled OCR benchmark image
+OCR-005,low_light,OCR-005_low_light.png,"kʼiʼikʼ
+sus
+niʼ",,,,,,Synthetic controlled OCR benchmark image
+OCR-006,blurred,OCR-006_blurred.png,"kʼab
+leʼ
+kaʼan",,,,,,Synthetic controlled OCR benchmark image
+OCR-007,mixed_maya_english,OCR-007_mixed_maya_english.png,"jaʼ
+water
+kʼiin
+sun
+uj",,,,,,Synthetic controlled OCR benchmark image
+OCR-008,multiline,OCR-008_multiline.png,"buutsʼ
+moots
+neekʼ
+tuunich
+áakʼab",,,,,,Synthetic controlled OCR benchmark image

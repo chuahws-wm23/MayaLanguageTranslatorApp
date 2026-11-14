@@ -1,82 +1,147 @@
 # MayaLanguageTranslatorApp
 
-Final Year Project Android application for **Yucatec Maya ↔ English** text translation, image OCR, and English voice-to-Yucatec-Maya translation.
+Android Final Year Project application focused on recognising supported Maya glyph drawings and showing proposed English meanings. Existing modern Yucatec Maya text tools are retained separately.
 
-## Current implementation scope
+## Application
 
-This development branch follows the Project I design:
+The fyp-development branch contains the application flow:
 
-- Kotlin + Jetpack Compose
-- MVVM-style presentation layer
-- Firebase Authentication and Cloud Firestore
-- Dictionary-based Yucatec Maya ↔ English translation
-- Google ML Kit Latin-script OCR for modern Yucatec Maya text
-- Android speech recognition / text-to-speech planned for later iterations
-- Translation history, saved vocabulary, analytics, feedback and admin functions planned after the core translation flow
+- account registration, login, logout and password reset
+- camera and gallery input for experimental offline Maya glyph recognition
+- single-glyph crop selection, EXIF orientation handling and manual rotation
+- bundled TinyGlyphNet v1 model with unverified suggestions and a review fallback
+- typed Yucatec Maya ↔ English dictionary/phrase lookup
+- English speech recognition
+- device text-to-speech playback
+- translation history with search/filter/delete
+- searchable dictionary browsing
+- saved vocabulary
+- usage analytics
+- profile editing
+- feedback submission
+- role-specific administrator console
+- administrator user management
+- administrator dictionary management
+- administrator feedback review
+- administrator system reports
+- Firebase Authentication and Cloud Firestore repositories
+- development-mode repositories for testing before Firebase setup
 
-Ancient Maya hieroglyph recognition is **not** part of this implementation scope.
+The main mobile navigation is:
+
+Home · Saved · History · Profile, with translation and learning screens accessible through Home and the sidebar.
+
+## Scope
+
+New images selected through **Photo translation** now use the **Maya glyph recognition** screen, not Latin-script text OCR.
+
+TinyGlyphNet v1 supports five experimental reference categories: Deer (CHIJ), Hawk (MUWAAN), Jaguar (HIX), Star (EK') and Cacao (KAKAW), plus an OTHER category. KAKAW is treated as a whole-block example. This is not a general ancient Maya inscription translator. Proposed readings need specialist review, and real-world recognition accuracy has not been established.
+
+The retained text, voice and dictionary features target modern Yucatec Maya written in Latin orthography. Those features and their stored text records are separate from glyph recognition. Older photo History items can still replay their original recognised text. New glyph scans are not automatically stored as verified dictionary entries or written into the existing text-history schema.
+
+See `docs/GLYPH_ANDROID_INTEGRATION.md` and `docs/glyph_v1_training_report.json` for runtime details, provenance, limitations and phone-testing requirements. Earlier OCR-specific documents describe the previous photo workflow.
 
 ## Branches
 
-- `main` — clean baseline
-- `fyp-development` — active FYP development
+- main — clean baseline
+- fyp-development — active FYP application branch
 
-## Android Studio setup
+## Run in Android Studio
 
-1. Clone the repository.
-2. Checkout `fyp-development`.
-3. Open the repository root in Android Studio.
-4. Use JDK 17.
-5. Let Android Studio sync Gradle.
-6. Before enabling Firebase, create a Firebase project and register Android package:
-   `com.chuahws.mayalanguageapp`
-7. Download `google-services.json` from Firebase Console and place it in `app/`.
-8. Never commit that file.
+1. Check that local changes are saved, then checkout fyp-development.
+2. Pull the latest changes with `git pull --ff-only origin fyp-development`.
+3. Sync Gradle.
+4. Run the app configuration on an emulator or Android device.
+5. Before Firebase is configured, create a temporary development account.
+6. Open Home > Photo translation, choose or capture an image, crop one glyph and tap **Recognise glyph**.
+7. For persistent account/text data, follow `docs/FIREBASE_SETUP.md`.
 
-The starter currently uses an in-memory dictionary so it can be developed before Firebase is configured.
+The 29,420-byte glyph model is bundled in `app/src/main/assets/maya_glyph_v1.mgl`. No separate model copy, Python installation, training dataset or model server is required on the phone. Recognition runs offline; account and Firestore features still have their existing connectivity requirements.
 
-## Dataset pipeline
+## Translation engines
 
-The initial dataset pipeline is designed around machine-readable **Yucatec Maya** lexical data.
+The glyph screen uses custom Kotlin inference with the bundled TinyGlyphNet v1 weights. Outputs are labelled as possible, unverified meanings, not validated translations. Model scores are not shown as accuracy percentages.
 
-Place raw JSONL at:
+The retained text/voice implementation uses verified dictionary / phrase lookup.
 
-`dataset/raw/kaikki-yucatec-maya.jsonl`
+An experimental direct **Yucatec Maya ↔ English neural machine translation** pipeline is available under `ml/`. It is designed as a future fallback for text not found in the verified dictionary. That text model is not connected to the Android app until it has been trained and evaluated; it is separate from the bundled image-recognition model.
 
-Then run:
+See:
+
+- `ml/README.md`
+- `docs/NMT_EXPERIMENT.md`
+- `docs/GLYPH_ANDROID_INTEGRATION.md`
+
+## Development sample dictionary
+
+A small source-checked dictionary is included so the text interface can be tested before Firestore is ready.
+
+Example English searches:
+
+- water
+- house
+- tree
+- moon
+- green
+- turtle
+- papaya
+- person
+- cloud
+- stone
+- forest
+- book
+- make
+- understand
+- with
+
+This sample is not the final dataset. See docs/DATA_SOURCES.md.
+
+## Firebase collections
+
+The application expects:
+
+- users
+- dictionary
+- translations
+- savedVocabulary
+- analytics
+- feedback
+
+Security rules are included in firestore.rules.
+
+Firebase configuration files and Admin service-account credentials must not be committed to Git.
+
+## Dictionary dataset
+
+The modern Yucatec Maya dictionary is prepared through the dataset scripts:
+
+- dataset/scripts/convert_kaikki.py
+- dataset/scripts/validate_dictionary.py
+- dataset/scripts/import_firestore.py
+
+See docs/DATA_SOURCES.md for the source and attribution notes. These text-dictionary scripts do not train the glyph recogniser.
+
+## Dataset quality workflow
+
+The repository separates three concepts for the text dictionary:
+
+1. **Source data** — machine-readable Yucatec Maya data downloaded from Kaikki / English Wiktionary.
+2. **Application dictionary** — cleaned CSV imported to Firestore. Automatically imported rows remain `verified=false`.
+3. **Evaluation set** — a manually reviewed subset used to report translation accuracy/coverage. Only rows explicitly marked `verified=true` are scored.
+
+Build the dictionary locally with:
 
 ```bash
+python dataset/scripts/download_kaikki.py
 python dataset/scripts/convert_kaikki.py dataset/raw/kaikki-yucatec-maya.jsonl dataset/processed/maya_english_dictionary.csv
-python dataset/scripts/validate_dictionary.py dataset/processed/maya_english_dictionary.csv
+python dataset/scripts/validate_dictionary.py dataset/processed/maya_english_dictionary.csv --report dataset/processed/validation_report.json
+python dataset/scripts/prepare_evaluation_sample.py dataset/processed/maya_english_dictionary.csv dataset/evaluation/manual_evaluation.csv --size 200
 ```
 
-The converter marks automatically imported entries as `verified=false`. Do not treat automatically extracted dictionary data as gold-standard evaluation data until the evaluation subset has been manually checked against reliable linguistic sources.
-
-## Firestore import
-
-Install:
+After manually checking the evaluation CSV, score only the approved rows:
 
 ```bash
-pip install -r dataset/requirements.txt
+python dataset/scripts/evaluate_dictionary.py dataset/processed/maya_english_dictionary.csv dataset/evaluation/manual_evaluation.csv
 ```
 
-Set a Firebase Admin service account outside the repository:
-
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-```
-
-Import:
-
-```bash
-python dataset/scripts/import_firestore.py dataset/processed/maya_english_dictionary.csv
-```
-
-## Development order
-
-1. Account management + typed text translation
-2. Image translation with ML Kit OCR and editable recognised text
-3. English speech recognition + Yucatec Maya translation + pronunciation
-4. Translation history + saved vocabulary + usage analytics
-5. Feedback + administrator functions
-6. Integration, security, performance and testing
+A GitHub Actions workflow builds and validates the public Kaikki dataset and publishes the processed CSV as a workflow artifact. It does not establish glyph-recognition accuracy.

@@ -11,6 +11,8 @@ data class DictionaryEntry(
     val exampleSentence: String? = null,
     val category: String? = null,
     val source: String? = null,
+    val usageLabel: String? = null,
+    val acceptedEnglishInputs: List<String> = emptyList(),
     val verified: Boolean = false,
     val active: Boolean = true,
 )

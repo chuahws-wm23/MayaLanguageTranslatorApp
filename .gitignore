@@ -23,6 +23,15 @@ dataset/raw/*
 dataset/processed/*.csv
 !dataset/processed/maya_english_dictionary_template.csv
 
+# Neural MT data / model outputs
+ml/data/raw/*
+!ml/data/raw/.gitkeep
+ml/data/processed/*
+!ml/data/processed/.gitkeep
+ml/artifacts/
+ml/runs/
+ml/**/*.log
+
 # Python
 __pycache__/
 *.py[cod]

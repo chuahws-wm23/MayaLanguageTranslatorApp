@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Deep indigo speech-bubble tile -->
+    <path
+        android:fillColor="#3428A8"
+        android:pathData="M22,4 H86 C96,4 104,12 104,22 V82 C104,92 96,100 86,100 H38 L22,106 V100 C12,100 4,92 4,82 V22 C4,12 12,4 22,4 Z" />
+
+    <!-- Subtle highlight panel -->
+    <path
+        android:fillColor="#6C5CE7"
+        android:fillAlpha="0.55"
+        android:pathData="M22,4 H63 C50,20 36,31 20,39 C14,42 9,43 4,43 V22 C4,12 12,4 22,4 Z" />
+
+    <!-- Stylised M -->
+    <path
+        android:fillColor="#F7F4FF"
+        android:pathData="M24,72 V39 C24,33 28,30 33,30 C37,30 40,32 43,36 L54,49 L65,36 C68,32 71,30 75,30 C80,30 84,33 84,39 V72 C84,77 80,80 76,80 C71,80 68,77 68,72 V53 L59,63 C56,66 52,66 49,63 L40,53 V72 C40,77 37,80 32,80 C28,80 24,77 24,72 Z" />
+
+    <!-- Upper translation arrow -->
+    <path
+        android:fillColor="#42E5D0"
+        android:pathData="M55,28 C64,20 74,20 82,26 L82,20 L96,34 L82,48 L82,41 C74,35 67,36 60,42 L54,48 L48,41 Z" />
+
+    <!-- Lower translation arrow -->
+    <path
+        android:fillColor="#B7AEFF"
+        android:pathData="M53,80 C44,88 34,88 26,82 L26,88 L12,74 L26,60 L26,67 C34,73 41,72 48,66 L54,60 L60,67 Z" />
+
+    <!-- Minimal Maya-inspired corner marks -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.42"
+        android:pathData="M14,16 H28 V20 H18 V28 H26 V24 H22 V22 H30 V32 H14 Z" />
+    <path
+        android:fillColor="#42E5D0"
+        android:fillAlpha="0.55"
+        android:pathData="M82,76 H94 V80 H86 V88 H92 V84 H90 V82 H96 V92 H82 Z" />
+</vector>
