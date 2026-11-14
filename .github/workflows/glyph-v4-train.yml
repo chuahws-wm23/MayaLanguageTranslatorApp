@@ -1,0 +1,56 @@
+name: Train Maya glyph v4 on ten catalogue signs
+on:
+  push:
+    branches: [glyph-v4-expanded-training]
+    paths:
+      - 'ml/glyph_v4/train_v4.py'
+      - '.github/workflows/glyph-v4-train.yml'
+permissions:
+  contents: write
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: glyph-v4-expanded-training
+      - name: Fetch only frozen pretrained visual weights from v2 research branch
+        run: |
+          git fetch --depth=1 origin glyph-model-v2-experiment
+          mkdir -p ml/glyph_v2/outputs/transfer
+          git show "FETCH_HEAD:ml/glyph_v2/outputs/transfer/mobilenet_v3_small_backbone.pt" > ml/glyph_v2/outputs/transfer/mobilenet_v3_small_backbone.pt
+          test -s ml/glyph_v2/outputs/transfer/mobilenet_v3_small_backbone.pt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU PyTorch
+        run: python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+      - name: Install image and evaluation dependencies
+        run: python -m pip install 'datasets>=4.0,<5' 'Pillow>=11,<13' scikit-learn scikit-image opencv-python-headless joblib
+      - name: Train with 10 classes, evaluate independent original holds and unknowns
+        run: python ml/glyph_v4/train_v4.py
+      - name: Publish actual held-out results
+        run: |
+          python - <<'PY'
+          import json,os
+          x=json.load(open('ml/glyph_v4/outputs/evaluation.json'))
+          m=json.load(open('ml/glyph_v4/outputs/metadata.json'))
+          s='## Experimental v4 — TEN original-drawing classes\n\n'
+          for candidate in x['classification_candidates']:
+              s+=f"* {candidate['method']} validation: {candidate['validation_correct']}/{candidate['validation_total']}\n"
+          s+=f"* **Test top-1:** {x['heldout_test_correct']}/{x['heldout_test_originals']} = {x['heldout_test_accuracy']:.1%}\n"
+          s+=f"* **Correct & accepted:** {x['screened_test_correct_and_accepted']}/{x['heldout_test_originals']} = {x['screened_test_accuracy']:.1%}\n"
+          s+=f"* **Unknown signs rejected:** {x['unknown_test_rejected']}/{x['unknown_test_total']} = {x['unknown_test_rejection_rate']:.1%}\n"
+          s+=f"* **Research deployment gates:** {m['can_deploy_research_mode']}\n"
+          s+='* All samples come from the SAME TWKM reference catalogue: NOT real phone accuracy. The ten-image known test is tiny.\n'
+          print(s)
+          open(os.environ['GITHUB_STEP_SUMMARY'],'a').write(s)
+          PY
+      - name: Commit evaluated model, source-original manifest, and results on experiment branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f ml/glyph_v4/outputs/
+          git commit -m 'Record held-out accuracy and trained Maya glyph v4 ten-class assets' || exit 0
+          git push origin HEAD:glyph-v4-expanded-training
