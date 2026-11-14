@@ -11,7 +11,8 @@ import kotlin.math.roundToInt
 /**
  * Mirrors the pinned TWKM training preprocessing as closely as practical on Android:
  * grayscale -> Otsu dark-ink mask -> tight crop with margin -> 64x64 bright foreground
- * on black -> inverted 224x224 ImageNet-normalized RGB tensor in NCHW order.
+ * on black -> inverted ImageNet-normalized RGB tensor in NCHW order.
+ * 224x224 remains the default for v2/v3; v4 uses 160x160.
  *
  * This is deliberately separate from TinyGlyphNet v1's preprocessing.
  */
@@ -21,7 +22,7 @@ internal object GlyphV2Preprocessor {
     private val means = floatArrayOf(.485f, .456f, .406f)
     private val stds = floatArrayOf(.229f, .224f, .225f)
 
-    fun fromBitmap(original: Bitmap): FloatArray {
+    fun fromBitmap(original: Bitmap, outputSide: Int = SIDE): FloatArray {
         require(original.width >= 25 && original.height >= 25) {
             "Crop is too small. Include one complete glyph."
         }
@@ -46,14 +47,15 @@ internal object GlyphV2Preprocessor {
                 val alpha = Color.alpha(c)
                 gray[i] = (light * alpha + 255 * (255 - alpha) + 127) / 255
             }
-            return fromGrayscale(gray, scaled.width, scaled.height)
+            return fromGrayscale(gray, scaled.width, scaled.height, outputSide)
         } finally {
             if (scaled !== original) scaled.recycle()
         }
     }
 
     /** Pure numeric input supports independent JVM tests without an Android Bitmap. */
-    fun fromGrayscale(grayInput: IntArray, width: Int, height: Int): FloatArray {
+    fun fromGrayscale(grayInput: IntArray, width: Int, height: Int, outputSide: Int = SIDE): FloatArray {
+        require(outputSide == 224 || outputSide == 160) { "Unsupported vision model image size." }
         require(width >= 25 && height >= 25 && grayInput.size == width * height)
         require(grayInput.all { it in 0..255 })
         val gray = grayInput.copyOf()
@@ -130,11 +132,11 @@ internal object GlyphV2Preprocessor {
             canonical[(y + offsetY) * CANONICAL + x + offsetX] =
                 (sum / ((sx1 - sx0) * (sy1 - sy0))).toFloat().coerceIn(0f, 1f)
         }
-        // Training upsamples 64x64 inverted glyphs to 224x224, using bilinear interpolation.
-        val channel = FloatArray(SIDE * SIDE)
-        for (y in 0 until SIDE) for (x in 0 until SIDE) {
-            val fx = (x + .5) * CANONICAL / SIDE - .5
-            val fy = (y + .5) * CANONICAL / SIDE - .5
+        // Training upsamples 64x64 inverted glyphs to the target model size with bilinear interpolation.
+        val channel = FloatArray(outputSide * outputSide)
+        for (y in 0 until outputSide) for (x in 0 until outputSide) {
+            val fx = (x + .5) * CANONICAL / outputSide - .5
+            val fy = (y + .5) * CANONICAL / outputSide - .5
             val x0 = floor(fx).toInt().coerceIn(0, CANONICAL - 1)
             val y0 = floor(fy).toInt().coerceIn(0, CANONICAL - 1)
             val x1 = min(CANONICAL - 1, x0 + 1)
@@ -148,7 +150,7 @@ internal object GlyphV2Preprocessor {
             val inkFraction = (a * (1.0 - dx) + b * dx) * (1.0 - dy) +
                 (c * (1.0 - dx) + d * dx) * dy
             // cv2 uint8 resize quantizes to nearest 8-bit value.
-            channel[y * SIDE + x] = (255 - (inkFraction * 255.0).roundToInt()).toFloat() / 255f
+            channel[y * outputSide + x] = (255 - (inkFraction * 255.0).roundToInt()).toFloat() / 255f
         }
         val output = FloatArray(3 * channel.size)
         for (c in 0..2) for (i in channel.indices) {
