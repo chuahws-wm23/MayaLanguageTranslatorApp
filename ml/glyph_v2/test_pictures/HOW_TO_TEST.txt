@@ -1,0 +1,32 @@
+MAYA GLYPH MODEL v2 — FIVE EXAMPLE PHOTOS
+
+Open Android Studio and run the fyp-development branch.
+
+1. Open Photo translation > Maya glyph recognition.
+2. Select Research v2. Do NOT use Model v1 for these five examples.
+3. Select Choose an image > pick ONE PNG from this folder.
+4. Keep the full single glyph in the crop (remove any extra border if needed).
+5. Tap Recognise glyph.
+6. Compare the displayed proposed reading to the filename and SOURCES.json.
+
+01 -> K'UH (God / deity), sign 32
+02 -> K'INICH (Resplendent / sunny), sign 184
+03 -> SIIP (Deity name), sign 291
+04 -> NAAH (First / house), sign 4
+05 -> TOK (Cloud / mist), sign 44
+
+These are standard TWKM catalogue reference drawings. The fitted model
+has seen these original drawings during training; positive results
+show that the software pipeline can run, not that the model generalizes.
+The measured 35/38 = 92.1% was an exploratory original-image
+five-fold cross-validation within this same catalogue, NOT phone-photo
+accuracy or an independently held-out final score.
+
+This model always chooses one of these five signs, EVEN for an
+unknown image. A suggested English gloss is not a verified translation.
+Deer (CHIJ) and Cacao (KAKAW) are NOT supported by v2.
+
+SOURCE: University of Bonn / TWKM Text Database and Dictionary of Classic Mayan.
+Drawings: Christian Prager. Drawing license: CC BY 4.0, with
+per-file attribution and the originating image URL in SOURCES.json.
+Dataset packaging: tadad/twkm-maya-glyphs, pinned snapshot 2026-09-04.

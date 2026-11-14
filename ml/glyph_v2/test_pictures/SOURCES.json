@@ -1,0 +1,97 @@
+[
+  {
+    "file": "01_32mt_KUH.png",
+    "graph_no": "32mt",
+    "sign_no": 32,
+    "reading": "K'UH",
+    "proposed_english_gloss": "God or deity",
+    "source_image_url": "https://classicmayan.org/portal/sc/client/data/images/graphs/3r83j.0.jpg",
+    "source_image_id": "3r83j.0",
+    "drawing_creator": "Christian Prager",
+    "drawing_license": "CC BY 4.0",
+    "source_dataset": "tadad/twkm-maya-glyphs",
+    "revision": "73fe9da1d975a5f1e588c7d42c952dfda53cefd0",
+    "sha256_of_exported_png": "295a38a45441d276870bc5058cc0f112d29bf3428c3c4a89d70a0730ecc90ce8",
+    "image_size": [
+      133,
+      512
+    ],
+    "role": "Training-catalogue reference; smoke-test only, NOT new unseen accuracy test"
+  },
+  {
+    "file": "02_184vb_KINICH.png",
+    "graph_no": "184vb",
+    "sign_no": 184,
+    "reading": "K'INICH",
+    "proposed_english_gloss": "Resplendent or sunny",
+    "source_image_url": "https://classicmayan.org/portal/sc/client/data/images/graphs/3vrgp.0.jpg",
+    "source_image_id": "3vrgp.0",
+    "drawing_creator": "Christian Prager",
+    "drawing_license": "CC BY 4.0",
+    "source_dataset": "tadad/twkm-maya-glyphs",
+    "revision": "73fe9da1d975a5f1e588c7d42c952dfda53cefd0",
+    "sha256_of_exported_png": "6fdc164b5d3c264b510ac8ca8224d9703a03786eb8963de2af7ccb9532e65695",
+    "image_size": [
+      512,
+      261
+    ],
+    "role": "Training-catalogue reference; smoke-test only, NOT new unseen accuracy test"
+  },
+  {
+    "file": "03_291va_SIIP.png",
+    "graph_no": "291va",
+    "sign_no": 291,
+    "reading": "SIIP",
+    "proposed_english_gloss": "Deity name",
+    "source_image_url": "https://classicmayan.org/portal/sc/client/data/images/graphs/3rq37.0.jpg",
+    "source_image_id": "3rq37.0",
+    "drawing_creator": "Christian Prager",
+    "drawing_license": "CC BY 4.0",
+    "source_dataset": "tadad/twkm-maya-glyphs",
+    "revision": "73fe9da1d975a5f1e588c7d42c952dfda53cefd0",
+    "sha256_of_exported_png": "9ce1d52a73eac181570b43cf3d2e05e050184d4433a65f0b5f9229d8b9e0984d",
+    "image_size": [
+      349,
+      512
+    ],
+    "role": "Training-catalogue reference; smoke-test only, NOT new unseen accuracy test"
+  },
+  {
+    "file": "04_4va_NAAH.png",
+    "graph_no": "4va",
+    "sign_no": 4,
+    "reading": "NAAH",
+    "proposed_english_gloss": "First or house",
+    "source_image_url": "https://classicmayan.org/portal/sc/client/data/images/graphs/47wr9.0.jpg",
+    "source_image_id": "47wr9.0",
+    "drawing_creator": "Christian Prager",
+    "drawing_license": "CC BY 4.0",
+    "source_dataset": "tadad/twkm-maya-glyphs",
+    "revision": "73fe9da1d975a5f1e588c7d42c952dfda53cefd0",
+    "sha256_of_exported_png": "08aa9fbfe5b98b59c784a4ab0dccda9c03a9396243d0443065f83a600c3a22e4",
+    "image_size": [
+      430,
+      512
+    ],
+    "role": "Training-catalogue reference; smoke-test only, NOT new unseen accuracy test"
+  },
+  {
+    "file": "05_44bb_TOK.png",
+    "graph_no": "44bb",
+    "sign_no": 44,
+    "reading": "TOK",
+    "proposed_english_gloss": "Cloud or mist",
+    "source_image_url": "https://classicmayan.org/portal/sc/client/data/images/graphs/3wpdt.0.jpg",
+    "source_image_id": "3wpdt.0",
+    "drawing_creator": "Christian Prager",
+    "drawing_license": "CC BY 4.0",
+    "source_dataset": "tadad/twkm-maya-glyphs",
+    "revision": "73fe9da1d975a5f1e588c7d42c952dfda53cefd0",
+    "sha256_of_exported_png": "113e51adcb035c771746e05273396db30aa9e2279391fe288697bfc4336f5808",
+    "image_size": [
+      512,
+      493
+    ],
+    "role": "Training-catalogue reference; smoke-test only, NOT new unseen accuracy test"
+  }
+]
