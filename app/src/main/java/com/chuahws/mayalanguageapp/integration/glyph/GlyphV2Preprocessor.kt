@@ -90,7 +90,7 @@ internal object GlyphV2Preprocessor {
                 bottom = max(bottom, y)
             }
         }
-        require(right >= left && dark.toFloat() / gray.size in .003f.. .85f) {
+        require(right >= left && dark.toFloat() / gray.size in 0.003f..0.85f) {
             "No clear isolated glyph detected. Crop to one dark drawing on light background."
         }
         val margin = max(2, (max(right - left + 1, bottom - top + 1) * .035f).toInt())
