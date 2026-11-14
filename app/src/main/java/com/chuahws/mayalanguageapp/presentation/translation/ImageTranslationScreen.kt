@@ -86,14 +86,14 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                             if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                                 showCamera = true
                             } else permission.launch(Manifest.permission.CAMERA)
-                        }, enabled = hasCamera && !state.busy,
+                        }, enabled = hasCamera && !state.busy && !state.sampleBusy,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                     ) {
                         Icon(Icons.Rounded.CameraAlt, contentDescription = null)
                         Spacer(Modifier.width(8.dp)); Text("Take a photo")
                     }
                     FilledTonalButton(
-                        onClick = { gallery.launch("image/*") }, enabled = !state.busy,
+                        onClick = { gallery.launch("image/*") }, enabled = !state.busy && !state.sampleBusy,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                     ) {
                         Icon(Icons.Rounded.PhotoLibrary, contentDescription = null)
@@ -108,29 +108,29 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (state.model == GlyphModelMode.TINY_V1) {
                             Button(onClick = { glyphModel.setModel(GlyphModelMode.TINY_V1) },
-                                enabled = !state.busy, modifier = Modifier.weight(1f)) { Text("Model v1", maxLines = 1) }
+                                enabled = !state.busy && !state.sampleBusy, modifier = Modifier.weight(1f)) { Text("Model v1", maxLines = 1) }
                         } else {
                             OutlinedButton(onClick = { glyphModel.setModel(GlyphModelMode.TINY_V1) },
-                                enabled = !state.busy, modifier = Modifier.weight(1f)) { Text("Model v1", maxLines = 1) }
+                                enabled = !state.busy && !state.sampleBusy, modifier = Modifier.weight(1f)) { Text("Model v1", maxLines = 1) }
                         }
                         if (state.model == GlyphModelMode.RESEARCH_V2) {
                             Button(onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_V2) },
-                                enabled = !state.busy, modifier = Modifier.weight(1f)) { Text("Research v2", maxLines = 1) }
+                                enabled = !state.busy && !state.sampleBusy, modifier = Modifier.weight(1f)) { Text("Research v2", maxLines = 1) }
                         } else {
                             OutlinedButton(onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_V2) },
-                                enabled = !state.busy, modifier = Modifier.weight(1f)) { Text("Research v2", maxLines = 1) }
+                                enabled = !state.busy && !state.sampleBusy, modifier = Modifier.weight(1f)) { Text("Research v2", maxLines = 1) }
                         }
                     }
                     if (state.model == GlyphModelMode.RESEARCH_V3) {
                         Button(
                             onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_V3) },
-                            enabled = !state.busy,
+                            enabled = !state.busy && !state.sampleBusy,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                         ) { Text("Research v3 (screened)") }
                     } else {
                         OutlinedButton(
                             onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_V3) },
-                            enabled = !state.busy,
+                            enabled = !state.busy && !state.sampleBusy,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                         ) { Text("Research v3 (screened)") }
                     }
@@ -152,16 +152,16 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text("Select one glyph", style = MaterialTheme.typography.titleMedium)
                         Text("Drag a rectangle over the complete glyph. Leave a small clear margin.", style = MaterialTheme.typography.bodySmall)
-                        GlyphCropPreview(image, state.crop, !state.busy, glyphModel::setCrop)
+                        GlyphCropPreview(image, state.crop, !state.busy && !state.sampleBusy, glyphModel::setCrop)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(onClick = { glyphModel.setCrop(GlyphCrop()) }, enabled = !state.busy,
+                            OutlinedButton(onClick = { glyphModel.setCrop(GlyphCrop()) }, enabled = !state.busy && !state.sampleBusy,
                                 modifier = Modifier.weight(1f)) { Text("Full image") }
-                            OutlinedButton(onClick = glyphModel::rotate, enabled = !state.busy,
+                            OutlinedButton(onClick = glyphModel::rotate, enabled = !state.busy && !state.sampleBusy,
                                 modifier = Modifier.weight(1f)) { Text("Rotate") }
                         }
                     }
                 }
-                Button(onClick = glyphModel::recognize, enabled = !state.busy,
+                Button(onClick = glyphModel::recognize, enabled = !state.busy && !state.sampleBusy,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                     Text("Recognise glyph")
                 }
@@ -180,6 +180,14 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             state.result?.let { GlyphResultCard(it) }
             state.resultV2?.let { GlyphV2ResultCard(it) }
             state.resultV3?.let { GlyphV3ResultCard(it) }
+            GlyphSampleCollectionCard(
+                state = state,
+                onSave = { label, drawingId, source, permission ->
+                    glyphModel.saveExample(label, drawingId, source, permission)
+                },
+                onExport = glyphModel::exportExamples,
+                onClear = glyphModel::deleteExamples,
+            )
             val modelLimitations = when (state.model) {
                 GlyphModelMode.TINY_V1 ->
                     "TinyGlyphNet v1 · Offline model · Real-world accuracy is not established."
