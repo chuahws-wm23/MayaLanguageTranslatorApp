@@ -47,6 +47,25 @@ class MayaGlyphRecognizerV4Test {
         assertEquals(3 * 224 * 224, GlyphV2Preprocessor.fromGrayscale(input, 80, 80).size)
     }
 
+    @Test
+    fun v4LightingViewAgreementKeepsCandidate() {
+        val first = MayaGlyphRecognizerV4.interpret(FloatArray(10) { if (it == 3) 3f else -1f })
+        val second = MayaGlyphRecognizerV4.interpret(FloatArray(10) { if (it == 3) 2f else -2f })
+        val result = MayaGlyphRecognizerV4.reconcileLightingViews(first, second)
+        assertEquals(4, result.signNumber)
+        assertTrue(!result.reviewRecommended)
+    }
+
+    @Test
+    fun v4DifferentLightingPredictionsAreFlaggedNotAsserted() {
+        val first = MayaGlyphRecognizerV4.interpret(FloatArray(10) { if (it == 3) 3f else -1f })
+        val second = MayaGlyphRecognizerV4.interpret(FloatArray(10) { if (it == 7) 3f else -1f })
+        val result = MayaGlyphRecognizerV4.reconcileLightingViews(first, second)
+        assertTrue(result.reviewRecommended)
+        assertTrue(result.reviewReason!!.contains("Different lighting"))
+        assertTrue(MayaGlyphRecognizerV4.reconcileLightingViews(first, null).reviewRecommended)
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun refusesUnexpectedImageDimensions() {
         GlyphV2Preprocessor.fromGrayscale(IntArray(80 * 80) { 255 }, 80, 80, 192)

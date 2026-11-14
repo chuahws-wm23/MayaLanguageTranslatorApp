@@ -15,13 +15,16 @@ import java.security.MessageDigest
  * The fine-tuned MobileNetV3-small model was trained using the publicly
  * accessible TWKM catalogue. It chooses the MOST LIKELY of ten categories
  * even for an unsupported sign; it is NOT a validated open-set detector.
- * Use v3 for the five-sign screened research demo.
+ * Two lighting views are used to flag unstable photo predictions for review.
+ * Agreement does not prove correctness, and coverage remains only ten signs.
  */
 data class GlyphV4Result(
     val signNumber: Int,
     val reading: String,
     val englishGloss: String,
     val modelVersion: String = "Research v4",
+    val reviewRecommended: Boolean = false,
+    val reviewReason: String? = null,
 )
 
 class MayaGlyphRecognizerV4 private constructor(
@@ -78,11 +81,42 @@ class MayaGlyphRecognizerV4 private constructor(
             }
             return GlyphV4Result(signs[best], readings[best], english[best])
         }
+
+        /** A disagreement means an uncertain photo candidate, not an unknown-sign proof. */
+        internal fun reconcileLightingViews(
+            standard: GlyphV4Result,
+            corrected: GlyphV4Result?,
+        ): GlyphV4Result = when {
+            corrected == null -> standard.copy(
+                reviewRecommended = true,
+                reviewReason = "Photo enhancement could not isolate this glyph; inspect the crop.",
+            )
+            standard.signNumber != corrected.signNumber -> standard.copy(
+                reviewRecommended = true,
+                reviewReason = "Different lighting treatments suggest different signs. " +
+                    "No stable supported match; inspect one clear glyph.",
+            )
+            else -> standard
+        }
     }
 
-    /** Runs the trained neural weights entirely offline on a background thread. */
+    /**
+     * Runs the same v4 ONNX model on two preprocessing views of a NEW photo.
+     * The second pass corrects slow lighting changes; it does not add classes
+     * or use saved catalogue pictures as a lookup.
+     */
     fun recognize(bitmap: Bitmap): GlyphV4Result {
-        val input = GlyphV2Preprocessor.fromBitmap(bitmap, INPUT_SIDE)
+        val standard = classify(GlyphV2Preprocessor.fromBitmap(bitmap, INPUT_SIDE))
+        val adjusted = try {
+            GlyphV2Preprocessor.fromBitmap(bitmap, INPUT_SIDE, photoCorrected = true)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+        val corrected = adjusted?.let { classify(it) }
+        return reconcileLightingViews(standard, corrected)
+    }
+
+    private fun classify(input: FloatArray): GlyphV4Result {
         require(input.size == 3 * INPUT_SIDE * INPUT_SIDE)
         val buffer = ByteBuffer.allocateDirect(input.size * java.lang.Float.BYTES)
             .order(ByteOrder.nativeOrder()).asFloatBuffer()

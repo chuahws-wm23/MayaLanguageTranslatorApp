@@ -83,3 +83,27 @@ and depend on inscription context.
 
 This is a bounded undergraduate FYP prototype, not a full Classic Maya
 glyph-block segmentation, transliteration or inscription translator.
+
+## Current v4 camera/gallery handling (same model, no v5)
+
+The Android app now chooses **Research v4** by default. It runs the SAME
+ten-class MobileNetV3 ONNX weights on every user-selected picture, not an
+exact lookup against the catalogue image library. To handle some uneven
+lighting it tries both the original Otsu/ink normalization and a locally
+illumination-corrected preprocessing pass. When the two views disagree (or
+the corrected view cannot isolate ink), the app displays **No stable
+supported match** and asks for a clearer, isolated glyph instead of
+presenting the disagreement as a reliable identification. A matching
+two-view result is still **UNVERIFIED**: this check is NOT an unknown-sign
+detector or a statistically calibrated confidence threshold.
+
+Both single-crop and automatic multi-block modes use this same v4 model.
+The multi-block detector still requires a reasonably regular grid and
+each block may contain several signs. No model weights or class coverage
+were changed, and the old catalogue-only 7/10 research statistic does
+NOT measure the impact of this input change. Performance and on-phone
+accuracy must be evaluated on independent labelled photographs.
+
+If the input depicts a sign outside the ten trained categories, more
+verified and source-separated labelled samples plus retraining within
+Research v4 are necessary. Photo preprocessing cannot learn that sign.

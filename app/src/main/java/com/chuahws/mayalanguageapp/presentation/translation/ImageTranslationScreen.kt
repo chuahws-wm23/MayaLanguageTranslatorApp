@@ -159,9 +159,9 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                             "v3: Same five signs as v2, with experimental unknown-glyph screening. " +
                                 "It can reject valid drawings and still accept incorrect ones. Deer/Cacao NOT included."
                         GlyphModelMode.RESEARCH_V4 ->
-                            "v4: Ten TWKM sign categories, including Gourd, Year, Fire, Name and K'AWIIL. " +
-                                "This mode is CLOSED SET: it ALWAYS guesses a supported sign, even for an unrelated picture. " +
-                                "Deer and Cacao are NOT included."
+                            "v4 (default): Ten TWKM sign categories. Works on photos chosen from Gallery or Camera " +
+                                "without a catalogue lookup. It compares normal and shadow-corrected views and " +
+                                "flags disagreements. Unknown signs can still be misidentified; Deer/Cacao are NOT included."
                     }
                     Text(modelDescription, style = MaterialTheme.typography.bodySmall)
                 }
@@ -186,8 +186,8 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                 }
                 Text(
                     "Automatically finds multiple blocks arranged in rows and columns. " +
-                        "No need to crop each one. Choose Research v3 for screening, " +
-                        "or v4 for ten-class unverified guesses.",
+                        "No need to crop each one. Research v4 is the default and flags " +
+                        "blocks with inconsistent lighting-view predictions.",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 OutlinedButton(onClick = glyphModel::recognize, enabled = !state.busy,
@@ -231,10 +231,10 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         "100 unknown sign drawings tested over five fold models. " +
                         "NOT independent phone-photo accuracy."
                 GlyphModelMode.RESEARCH_V4 ->
-                    "Research v4 · Fine-tuned MobileNetV3, 10 sign categories. " +
-                        "7/10 on held-out TWKM reference drawings (small sample). " +
-                        "The v4 rejection filter failed its usability test and is NOT enabled. " +
-                        "Not evaluated for independent phone-photo accuracy."
+                    "Research v4 · Same fine-tuned MobileNetV3 weights, ten sign categories; " +
+                        "normal and shadow-corrected photo views. Matching guesses are NOT proof " +
+                        "that an unfamiliar sign is supported. Previous 7/10 test came from " +
+                        "catalogue drawings only; real photo accuracy is still unmeasured."
             }
             Text(
                 modelLimitations, style = MaterialTheme.typography.bodySmall,
@@ -367,36 +367,43 @@ private fun GlyphV4ResultCard(result: GlyphV4Result) {
     Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
-                "Research v4 — unverified guess",
+                if (result.reviewRecommended) "No stable supported match — review photo"
+                else "Research v4 — possible match (unverified)",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
-            Text(result.englishGloss, style = MaterialTheme.typography.headlineSmall)
-            Text("Proposed reading: ${result.reading}")
-            Text("TWKM sign #${result.signNumber}", style = MaterialTheme.typography.bodySmall)
+            if (result.reviewRecommended) {
+                Text(result.reviewReason ?: "Try a clearer picture of one complete glyph.")
+            } else {
+                Text(result.englishGloss, style = MaterialTheme.typography.headlineSmall)
+                Text("Proposed reading: ${result.reading}")
+                Text("TWKM sign #${result.signNumber}", style = MaterialTheme.typography.bodySmall)
+            }
             Surface(
                 color = MaterialTheme.colorScheme.errorContainer,
                 shape = MaterialTheme.shapes.medium,
             ) {
                 Text(
-                    "Research demo only. The model ALWAYS chooses one of ten signs, including " +
-                        "when the picture is unfamiliar or incorrect. Its 70% test result came " +
-                        "from just ten held-out catalogue drawings, NOT phone photographs. " +
-                        "Do not treat this as a verified reading or translation.",
+                    "Research demo only. The model still covers just ten signs. Even when two " +
+                        "photo treatments agree, an unsupported sign may be guessed incorrectly. " +
+                        "The old 70% figure came from ten held-out catalogue drawings, NOT " +
+                        "phone photos. No verified translation or calibrated accuracy.",
                     Modifier.padding(12.dp),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            FilledTonalButton(
-                onClick = {
-                    clipboard.setText(AnnotatedString(
-                        "Unverified Maya glyph suggestion: ${result.reading} — ${result.englishGloss}, " +
-                            "TWKM sign ${result.signNumber}. Experimental closed-set v4; " +
-                            "not confirmed and may be incorrect.",
-                    ))
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Copy with disclaimer") }
+            if (!result.reviewRecommended) {
+                FilledTonalButton(
+                    onClick = {
+                        clipboard.setText(AnnotatedString(
+                            "Unverified Maya glyph suggestion: ${result.reading} — ${result.englishGloss}, " +
+                                "TWKM sign ${result.signNumber}. Experimental closed-set v4; " +
+                                "not confirmed and may be incorrect.",
+                        ))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Copy with disclaimer") }
+            }
         }
     }
 }

@@ -22,7 +22,11 @@ internal object GlyphV2Preprocessor {
     private val means = floatArrayOf(.485f, .456f, .406f)
     private val stds = floatArrayOf(.229f, .224f, .225f)
 
-    fun fromBitmap(original: Bitmap, outputSide: Int = SIDE): FloatArray {
+    fun fromBitmap(
+        original: Bitmap,
+        outputSide: Int = SIDE,
+        photoCorrected: Boolean = false,
+    ): FloatArray {
         require(original.width >= 25 && original.height >= 25) {
             "Crop is too small. Include one complete glyph."
         }
@@ -47,7 +51,10 @@ internal object GlyphV2Preprocessor {
                 val alpha = Color.alpha(c)
                 gray[i] = (light * alpha + 255 * (255 - alpha) + 127) / 255
             }
-            return fromGrayscale(gray, scaled.width, scaled.height, outputSide)
+            val adjusted = if (photoCorrected) {
+                GlyphV4PhotoNormalizer.correct(gray, scaled.width, scaled.height)
+            } else gray
+            return fromGrayscale(adjusted, scaled.width, scaled.height, outputSide)
         } finally {
             if (scaled !== original) scaled.recycle()
         }

@@ -53,7 +53,7 @@ internal data class GlyphUiState(
     val resultV4: GlyphV4Result? = null,
     val multiple: List<MultiGlyphItem> = emptyList(),
     val multipleProgress: String? = null,
-    val model: GlyphModelMode = GlyphModelMode.TINY_V1,
+    val model: GlyphModelMode = GlyphModelMode.RESEARCH_V4,
     val busy: Boolean = false,
     val message: String? = null,
 )
@@ -234,8 +234,11 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                                         val result = MayaGlyphRecognizerV4.fromAssets(getApplication())
                                             .recognize(cropped)
                                         MultiGlyphItem(
-                                            index + 1, region, result.reading, result.englishGloss,
-                                            "Closed-set guess — NOT a verified reading",
+                                            index + 1, region,
+                                            if (result.reviewRecommended) null else result.reading,
+                                            if (result.reviewRecommended) null else result.englishGloss,
+                                            result.reviewReason
+                                                ?: "Two lighting views agree; still an UNVERIFIED ten-sign guess",
                                         )
                                     }
                                 }
