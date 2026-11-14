@@ -1,0 +1,63 @@
+name: Verify offline 10-sign Maya glyph v4 integration
+on:
+  push:
+    branches: [glyph-v4-available-data-android]
+    paths:
+      - 'app/**'
+      - '.github/workflows/glyph-v4-android.yml'
+permissions:
+  contents: write
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: glyph-v4-available-data-android
+          fetch-depth: 0
+      - name: Fetch the trained ONNX model and verify original model hash
+        run: |
+          git fetch origin glyph-v4-expanded-training
+          mkdir -p app/src/main/assets
+          if test ! -s app/src/main/assets/maya_glyph_v4.onnx; then
+            git show "FETCH_HEAD:ml/glyph_v4/outputs/android/maya_glyph_v4.onnx" > app/src/main/assets/maya_glyph_v4.onnx
+          fi
+          git show "FETCH_HEAD:ml/glyph_v4/outputs/android/metadata.json" > /tmp/maya-v4-meta.json
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          model=Path('app/src/main/assets/maya_glyph_v4.onnx')
+          info=json.loads(Path('/tmp/maya-v4-meta.json').read_text())
+          expected=info['assets']['maya_glyph_v4.onnx']
+          actual=model.read_bytes()
+          assert len(actual)==expected['size_bytes']==3741064
+          assert hashlib.sha256(actual).hexdigest()==expected['sha256']
+          assert info['signs']==[32,184,291,4,44,507,548,122,187,1030]
+          assert info['cross_format_max_abs_logit_error']<2e-4
+          print('Verified trained v4 ONNX model size/hash and source class order')
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Compile and run all JVM tests
+        run: gradle testDebugUnitTest assembleDebug --stacktrace
+      - name: Upload experimental Android APK for physical-device testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: MayaGlyphV4TenSignExperimentalAPK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+      - name: Commit model to integration branch only after successful tests
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f app/src/main/assets/maya_glyph_v4.onnx
+          if ! git diff --cached --quiet; then
+            git commit -m 'Bundle verified ten-sign v4 ONNX model after Android tests'
+            git push origin HEAD:glyph-v4-available-data-android
+          fi
