@@ -1,0 +1,42 @@
+{
+  "chosen_model": "fine_tuned",
+  "signs": [
+    32,
+    184,
+    291,
+    4,
+    44,
+    507,
+    548,
+    122,
+    187,
+    1030
+  ],
+  "labels": [
+    "K'UH | god/deity",
+    "K'INICH | resplendent/sunny",
+    "SIIP | deity name",
+    "NAAH | house/first",
+    "TOK | cloud/mist",
+    "TZIMAH | gourd",
+    "HAAB | year",
+    "K'AK' | fire",
+    "K'ABA' | name",
+    "K'AWIIL | deity name"
+  ],
+  "input_side": 160,
+  "gallery_sha256": "a3984cf45fd8c3ca6103aa03f1447a150c9c62c6a85666c057b345ebb5a571d5",
+  "gallery_count": 45,
+  "feature_dimension": 576,
+  "rules": {
+    "selected": true,
+    "similarity_threshold": 0.92,
+    "margin_threshold": 0.04,
+    "known_val_correct_accepted": 0.5,
+    "unknown_cal_rejected": 0.9125,
+    "val_balanced": 0.7062
+  },
+  "can_deploy_research_mode": true,
+  "criteria": ">=50% CLOSED SET on unseen original signs; >=75% unknown sign rejection; thresholds picked without touching test",
+  "not_a_phone_accuracy_estimate": true
+}
