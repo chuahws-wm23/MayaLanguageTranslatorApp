@@ -54,6 +54,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
     val state by glyphModel.state.collectAsStateWithLifecycle()
     var showCamera by remember { mutableStateOf(false) }
     var showAssistedGrid by remember { mutableStateOf(false) }
+    var showAdvancedPanelTools by remember { mutableStateOf(false) }
     var gridRows by remember { mutableIntStateOf(9) }
     var gridColumns by remember { mutableIntStateOf(9) }
     var permissionMessage by remember { mutableStateOf<String?>(null) }
@@ -83,8 +84,9 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Maya glyph recognition", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text("Choose a photo containing one glyph or many glyph blocks. " +
-    "Use Scan all glyphs for panels of several symbols, or crop an individual sign below.")
+                    Text("Choose a photo showing ONE Maya sign. Crop tightly around the complete sign, " +
+                        "with a small margin. Research v4 tries three treatments for lighting/noise; " +
+                        "a suggested meaning is still unverified.")
                     FilledTonalButton(
                         onClick = {
                             permissionMessage = null
@@ -163,8 +165,8 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                                 "It can reject valid drawings and still accept incorrect ones. Deer/Cacao NOT included."
                         GlyphModelMode.RESEARCH_V4 ->
                             "v4 (default): Ten TWKM sign categories. Works on photos chosen from Gallery or Camera " +
-                                "without a catalogue lookup. It compares normal and shadow-corrected views and " +
-                                "flags disagreements. Unknown signs can still be misidentified; Deer/Cacao are NOT included."
+                                "without a catalogue lookup. It compares three photo treatments and " +
+                                "flags unstable results. Unknown signs can still be misidentified; Deer/Cacao are NOT included."
                     }
                     Text(modelDescription, style = MaterialTheme.typography.bodySmall)
                 }
@@ -183,10 +185,19 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         }
                     }
                 }
-                Button(onClick = glyphModel::scanAll, enabled = !state.busy,
+                Button(onClick = glyphModel::recognize, enabled = !state.busy,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-                    Text("Scan all glyphs automatically")
+                    Text("Recognise this single glyph")
                 }
+                OutlinedButton(
+                    onClick = { showAdvancedPanelTools = !showAdvancedPanelTools },
+                    enabled = !state.busy, modifier = Modifier.fillMaxWidth(),
+                ) { Text(if (showAdvancedPanelTools) "Hide panel scanning tools" else "Panel scanning tools (optional)") }
+                if (showAdvancedPanelTools) {
+                    OutlinedButton(onClick = glyphModel::scanAll, enabled = !state.busy,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                        Text("Scan all glyphs automatically")
+                    }
                 Text(
                     "Automatically finds multiple blocks arranged in rows and columns. " +
                         "No need to crop each one. Research v4 is the default and flags " +
@@ -241,9 +252,6 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         }
                     }
                 }
-                OutlinedButton(onClick = glyphModel::recognize, enabled = !state.busy,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-                    Text("Recognise one selected glyph")
                 }
             }
             if (state.busy) {
@@ -284,7 +292,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         "NOT independent phone-photo accuracy."
                 GlyphModelMode.RESEARCH_V4 ->
                     "Research v4 · Same fine-tuned MobileNetV3 weights, ten sign categories; " +
-                        "normal and shadow-corrected photo views. Matching guesses are NOT proof " +
+                        "three photo views (original, shadow-corrected, denoised). Agreement is NOT proof " +
                         "that an unfamiliar sign is supported. Previous 7/10 test came from " +
                         "catalogue drawings only; real photo accuracy is still unmeasured."
             }

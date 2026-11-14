@@ -82,7 +82,36 @@ class MayaGlyphRecognizerV4 private constructor(
             return GlyphV4Result(signs[best], readings[best], english[best])
         }
 
-        /** A disagreement means an uncertain photo candidate, not an unknown-sign proof. */
+        /**
+         * Three independent preprocessing views are evaluated using the SAME
+         * trained v4 weights. Requiring the original view plus one supporting
+         * view reduces some preprocessing-instability failures, but consensus
+         * is NOT an out-of-distribution detector or calibrated accuracy score.
+         */
+        internal fun reconcileThreeViews(
+            original: GlyphV4Result,
+            corrected: GlyphV4Result?,
+            denoised: GlyphV4Result?,
+        ): GlyphV4Result {
+            val originalVotes = 1 +
+                (if (corrected?.signNumber == original.signNumber) 1 else 0) +
+                (if (denoised?.signNumber == original.signNumber) 1 else 0)
+            return when {
+                corrected == null && denoised == null -> original.copy(
+                    reviewRecommended = true,
+                    reviewReason = "Could not reliably prepare this photo. " +
+                        "Try a clear crop of one supported sign.",
+                )
+                originalVotes < 2 -> original.copy(
+                    reviewRecommended = true,
+                    reviewReason = "Different photo treatments suggest different signs. " +
+                        "Try a closer, sharper crop. No stable supported match.",
+                )
+                else -> original
+            }
+        }
+
+        /** Retained for the original two-view regression cases. */
         internal fun reconcileLightingViews(
             standard: GlyphV4Result,
             corrected: GlyphV4Result?,
@@ -101,9 +130,10 @@ class MayaGlyphRecognizerV4 private constructor(
     }
 
     /**
-     * Runs the same v4 ONNX model on two preprocessing views of a NEW photo.
-     * The second pass corrects slow lighting changes; it does not add classes
-     * or use saved catalogue pictures as a lookup.
+     * Single-sign photo recognition. An unsmoothed view, an illumination-
+     * corrected view and a median-denoised view use the same trained weights.
+     * The original top-1 needs support from another view to be presented as
+     * a *possible* match. Unsupported signs may still be guessed incorrectly.
      */
     fun recognize(bitmap: Bitmap): GlyphV4Result {
         val standard = classify(GlyphV2Preprocessor.fromBitmap(bitmap, INPUT_SIDE))
@@ -112,8 +142,16 @@ class MayaGlyphRecognizerV4 private constructor(
         } catch (_: IllegalArgumentException) {
             null
         }
-        val corrected = adjusted?.let { classify(it) }
-        return reconcileLightingViews(standard, corrected)
+        val denoised = try {
+            GlyphV2Preprocessor.fromBitmap(bitmap, INPUT_SIDE, medianDenoised = true)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+        return reconcileThreeViews(
+            standard,
+            adjusted?.let { classify(it) },
+            denoised?.let { classify(it) },
+        )
     }
 
     private fun classify(input: FloatArray): GlyphV4Result {
