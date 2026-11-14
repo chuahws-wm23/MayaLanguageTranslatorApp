@@ -1,0 +1,1463 @@
+{
+  "purpose": "Compare frozen ImageNet vision features for five TWKM sign classes",
+  "source": "tadad/twkm-maya-glyphs",
+  "revision": "73fe9da1d975a5f1e588c7d42c952dfda53cefd0",
+  "seed": 20261114,
+  "original_count": 38,
+  "classes": [
+    {
+      "sign_no": 32,
+      "label": "K'UH | god / deity"
+    },
+    {
+      "sign_no": 184,
+      "label": "K'INICH | resplendent"
+    },
+    {
+      "sign_no": 291,
+      "label": "SIIP | deity name"
+    },
+    {
+      "sign_no": 4,
+      "label": "NAAH | first / house"
+    },
+    {
+      "sign_no": 44,
+      "label": "TOK | cloud / mist"
+    }
+  ],
+  "evaluation": "Five-fold stratified CV; each distinct original is tested in exactly one fold; no augmentation leaks",
+  "models": [
+    {
+      "backbone": "mobilenet_v3_small",
+      "method": "svm_linear",
+      "out_of_fold_accuracy": 0.7105,
+      "out_of_fold_correct": 27,
+      "out_of_fold_original_count": 38,
+      "out_of_fold_macro_f1": 0.6879,
+      "confusion": [
+        [
+          4,
+          3,
+          0,
+          1,
+          1
+        ],
+        [
+          0,
+          8,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          6,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          7,
+          0
+        ],
+        [
+          3,
+          0,
+          1,
+          0,
+          2
+        ]
+      ],
+      "predictions": [
+        {
+          "graph": "32vt",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32fc",
+          "sign": 32,
+          "pred_sign": 184
+        },
+        {
+          "graph": "32mt",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vl",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vb",
+          "sign": 32,
+          "pred_sign": 44
+        },
+        {
+          "graph": "32vr",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vc",
+          "sign": 32,
+          "pred_sign": 184
+        },
+        {
+          "graph": "32va",
+          "sign": 32,
+          "pred_sign": 184
+        },
+        {
+          "graph": "32md",
+          "sign": 32,
+          "pred_sign": 4
+        },
+        {
+          "graph": "184vr",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vd",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vi",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184ex",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vb",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vt",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vl",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vs",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "291vt",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vc",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vs",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vl",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291va",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291hc",
+          "sign": 291,
+          "pred_sign": 184
+        },
+        {
+          "graph": "291vr",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291fc",
+          "sign": 291,
+          "pred_sign": 184
+        },
+        {
+          "graph": "4vb",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vc",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4va",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vl",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vt",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vs",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vr",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "44bv",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44bb",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44bt",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44dt",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44do",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44hp",
+          "sign": 44,
+          "pred_sign": 291
+        }
+      ]
+    },
+    {
+      "backbone": "mobilenet_v3_small",
+      "method": "svm_rbf",
+      "out_of_fold_accuracy": 0.9211,
+      "out_of_fold_correct": 35,
+      "out_of_fold_original_count": 38,
+      "out_of_fold_macro_f1": 0.9099,
+      "confusion": [
+        [
+          9,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          8,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          7,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          7,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          4
+        ]
+      ],
+      "predictions": [
+        {
+          "graph": "32vt",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32fc",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32mt",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vl",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vb",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vr",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vc",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32va",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32md",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "184vr",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vd",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vi",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184ex",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vb",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vt",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vl",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vs",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "291vt",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vc",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vs",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vl",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291va",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291hc",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vr",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291fc",
+          "sign": 291,
+          "pred_sign": 44
+        },
+        {
+          "graph": "4vb",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vc",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4va",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vl",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vt",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vs",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vr",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "44bv",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44bb",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44bt",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44dt",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44do",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44hp",
+          "sign": 44,
+          "pred_sign": 291
+        }
+      ]
+    },
+    {
+      "backbone": "mobilenet_v3_small",
+      "method": "knn_cosine",
+      "out_of_fold_accuracy": 0.8421,
+      "out_of_fold_correct": 32,
+      "out_of_fold_original_count": 38,
+      "out_of_fold_macro_f1": 0.8431,
+      "confusion": [
+        [
+          7,
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          8,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          6,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          7,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          4
+        ]
+      ],
+      "predictions": [
+        {
+          "graph": "32vt",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32fc",
+          "sign": 32,
+          "pred_sign": 291
+        },
+        {
+          "graph": "32mt",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vl",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vb",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vr",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vc",
+          "sign": 32,
+          "pred_sign": 184
+        },
+        {
+          "graph": "32va",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32md",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "184vr",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vd",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vi",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184ex",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vb",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vt",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vl",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vs",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "291vt",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vc",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vs",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vl",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291va",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291hc",
+          "sign": 291,
+          "pred_sign": 184
+        },
+        {
+          "graph": "291vr",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291fc",
+          "sign": 291,
+          "pred_sign": 184
+        },
+        {
+          "graph": "4vb",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vc",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4va",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vl",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vt",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vs",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vr",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "44bv",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44bb",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44bt",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44dt",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44do",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44hp",
+          "sign": 44,
+          "pred_sign": 291
+        }
+      ]
+    },
+    {
+      "backbone": "resnet18",
+      "method": "svm_linear",
+      "out_of_fold_accuracy": 0.6579,
+      "out_of_fold_correct": 25,
+      "out_of_fold_original_count": 38,
+      "out_of_fold_macro_f1": 0.5803,
+      "confusion": [
+        [
+          5,
+          2,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          7,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          7,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          6,
+          0
+        ],
+        [
+          6,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "predictions": [
+        {
+          "graph": "32vt",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32fc",
+          "sign": 32,
+          "pred_sign": 184
+        },
+        {
+          "graph": "32mt",
+          "sign": 32,
+          "pred_sign": 4
+        },
+        {
+          "graph": "32vl",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vb",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vr",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vc",
+          "sign": 32,
+          "pred_sign": 184
+        },
+        {
+          "graph": "32va",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32md",
+          "sign": 32,
+          "pred_sign": 4
+        },
+        {
+          "graph": "184vr",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vd",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vi",
+          "sign": 184,
+          "pred_sign": 291
+        },
+        {
+          "graph": "184ex",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vb",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vt",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vl",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vs",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "291vt",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vc",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vs",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vl",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291va",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291hc",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vr",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291fc",
+          "sign": 291,
+          "pred_sign": 184
+        },
+        {
+          "graph": "4vb",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vc",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4va",
+          "sign": 4,
+          "pred_sign": 291
+        },
+        {
+          "graph": "4vl",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vt",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vs",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vr",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "44bv",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44bb",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44bt",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44dt",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44do",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44hp",
+          "sign": 44,
+          "pred_sign": 32
+        }
+      ]
+    },
+    {
+      "backbone": "resnet18",
+      "method": "svm_rbf",
+      "out_of_fold_accuracy": 0.8947,
+      "out_of_fold_correct": 34,
+      "out_of_fold_original_count": 38,
+      "out_of_fold_macro_f1": 0.8917,
+      "confusion": [
+        [
+          8,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          7,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          8,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          7,
+          0
+        ],
+        [
+          2,
+          0,
+          0,
+          0,
+          4
+        ]
+      ],
+      "predictions": [
+        {
+          "graph": "32vt",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32fc",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32mt",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vl",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vb",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vr",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vc",
+          "sign": 32,
+          "pred_sign": 184
+        },
+        {
+          "graph": "32va",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32md",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "184vr",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vd",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vi",
+          "sign": 184,
+          "pred_sign": 291
+        },
+        {
+          "graph": "184ex",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vb",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vt",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vl",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vs",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "291vt",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vc",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vs",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vl",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291va",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291hc",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vr",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291fc",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "4vb",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vc",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4va",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vl",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vt",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vs",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vr",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "44bv",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44bb",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44bt",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44dt",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44do",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44hp",
+          "sign": 44,
+          "pred_sign": 44
+        }
+      ]
+    },
+    {
+      "backbone": "resnet18",
+      "method": "knn_cosine",
+      "out_of_fold_accuracy": 0.8421,
+      "out_of_fold_correct": 32,
+      "out_of_fold_original_count": 38,
+      "out_of_fold_macro_f1": 0.8369,
+      "confusion": [
+        [
+          7,
+          0,
+          0,
+          1,
+          1
+        ],
+        [
+          0,
+          8,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          6,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          7,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          0,
+          4
+        ]
+      ],
+      "predictions": [
+        {
+          "graph": "32vt",
+          "sign": 32,
+          "pred_sign": 44
+        },
+        {
+          "graph": "32fc",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32mt",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vl",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vb",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vr",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32vc",
+          "sign": 32,
+          "pred_sign": 4
+        },
+        {
+          "graph": "32va",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "32md",
+          "sign": 32,
+          "pred_sign": 32
+        },
+        {
+          "graph": "184vr",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vd",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vi",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184ex",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vb",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vt",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vl",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "184vs",
+          "sign": 184,
+          "pred_sign": 184
+        },
+        {
+          "graph": "291vt",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vc",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vs",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291vl",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291va",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291hc",
+          "sign": 291,
+          "pred_sign": 184
+        },
+        {
+          "graph": "291vr",
+          "sign": 291,
+          "pred_sign": 291
+        },
+        {
+          "graph": "291fc",
+          "sign": 291,
+          "pred_sign": 32
+        },
+        {
+          "graph": "4vb",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vc",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4va",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vl",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vt",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vs",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "4vr",
+          "sign": 4,
+          "pred_sign": 4
+        },
+        {
+          "graph": "44bv",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44bb",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44bt",
+          "sign": 44,
+          "pred_sign": 44
+        },
+        {
+          "graph": "44dt",
+          "sign": 44,
+          "pred_sign": 32
+        },
+        {
+          "graph": "44do",
+          "sign": 44,
+          "pred_sign": 184
+        },
+        {
+          "graph": "44hp",
+          "sign": 44,
+          "pred_sign": 44
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "CV estimates on TWKM standardized drawings only, not phone camera images",
+    "Comparing models using CV and selecting the best creates model-selection optimism",
+    "Sign classification is not English sentence translation",
+    "Unknown/unsupported glyph rejection not evaluated",
+    "ResNet18 backbone is too large for lightweight Android"
+  ],
+  "seconds": 3.3,
+  "exported_mobilenet_method": "svm_rbf"
+}
