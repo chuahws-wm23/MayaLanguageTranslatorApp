@@ -1,0 +1,16 @@
+filename,group,twkm_sign_no,twkm_graph_no,expected,source_image_url,note
+unknown_01_sign_42_graph_42bt.png,UNSUPPORTED_SIGN_TEST,42,42bt,No reliable supported match,https://classicmayan.org/portal/sc/client/data/images/graphs/3r3rb.0.jpg,Sign identity was excluded from BOTH supported model training and threshold calibration
+unknown_02_sign_45_graph_45dh.png,UNSUPPORTED_SIGN_TEST,45,45dh,No reliable supported match,https://classicmayan.org/portal/sc/client/data/images/graphs/3r9h0.0.jpg,Sign identity was excluded from BOTH supported model training and threshold calibration
+unknown_03_sign_53_graph_53bt.png,UNSUPPORTED_SIGN_TEST,53,53bt,No reliable supported match,https://classicmayan.org/portal/sc/client/data/images/graphs/3r9h1.0.jpg,Sign identity was excluded from BOTH supported model training and threshold calibration
+unknown_04_sign_77_graph_77fc.png,UNSUPPORTED_SIGN_TEST,77,77fc,No reliable supported match,https://classicmayan.org/portal/sc/client/data/images/graphs/47vdd.0.jpg,Sign identity was excluded from BOTH supported model training and threshold calibration
+unknown_05_sign_108_graph_108md.png,UNSUPPORTED_SIGN_TEST,108,108md,No reliable supported match,https://classicmayan.org/portal/sc/client/data/images/graphs/46kw7.0.jpg,Sign identity was excluded from BOTH supported model training and threshold calibration
+unknown_06_sign_115_graph_115bh.png,UNSUPPORTED_SIGN_TEST,115,115bh,No reliable supported match,https://classicmayan.org/portal/sc/client/data/images/graphs/3r4jt.0.jpg,Sign identity was excluded from BOTH supported model training and threshold calibration
+unknown_07_sign_124_graph_124bb.png,UNSUPPORTED_SIGN_TEST,124,124bb,No reliable supported match,https://classicmayan.org/portal/sc/client/data/images/graphs/49x96.0.jpg,Sign identity was excluded from BOTH supported model training and threshold calibration
+unknown_08_sign_158_graph_158bt.png,UNSUPPORTED_SIGN_TEST,158,158bt,No reliable supported match,https://classicmayan.org/portal/sc/client/data/images/graphs/3r9j2.0.jpg,Sign identity was excluded from BOTH supported model training and threshold calibration
+unknown_09_sign_182_graph_182bt.png,UNSUPPORTED_SIGN_TEST,182,182bt,No reliable supported match,https://classicmayan.org/portal/sc/client/data/images/graphs/3rwr2.0.jpg,Sign identity was excluded from BOTH supported model training and threshold calibration
+unknown_10_sign_225_graph_225ex.png,UNSUPPORTED_SIGN_TEST,225,225ex,No reliable supported match,https://classicmayan.org/portal/sc/client/data/images/graphs/3rn66.0.jpg,Sign identity was excluded from BOTH supported model training and threshold calibration
+01_32mt_KUH.png,KNOWN_SIGN_SMOKE_ONLY,32,32mt,K'UH,,The original was in model training; NOT an independent positive accuracy test
+02_184vb_KINICH.png,KNOWN_SIGN_SMOKE_ONLY,184,184vb,K'INICH,,The original was in model training; NOT an independent positive accuracy test
+03_291va_SIIP.png,KNOWN_SIGN_SMOKE_ONLY,291,291va,SIIP,,The original was in model training; NOT an independent positive accuracy test
+04_4va_NAAH.png,KNOWN_SIGN_SMOKE_ONLY,4,4va,NAAH,,The original was in model training; NOT an independent positive accuracy test
+05_44bb_TOK.png,KNOWN_SIGN_SMOKE_ONLY,44,44bb,TOK,,The original was in model training; NOT an independent positive accuracy test

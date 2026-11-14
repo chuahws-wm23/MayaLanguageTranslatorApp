@@ -1,0 +1,22 @@
+RESEARCH V3 — OPEN-SET PHONE TEST PACK
+
+No change to Android code is needed after pulling the v3 integration.
+
+Select Research v3 (screened) from the app's Photo translation screen.
+Pick each PNG from Gallery, crop just the glyph, and tap Recognise glyph.
+
+- The FIVE 'known' images are reused source drawings from the model's training
+  corpus; these are ONLY a software smoke test and cannot demonstrate accuracy
+  on genuinely new handwriting or camera photographs.
+- The TEN 'unknown' images use TWKM sign identities completely outside the five
+  supported model classes and also excluded from rejection-threshold calibration.
+  Expect 'No reliable supported match'. If a result is suggested, record it as
+  an UNKNOWN FALSE ACCEPT rather than an English translation.
+- Original drawings, without text overlay, by Christian Prager, TWKM, University
+  of Bonn. Licensed CC BY 4.0; relevant catalogue URLs/IDs are in the CSV.
+- These are all catalogue-style drawings, NOT a separately sourced dataset.
+- Never interpret the 92.1% old five-class cross-validation or the 63.2% v3
+  known acceptance as actual phone-camera accuracy.
+
+Record predicted sign / acceptance / failures separately and upload
+a completed copy of EXPECTED_RESULTS.csv if you want those tests analysed.
