@@ -1,0 +1,3756 @@
+{
+  "repo": "tadad/twkm-maya-glyphs",
+  "revision": "73fe9da1d975a5f1e588c7d42c952dfda53cefd0",
+  "graph_count": 1606,
+  "sign_count": 1098,
+  "signs_with_images": 1090,
+  "counts": {
+    "2": 282,
+    "3": 114,
+    "4": 44,
+    "5": 25,
+    "6": 16,
+    "8": 3,
+    "10": 1
+  },
+  "top_signs": [
+    {
+      "sign_no": "32",
+      "distinct_graph_images": 10,
+      "examples": [
+        "32vb",
+        "32vc",
+        "32mt",
+        "32fc",
+        "32vl",
+        "32va",
+        "32vr",
+        "32vs",
+        "32md",
+        "32vt"
+      ],
+      "graph_translations": [
+        [
+          "god | idol",
+          10
+        ]
+      ],
+      "sign_translation": "god | idol",
+      "readings": [
+        {
+          "value": "K'UH",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "184",
+      "distinct_graph_images": 9,
+      "examples": [
+        "184vl",
+        "184ex",
+        "184vs",
+        "184vr",
+        "184vt",
+        "184vb",
+        "184vd",
+        "184vc",
+        "184vi"
+      ],
+      "graph_translations": [
+        [
+          "resplendent | sunny",
+          9
+        ]
+      ],
+      "sign_translation": "resplendent | sunny",
+      "readings": [
+        {
+          "value": "K'INICH",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "291",
+      "distinct_graph_images": 8,
+      "examples": [
+        "291vt",
+        "291vs",
+        "291fc",
+        "291hc",
+        "291vc",
+        "291va",
+        "291vl",
+        "291vr"
+      ],
+      "graph_translations": [
+        [
+          "Siip (name of deity)",
+          8
+        ]
+      ],
+      "sign_translation": "Siip (name of deity)",
+      "readings": [
+        {
+          "value": "SIIP",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "178",
+      "distinct_graph_images": 7,
+      "examples": [
+        "178br",
+        "178bh",
+        "178bl",
+        "178st",
+        "178mp",
+        "178hs",
+        "178hp"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "la",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "4",
+      "distinct_graph_images": 7,
+      "examples": [
+        "4vt",
+        "4vs",
+        "4vr",
+        "4vl",
+        "4vb",
+        "4vc",
+        "4va"
+      ],
+      "graph_translations": [
+        [
+          "first | house",
+          7
+        ]
+      ],
+      "sign_translation": "first | house",
+      "readings": [
+        {
+          "value": "NAAH",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "na",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "NAH",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "74",
+      "distinct_graph_images": 7,
+      "examples": [
+        "74tf",
+        "74bl",
+        "74tt",
+        "74dt",
+        "74tb",
+        "74ta",
+        "74tv"
+      ],
+      "graph_translations": [
+        [
+          "nothing",
+          7
+        ]
+      ],
+      "sign_translation": "nothing",
+      "readings": [
+        {
+          "value": "ma",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1",
+      "distinct_graph_images": 6,
+      "examples": [
+        "1bl",
+        "1bh",
+        "1br",
+        "1mp",
+        "1dh",
+        "1ex"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "u",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "102",
+      "distinct_graph_images": 6,
+      "examples": [
+        "102bh",
+        "102hc",
+        "102br",
+        "102ex",
+        "102bl",
+        "102hh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ki",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "21",
+      "distinct_graph_images": 6,
+      "examples": [
+        "21vl",
+        "21vr",
+        "21vs",
+        "21vt",
+        "21vb",
+        "21va"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "bu",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "28",
+      "distinct_graph_images": 6,
+      "examples": [
+        "28dt",
+        "28hs",
+        "28ta",
+        "28tt",
+        "28hp",
+        "28tv"
+      ],
+      "graph_translations": [
+        [
+          "K'atun | time-period of 20 years",
+          6
+        ]
+      ],
+      "sign_translation": "K'atun | time-period of 20 years",
+      "readings": [
+        {
+          "value": "WINAKHAAB",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "325",
+      "distinct_graph_images": 6,
+      "examples": [
+        "325ts",
+        "325th",
+        "325do",
+        "325dt",
+        "325bt",
+        "325dh"
+      ],
+      "graph_translations": [
+        [
+          "to fall | to sink",
+          6
+        ]
+      ],
+      "sign_translation": "to fall | to sink",
+      "readings": [
+        {
+          "value": "JUB",
+          "type": "logogram",
+          "confidence_level": 7,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "44",
+      "distinct_graph_images": 6,
+      "examples": [
+        "44bv",
+        "44bt",
+        "44do",
+        "44dt",
+        "44hp",
+        "44bb"
+      ],
+      "graph_translations": [
+        [
+          "cloud | mist",
+          6
+        ]
+      ],
+      "sign_translation": "cloud | mist",
+      "readings": [
+        {
+          "value": "TOK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "to",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "507",
+      "distinct_graph_images": 6,
+      "examples": [
+        "507hh",
+        "507vt",
+        "507vc",
+        "507va",
+        "507vb",
+        "507vi"
+      ],
+      "graph_translations": [
+        [
+          "gourd",
+          6
+        ]
+      ],
+      "sign_translation": "gourd",
+      "readings": [
+        {
+          "value": "TZIMAH",
+          "type": "logogram",
+          "confidence_level": 2,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "tzi",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "548",
+      "distinct_graph_images": 6,
+      "examples": [
+        "548bv",
+        "548bt",
+        "548hh",
+        "548bb",
+        "548fc",
+        "548hp"
+      ],
+      "graph_translations": [
+        [
+          "year",
+          6
+        ]
+      ],
+      "sign_translation": "year",
+      "readings": [
+        {
+          "value": "HAAB",
+          "type": "logogram",
+          "confidence_level": 2,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "595",
+      "distinct_graph_images": 6,
+      "examples": [
+        "595tr",
+        "595ts",
+        "595tl",
+        "595th",
+        "595tp",
+        "595tm"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "no",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "630",
+      "distinct_graph_images": 6,
+      "examples": [
+        "630bh",
+        "630md",
+        "630br",
+        "630bl",
+        "630hh",
+        "630mt"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "sa",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1030",
+      "distinct_graph_images": 5,
+      "examples": [
+        "1030fc",
+        "1030bl",
+        "1030bh",
+        "1030br",
+        "1030ex"
+      ],
+      "graph_translations": [
+        [
+          "K'awiil (deity)",
+          5
+        ]
+      ],
+      "sign_translation": "K'awiil (deity)",
+      "readings": [
+        {
+          "value": "K'AWIIL",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "122",
+      "distinct_graph_images": 5,
+      "examples": [
+        "122hp",
+        "122bt",
+        "122bv",
+        "122mp",
+        "122fc"
+      ],
+      "graph_translations": [
+        [
+          "fire",
+          5
+        ]
+      ],
+      "sign_translation": "fire",
+      "readings": [
+        {
+          "value": "K'AK'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "126",
+      "distinct_graph_images": 5,
+      "examples": [
+        "126dt",
+        "126do",
+        "126ex",
+        "126st",
+        "126fc"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ya",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "177",
+      "distinct_graph_images": 5,
+      "examples": [
+        "177br",
+        "177mp",
+        "177bh",
+        "177bl",
+        "177bb"
+      ],
+      "graph_translations": [
+        [
+          "8000 | bundle | cloth",
+          5
+        ]
+      ],
+      "sign_translation": "8000 | bundle | cloth",
+      "readings": [
+        {
+          "value": "pi",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "PIK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "187",
+      "distinct_graph_images": 5,
+      "examples": [
+        "187ex",
+        "187hh",
+        "187bt",
+        "187dt",
+        "187bv"
+      ],
+      "graph_translations": [
+        [
+          "name",
+          5
+        ]
+      ],
+      "sign_translation": "name",
+      "readings": [
+        {
+          "value": "K'ABA'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "204",
+      "distinct_graph_images": 5,
+      "examples": [
+        "204bt",
+        "204bv",
+        "204ex",
+        "204fc",
+        "204md"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "u",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "569",
+      "distinct_graph_images": 5,
+      "examples": [
+        "569br",
+        "569hh",
+        "569st",
+        "569fc",
+        "569hc"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "MUT",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "586",
+      "distinct_graph_images": 5,
+      "examples": [
+        "586st",
+        "586hc",
+        "586fc",
+        "586fh",
+        "586hh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "pa",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "604",
+      "distinct_graph_images": 5,
+      "examples": [
+        "604mt",
+        "604dh",
+        "604bh",
+        "604bl",
+        "604br"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "k'u",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1078",
+      "distinct_graph_images": 4,
+      "examples": [
+        "1078vc",
+        "1078va",
+        "1078vs",
+        "1078vr"
+      ],
+      "graph_translations": [
+        [
+          "wound",
+          4
+        ]
+      ],
+      "sign_translation": "wound",
+      "readings": [
+        {
+          "value": "YA'",
+          "type": "logogram",
+          "confidence_level": 2,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "110",
+      "distinct_graph_images": 4,
+      "examples": [
+        "110st",
+        "110fh",
+        "110ex",
+        "110fc"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ko",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "124",
+      "distinct_graph_images": 4,
+      "examples": [
+        "124fc",
+        "124bv",
+        "124bt",
+        "124bb"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": []
+    },
+    {
+      "sign_no": "136",
+      "distinct_graph_images": 4,
+      "examples": [
+        "136ts",
+        "136mp",
+        "136tl",
+        "136th"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ji",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "152",
+      "distinct_graph_images": 4,
+      "examples": [
+        "152bl",
+        "152bh",
+        "152br",
+        "152fc"
+      ],
+      "graph_translations": [
+        [
+          "eagle",
+          4
+        ]
+      ],
+      "sign_translation": "eagle",
+      "readings": [
+        {
+          "value": "KOKAAJ",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1585",
+      "distinct_graph_images": 4,
+      "examples": [
+        "1585hc",
+        "1585vl",
+        "1585va",
+        "1585vc"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "HUL",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1678",
+      "distinct_graph_images": 4,
+      "examples": [
+        "1678vs",
+        "1678hc",
+        "1678vi",
+        "1678va"
+      ],
+      "graph_translations": [
+        [
+          "person (who)",
+          4
+        ]
+      ],
+      "sign_translation": "person (who)",
+      "readings": [
+        {
+          "value": "AJ",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "181",
+      "distinct_graph_images": 4,
+      "examples": [
+        "181bl",
+        "181bh",
+        "181hh",
+        "181br"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ja",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "186",
+      "distinct_graph_images": 4,
+      "examples": [
+        "186bv",
+        "186hc",
+        "186bt",
+        "186bb"
+      ],
+      "graph_translations": [
+        [
+          "sihoom-flower",
+          4
+        ]
+      ],
+      "sign_translation": "sihoom-flower",
+      "readings": [
+        {
+          "value": "SIHOOM",
+          "type": "logogram",
+          "confidence_level": 2,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "hi",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "211",
+      "distinct_graph_images": 4,
+      "examples": [
+        "211ti",
+        "211tv",
+        "211ta",
+        "211tc"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "u",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "29",
+      "distinct_graph_images": 4,
+      "examples": [
+        "29bv",
+        "29dt",
+        "29bt",
+        "29ex"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": []
+    },
+    {
+      "sign_no": "509",
+      "distinct_graph_images": 4,
+      "examples": [
+        "509bv",
+        "509bt",
+        "509bb",
+        "509hp"
+      ],
+      "graph_translations": [
+        [
+          "spirit companion",
+          4
+        ]
+      ],
+      "sign_translation": "spirit companion",
+      "readings": [
+        {
+          "value": "WAY",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "510",
+      "distinct_graph_images": 4,
+      "examples": [
+        "510bt",
+        "510bv",
+        "510bb",
+        "510dh"
+      ],
+      "graph_translations": [
+        [
+          "star",
+          4
+        ]
+      ],
+      "sign_translation": "star",
+      "readings": [
+        {
+          "value": "EK'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "528",
+      "distinct_graph_images": 4,
+      "examples": [
+        "528st",
+        "528ex",
+        "528hc",
+        "528fc"
+      ],
+      "graph_translations": [
+        [
+          "stone | year",
+          4
+        ]
+      ],
+      "sign_translation": "stone | year",
+      "readings": [
+        {
+          "value": "ku",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "TUUN",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "CHAHUK",
+          "type": "logogram",
+          "confidence_level": 8,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "536",
+      "distinct_graph_images": 4,
+      "examples": [
+        "536tm",
+        "536ts",
+        "536th",
+        "536td"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "xo",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "582",
+      "distinct_graph_images": 4,
+      "examples": [
+        "582bh",
+        "582bl",
+        "582fc",
+        "582ex"
+      ],
+      "graph_translations": [
+        [
+          "macaw",
+          4
+        ]
+      ],
+      "sign_translation": "macaw",
+      "readings": [
+        {
+          "value": "mo",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "MO'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "68",
+      "distinct_graph_images": 4,
+      "examples": [
+        "68ta",
+        "68tf",
+        "68tv",
+        "68tt"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "tz'a",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "77",
+      "distinct_graph_images": 4,
+      "examples": [
+        "77md",
+        "77st",
+        "77fc",
+        "77hh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "k'i",
+          "type": "phonogram",
+          "confidence_level": 2,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "ch'i",
+          "type": "phonogram",
+          "confidence_level": 2,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "93",
+      "distinct_graph_images": 4,
+      "examples": [
+        "93mp",
+        "93br",
+        "93bl",
+        "93bh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ch'a",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1013",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1013st",
+        "1013fh",
+        "1013fc"
+      ],
+      "graph_translations": [
+        [
+          "to clear milpa",
+          3
+        ]
+      ],
+      "sign_translation": "to clear milpa",
+      "readings": [
+        {
+          "value": "AK'IIN",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1014",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1014bh",
+        "1014fh",
+        "1014st"
+      ],
+      "graph_translations": [
+        [
+          "to ascend | to go up | to rise",
+          3
+        ]
+      ],
+      "sign_translation": "to ascend | to go up | to rise",
+      "readings": [
+        {
+          "value": "T'AB",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1031",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1031fh",
+        "1031fc",
+        "1031st"
+      ],
+      "graph_translations": [
+        [
+          "splash of water | water spay | waterfall",
+          3
+        ]
+      ],
+      "sign_translation": "splash of water | water spay | waterfall",
+      "readings": [
+        {
+          "value": "WITZ'",
+          "type": "logogram",
+          "confidence_level": 2,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1059",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1059bh",
+        "1059br",
+        "1059bl"
+      ],
+      "graph_translations": [
+        [
+          "wind deity",
+          3
+        ]
+      ],
+      "sign_translation": "wind deity",
+      "readings": []
+    },
+    {
+      "sign_no": "108",
+      "distinct_graph_images": 3,
+      "examples": [
+        "108md",
+        "108ts",
+        "108th"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "cha",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1086",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1086vc",
+        "1086va",
+        "1086vs"
+      ],
+      "graph_translations": [
+        [
+          "two (cha') | white (sak)",
+          3
+        ]
+      ],
+      "sign_translation": "two (cha') | white (sak)",
+      "readings": [
+        {
+          "value": "2",
+          "type": "numeric",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "CHA'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "SAK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "109",
+      "distinct_graph_images": 3,
+      "examples": [
+        "109bv",
+        "109bb",
+        "109ex"
+      ],
+      "graph_translations": [
+        [
+          "red",
+          3
+        ]
+      ],
+      "sign_translation": "red",
+      "readings": [
+        {
+          "value": "CHAK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "115",
+      "distinct_graph_images": 3,
+      "examples": [
+        "115br",
+        "115bl",
+        "115bh"
+      ],
+      "graph_translations": [
+        [
+          "leaf",
+          3
+        ]
+      ],
+      "sign_translation": "leaf",
+      "readings": [
+        {
+          "value": "YOP",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "yo",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "116",
+      "distinct_graph_images": 3,
+      "examples": [
+        "116st",
+        "116fh",
+        "116hf"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ni",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "15",
+      "distinct_graph_images": 3,
+      "examples": [
+        "15br",
+        "15bl",
+        "15bh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": []
+    },
+    {
+      "sign_no": "1515",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1515fh",
+        "1515st",
+        "1515ex"
+      ],
+      "graph_translations": [
+        [
+          "lord | ruler",
+          3
+        ]
+      ],
+      "sign_translation": "lord | ruler",
+      "readings": [
+        {
+          "value": "AJAW",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1520",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1520fc",
+        "1520bv",
+        "1520bt"
+      ],
+      "graph_translations": [
+        [
+          "Yopaat (name of deity)",
+          3
+        ]
+      ],
+      "sign_translation": "Yopaat (name of deity)",
+      "readings": [
+        {
+          "value": "YOPAAT",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1527",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1527hs",
+        "1527st",
+        "1527hc"
+      ],
+      "graph_translations": [
+        [
+          "claw | nail",
+          3
+        ]
+      ],
+      "sign_translation": "claw | nail",
+      "readings": [
+        {
+          "value": "ICH'AAK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1535",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1535md",
+        "1535bb",
+        "1535bv"
+      ],
+      "graph_translations": [
+        [
+          "to diminish",
+          3
+        ]
+      ],
+      "sign_translation": "to diminish",
+      "readings": [
+        {
+          "value": "LAM",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1536",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1536st",
+        "1536fc",
+        "1536ex"
+      ],
+      "graph_translations": [
+        [
+          "centipede",
+          3
+        ]
+      ],
+      "sign_translation": "centipede",
+      "readings": [
+        {
+          "value": "CHAPAAT",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1537",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1537br",
+        "1537bl",
+        "1537bh"
+      ],
+      "graph_translations": [
+        [
+          "to arrive here",
+          3
+        ]
+      ],
+      "sign_translation": "to arrive here",
+      "readings": [
+        {
+          "value": "HUL",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1568",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1568st",
+        "1568fh",
+        "1568ex"
+      ],
+      "graph_translations": [
+        [
+          "maize (ixiim) | one (juun)",
+          3
+        ]
+      ],
+      "sign_translation": "maize (ixiim) | one (juun)",
+      "readings": [
+        {
+          "value": "na",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "IXIIM",
+          "type": "logogram",
+          "confidence_level": 2,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "JUUN",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "1",
+          "type": "numeric",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "157",
+      "distinct_graph_images": 3,
+      "examples": [
+        "157bh",
+        "157bl",
+        "157br"
+      ],
+      "graph_translations": [
+        [
+          "cenote | hole | opening",
+          3
+        ]
+      ],
+      "sign_translation": "cenote | hole | opening",
+      "readings": [
+        {
+          "value": "WAY",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1576",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1576bb",
+        "1576hh",
+        "1576bv"
+      ],
+      "graph_translations": [
+        [
+          "lima bean",
+          3
+        ]
+      ],
+      "sign_translation": "lima bean",
+      "readings": [
+        {
+          "value": "IB",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1627",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1627br",
+        "1627hh",
+        "1627bh"
+      ],
+      "graph_translations": [
+        [
+          "hammer",
+          3
+        ]
+      ],
+      "sign_translation": "hammer",
+      "readings": [
+        {
+          "value": "ba",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "BAJ",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1677",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1677tv",
+        "1677vs",
+        "1677tf"
+      ],
+      "graph_translations": [
+        [
+          "person (who)",
+          3
+        ]
+      ],
+      "sign_translation": "person (who)",
+      "readings": [
+        {
+          "value": "AJ",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "168",
+      "distinct_graph_images": 3,
+      "examples": [
+        "168bt",
+        "168bv",
+        "168dh"
+      ],
+      "graph_translations": [
+        [
+          "lord | ruler",
+          3
+        ]
+      ],
+      "sign_translation": "lord | ruler",
+      "readings": [
+        {
+          "value": "AJAW",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1690",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1690bb",
+        "1690bt",
+        "1690bv"
+      ],
+      "graph_translations": [
+        [
+          "to drink",
+          3
+        ]
+      ],
+      "sign_translation": "to drink",
+      "readings": [
+        {
+          "value": "UK'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1691",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1691bb",
+        "1691bt",
+        "1691bv"
+      ],
+      "graph_translations": [
+        [
+          "to eat",
+          3
+        ]
+      ],
+      "sign_translation": "to eat",
+      "readings": [
+        {
+          "value": "WE'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "17",
+      "distinct_graph_images": 3,
+      "examples": [
+        "17hh",
+        "17br",
+        "17bh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "yi",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "173",
+      "distinct_graph_images": 3,
+      "examples": [
+        "173fh",
+        "173md",
+        "173st"
+      ],
+      "graph_translations": [
+        [
+          "no | nothing | zero",
+          3
+        ]
+      ],
+      "sign_translation": "no | nothing | zero",
+      "readings": [
+        {
+          "value": "0",
+          "type": "numeric",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "MIH",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "mi",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1742",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1742fh",
+        "1742bb",
+        "1742bv"
+      ],
+      "graph_translations": [
+        [
+          "five",
+          3
+        ]
+      ],
+      "sign_translation": "five",
+      "readings": [
+        {
+          "value": "HO'",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "5",
+          "type": "numeric",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "183",
+      "distinct_graph_images": 3,
+      "examples": [
+        "183bb",
+        "183hc",
+        "183bv"
+      ],
+      "graph_translations": [
+        [
+          "to arise | to cense | to go out",
+          3
+        ]
+      ],
+      "sign_translation": "to arise | to cense | to go out",
+      "readings": [
+        {
+          "value": "EL",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "185",
+      "distinct_graph_images": 3,
+      "examples": [
+        "185bb",
+        "185bv",
+        "185bt"
+      ],
+      "graph_translations": [
+        [
+          "body of water | pool | sea | waterlily",
+          3
+        ]
+      ],
+      "sign_translation": "body of water | pool | sea | waterlily",
+      "readings": [
+        {
+          "value": "NAAB",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1854",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1854bt",
+        "1854bv",
+        "1854bb"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "se",
+          "type": "phonogram",
+          "confidence_level": 3,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1867",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1867hc",
+        "1867bb",
+        "1867bv"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "cha",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "188",
+      "distinct_graph_images": 3,
+      "examples": [
+        "188ex",
+        "188st",
+        "188md"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "le",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "19",
+      "distinct_graph_images": 3,
+      "examples": [
+        "19vl",
+        "19vs",
+        "19vc"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "mu",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1900",
+      "distinct_graph_images": 3,
+      "examples": [
+        "1900ta",
+        "1900tc",
+        "1900tv"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "tze",
+          "type": "phonogram",
+          "confidence_level": 2,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "193",
+      "distinct_graph_images": 3,
+      "examples": [
+        "193bh",
+        "193bl",
+        "193br"
+      ],
+      "graph_translations": [
+        [
+          "ladder | stair | step",
+          3
+        ]
+      ],
+      "sign_translation": "ladder | stair | step",
+      "readings": [
+        {
+          "value": "EEB",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "203",
+      "distinct_graph_images": 3,
+      "examples": [
+        "203bl",
+        "203br",
+        "203bh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "tz'u",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "222",
+      "distinct_graph_images": 3,
+      "examples": [
+        "222bt",
+        "222md",
+        "222bv"
+      ],
+      "graph_translations": [
+        [
+          "to open | to uncover",
+          3
+        ]
+      ],
+      "sign_translation": "to open | to uncover",
+      "readings": [
+        {
+          "value": "PAS",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "223",
+      "distinct_graph_images": 3,
+      "examples": [
+        "223hc",
+        "223bt",
+        "223bv"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": []
+    },
+    {
+      "sign_no": "229",
+      "distinct_graph_images": 3,
+      "examples": [
+        "229fc",
+        "229bl",
+        "229bh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "a",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "25",
+      "distinct_graph_images": 3,
+      "examples": [
+        "25md",
+        "25st",
+        "25mt"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ka",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "251",
+      "distinct_graph_images": 3,
+      "examples": [
+        "251th",
+        "251tl",
+        "251ts"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ba",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "278",
+      "distinct_graph_images": 3,
+      "examples": [
+        "278bv",
+        "278bt",
+        "278bb"
+      ],
+      "graph_translations": [
+        [
+          "atole | corn gruel",
+          3
+        ]
+      ],
+      "sign_translation": "atole | corn gruel",
+      "readings": [
+        {
+          "value": "SA'",
+          "type": "logogram",
+          "confidence_level": 2,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "281",
+      "distinct_graph_images": 3,
+      "examples": [
+        "281hp",
+        "281hc",
+        "281st"
+      ],
+      "graph_translations": [
+        [
+          "bench | ripe | yellow",
+          3
+        ]
+      ],
+      "sign_translation": "bench | ripe | yellow",
+      "readings": [
+        {
+          "value": "K'AN",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "282",
+      "distinct_graph_images": 3,
+      "examples": [
+        "282st",
+        "282md",
+        "282ex"
+      ],
+      "graph_translations": [
+        [
+          "intermediary | ritual speaker",
+          3
+        ]
+      ],
+      "sign_translation": "intermediary | ritual speaker",
+      "readings": [
+        {
+          "value": "NUUN",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "502",
+      "distinct_graph_images": 3,
+      "examples": [
+        "502hh",
+        "502hp",
+        "502st"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ma",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "503",
+      "distinct_graph_images": 3,
+      "examples": [
+        "503vc",
+        "503va",
+        "503fh"
+      ],
+      "graph_translations": [
+        [
+          "breath | spirit | wind",
+          3
+        ]
+      ],
+      "sign_translation": "breath | spirit | wind",
+      "readings": [
+        {
+          "value": "IK'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "520",
+      "distinct_graph_images": 3,
+      "examples": [
+        "520hs",
+        "520st",
+        "520fc"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "se",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "529",
+      "distinct_graph_images": 3,
+      "examples": [
+        "529hp",
+        "529st",
+        "529hc"
+      ],
+      "graph_translations": [
+        [
+          "hill | mountain | woods",
+          3
+        ]
+      ],
+      "sign_translation": "hill | mountain | woods",
+      "readings": [
+        {
+          "value": "WITZ",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "530",
+      "distinct_graph_images": 3,
+      "examples": [
+        "530bb",
+        "530bv",
+        "530bt"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "k'o",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "533",
+      "distinct_graph_images": 3,
+      "examples": [
+        "533hs",
+        "533hc",
+        "533st"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "SAAK",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "AJAW",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "535",
+      "distinct_graph_images": 3,
+      "examples": [
+        "535va",
+        "535vc",
+        "535vs"
+      ],
+      "graph_translations": [
+        [
+          "child of father",
+          3
+        ]
+      ],
+      "sign_translation": "child of father",
+      "readings": [
+        {
+          "value": "MIJIIN",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "542",
+      "distinct_graph_images": 3,
+      "examples": [
+        "542fc",
+        "542ex",
+        "542st"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "e",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "544",
+      "distinct_graph_images": 3,
+      "examples": [
+        "544st",
+        "544ex",
+        "544fh"
+      ],
+      "graph_translations": [
+        [
+          "day | heat | sun | time",
+          3
+        ]
+      ],
+      "sign_translation": "day | heat | sun | time",
+      "readings": [
+        {
+          "value": "K'IN",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "CHAN",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "545",
+      "distinct_graph_images": 3,
+      "examples": [
+        "545st",
+        "545fh",
+        "545hh"
+      ],
+      "graph_translations": [
+        [
+          "aged sun | dark sun | ripe sun | sundown",
+          3
+        ]
+      ],
+      "sign_translation": "aged sun | dark sun | ripe sun | sundown",
+      "readings": [
+        {
+          "value": "IK'IN",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "580",
+      "distinct_graph_images": 3,
+      "examples": [
+        "580hs",
+        "580st",
+        "580hc"
+      ],
+      "graph_translations": [
+        [
+          "likeness",
+          3
+        ]
+      ],
+      "sign_translation": "likeness",
+      "readings": [
+        {
+          "value": "CHIT",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "lo",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "585",
+      "distinct_graph_images": 3,
+      "examples": [
+        "585st",
+        "585hh",
+        "585hc"
+      ],
+      "graph_translations": [
+        [
+          "road",
+          3
+        ]
+      ],
+      "sign_translation": "road",
+      "readings": [
+        {
+          "value": "BIH",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "bi",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "607",
+      "distinct_graph_images": 3,
+      "examples": [
+        "607hh",
+        "607bt",
+        "607bv"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "jo",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "609",
+      "distinct_graph_images": 3,
+      "examples": [
+        "609st",
+        "609hp",
+        "609ex"
+      ],
+      "graph_translations": [
+        [
+          "throne",
+          3
+        ]
+      ],
+      "sign_translation": "throne",
+      "readings": [
+        {
+          "value": "TZ'AM",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "61",
+      "distinct_graph_images": 3,
+      "examples": [
+        "61bv",
+        "61bt",
+        "61dt"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "yu",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "610",
+      "distinct_graph_images": 3,
+      "examples": [
+        "610hc",
+        "610bv",
+        "610bt"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": []
+    },
+    {
+      "sign_no": "675",
+      "distinct_graph_images": 3,
+      "examples": [
+        "675hh",
+        "675bv",
+        "675bb"
+      ],
+      "graph_translations": [
+        [
+          "edge | lips | mouth",
+          3
+        ]
+      ],
+      "sign_translation": "edge | lips | mouth",
+      "readings": [
+        {
+          "value": "TI'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "680",
+      "distinct_graph_images": 3,
+      "examples": [
+        "680st",
+        "680ex",
+        "680fh"
+      ],
+      "graph_translations": [
+        [
+          "\"Cib\" (day name) | Chuwaaj (name of deity)",
+          3
+        ]
+      ],
+      "sign_translation": "\"Cib\" (day name) | Chuwaaj (name of deity)",
+      "readings": [
+        {
+          "value": "CHUWAAJ",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "713",
+      "distinct_graph_images": 3,
+      "examples": [
+        "713bb",
+        "713bv",
+        "713hh"
+      ],
+      "graph_translations": [
+        [
+          "to bind | to hold",
+          3
+        ]
+      ],
+      "sign_translation": "to bind | to hold",
+      "readings": [
+        {
+          "value": "K'AL",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "717",
+      "distinct_graph_images": 3,
+      "examples": [
+        "717hh",
+        "717br",
+        "717bh"
+      ],
+      "graph_translations": [
+        [
+          "to die",
+          3
+        ]
+      ],
+      "sign_translation": "to die",
+      "readings": [
+        {
+          "value": "CHAM",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "731",
+      "distinct_graph_images": 3,
+      "examples": [
+        "731bv",
+        "731bb",
+        "731hh"
+      ],
+      "graph_translations": [
+        [
+          "face | moon",
+          3
+        ]
+      ],
+      "sign_translation": "face | moon",
+      "readings": [
+        {
+          "value": "UH",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "UT",
+          "type": "logogram",
+          "confidence_level": 3,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "79",
+      "distinct_graph_images": 3,
+      "examples": [
+        "79bv",
+        "79mq",
+        "79bt"
+      ],
+      "graph_translations": [
+        [
+          "to build | to form | to shape",
+          3
+        ]
+      ],
+      "sign_translation": "to build | to form | to shape",
+      "readings": [
+        {
+          "value": "PAT",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "819",
+      "distinct_graph_images": 3,
+      "examples": [
+        "819bh",
+        "819bl",
+        "819br"
+      ],
+      "graph_translations": [
+        [
+          "to see | to visit",
+          3
+        ]
+      ],
+      "sign_translation": "to see | to visit",
+      "readings": [
+        {
+          "value": "IL",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "86",
+      "distinct_graph_images": 3,
+      "examples": [
+        "86bv",
+        "86hh",
+        "86bt"
+      ],
+      "graph_translations": [
+        [
+          "ear of corn | habitant | place with cultivated crops",
+          3
+        ]
+      ],
+      "sign_translation": "ear of corn | habitant | place with cultivated crops",
+      "readings": [
+        {
+          "value": "NAL",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "87",
+      "distinct_graph_images": 3,
+      "examples": [
+        "87bv",
+        "87bt",
+        "87bb"
+      ],
+      "graph_translations": [
+        [
+          "forest | staff | stick | tree | wood",
+          3
+        ]
+      ],
+      "sign_translation": "forest | staff | stick | tree | wood",
+      "readings": [
+        {
+          "value": "TE'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "99",
+      "distinct_graph_images": 3,
+      "examples": [
+        "99st",
+        "99hc",
+        "99ex"
+      ],
+      "graph_translations": [
+        [
+          "o'-bird",
+          3
+        ]
+      ],
+      "sign_translation": "o'-bird",
+      "readings": [
+        {
+          "value": "o",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1003",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1003st",
+        "1003fh"
+      ],
+      "graph_translations": [
+        [
+          "fresh | green | new | nine",
+          2
+        ]
+      ],
+      "sign_translation": "fresh | green | new | nine",
+      "readings": [
+        {
+          "value": "BALUUN",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "YAX",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "9",
+          "type": "numeric",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "ba",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1004",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1004fh",
+        "1004st"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "sa",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1005",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1005st",
+        "1005fh"
+      ],
+      "graph_translations": [
+        [
+          "eleven",
+          2
+        ]
+      ],
+      "sign_translation": "eleven",
+      "readings": [
+        {
+          "value": "11",
+          "type": "numeric",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "BULUCH",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "BULUK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1006",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1006st",
+        "1006fh"
+      ],
+      "graph_translations": [
+        [
+          "Classic Maya Maize God | corn cob | elote",
+          2
+        ]
+      ],
+      "sign_translation": "Classic Maya Maize God | corn cob | elote",
+      "readings": [
+        {
+          "value": "8",
+          "type": "numeric",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "WAXAK",
+          "type": "logogram",
+          "confidence_level": 8,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "AJAN",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1025",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1025fh",
+        "1025st"
+      ],
+      "graph_translations": [
+        [
+          "moon",
+          2
+        ]
+      ],
+      "sign_translation": "moon",
+      "readings": [
+        {
+          "value": "UUW",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1026",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1026br",
+        "1026bh"
+      ],
+      "graph_translations": [
+        [
+          "woman",
+          2
+        ]
+      ],
+      "sign_translation": "woman",
+      "readings": [
+        {
+          "value": "IXIK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "103",
+      "distinct_graph_images": 2,
+      "examples": [
+        "103st",
+        "103ex"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ta",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1033",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1033st",
+        "1033fc"
+      ],
+      "graph_translations": [
+        [
+          "Bak'tun | period of 400 years",
+          2
+        ]
+      ],
+      "sign_translation": "Bak'tun | period of 400 years",
+      "readings": [
+        {
+          "value": "PIK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1034",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1034fc",
+        "1034st"
+      ],
+      "graph_translations": [
+        [
+          "Tun | period of 360 days | year",
+          2
+        ]
+      ],
+      "sign_translation": "Tun | period of 360 days | year",
+      "readings": [
+        {
+          "value": "HAAB",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1042",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1042br",
+        "1042bh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ha",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1045",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1045fc",
+        "1045st"
+      ],
+      "graph_translations": [
+        [
+          "bone",
+          2
+        ]
+      ],
+      "sign_translation": "bone",
+      "readings": [
+        {
+          "value": "BAAK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1049",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1049bh",
+        "1049br"
+      ],
+      "graph_translations": [
+        [
+          "necklace",
+          2
+        ]
+      ],
+      "sign_translation": "necklace",
+      "readings": [
+        {
+          "value": "UH",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1060",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1060fc",
+        "1060st"
+      ],
+      "graph_translations": [
+        [
+          "six",
+          2
+        ]
+      ],
+      "sign_translation": "six",
+      "readings": [
+        {
+          "value": "WAK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "6",
+          "type": "numeric",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1071",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1071st",
+        "1071fc"
+      ],
+      "graph_translations": [
+        [
+          "spear | stick | stuff | tree | wood",
+          2
+        ]
+      ],
+      "sign_translation": "spear | stick | stuff | tree | wood",
+      "readings": [
+        {
+          "value": "TE'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "117",
+      "distinct_graph_images": 2,
+      "examples": [
+        "117st",
+        "117md"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "wi",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "12",
+      "distinct_graph_images": 2,
+      "examples": [
+        "12st",
+        "12md"
+      ],
+      "graph_translations": [
+        [
+          "person who",
+          2
+        ]
+      ],
+      "sign_translation": "person who",
+      "readings": [
+        {
+          "value": "AJ",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "a",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "120",
+      "distinct_graph_images": 2,
+      "examples": [
+        "120bh",
+        "120bl"
+      ],
+      "graph_translations": [
+        [
+          "to sing",
+          2
+        ]
+      ],
+      "sign_translation": "to sing",
+      "readings": [
+        {
+          "value": "K'AY",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "121",
+      "distinct_graph_images": 2,
+      "examples": [
+        "121st",
+        "121hc"
+      ],
+      "graph_translations": [
+        [
+          "shiny",
+          2
+        ]
+      ],
+      "sign_translation": "shiny",
+      "readings": [
+        {
+          "value": "WIN",
+          "type": "logogram",
+          "confidence_level": 8,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "LEEM",
+          "type": "logogram",
+          "confidence_level": 8,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "128",
+      "distinct_graph_images": 2,
+      "examples": [
+        "128st",
+        "128hh"
+      ],
+      "graph_translations": [
+        [
+          "edge | mouth",
+          2
+        ]
+      ],
+      "sign_translation": "edge | mouth",
+      "readings": [
+        {
+          "value": "TI'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "130",
+      "distinct_graph_images": 2,
+      "examples": [
+        "130bl",
+        "130bh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "wa",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "145",
+      "distinct_graph_images": 2,
+      "examples": [
+        "145st",
+        "145md"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "che",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1500",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1500bt",
+        "1500bv"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "DAY",
+          "type": "diacritic",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1501",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1501bh",
+        "1501br"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "me",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1503",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1503st",
+        "1503hh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": []
+    },
+    {
+      "sign_no": "1504",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1504bb",
+        "1504bv"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "TI'",
+          "type": "logogram",
+          "confidence_level": 7,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1506",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1506st",
+        "1506fh"
+      ],
+      "graph_translations": [
+        [
+          "incenser | scatterer of incense | young lord",
+          2
+        ]
+      ],
+      "sign_translation": "incenser | scatterer of incense | young lord",
+      "readings": [
+        {
+          "value": "CH'AJOOM",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1512",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1512bv",
+        "1512bt"
+      ],
+      "graph_translations": [
+        [
+          "to arrive here",
+          2
+        ]
+      ],
+      "sign_translation": "to arrive here",
+      "readings": [
+        {
+          "value": "HUL",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1516",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1516hh",
+        "1516st"
+      ],
+      "graph_translations": [
+        [
+          "body of water | lake | pool",
+          2
+        ]
+      ],
+      "sign_translation": "body of water | lake | pool",
+      "readings": [
+        {
+          "value": "HA'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1519",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1519fc",
+        "1519st"
+      ],
+      "graph_translations": [
+        [
+          "period of 20 days | person",
+          2
+        ]
+      ],
+      "sign_translation": "period of 20 days | person",
+      "readings": [
+        {
+          "value": "WINIK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "WINAK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1521",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1521fc",
+        "1521st"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "ji",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1538",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1538fc",
+        "1538st"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": []
+    },
+    {
+      "sign_no": "1544",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1544bh",
+        "1544br"
+      ],
+      "graph_translations": [
+        [
+          "cave",
+          2
+        ]
+      ],
+      "sign_translation": "cave",
+      "readings": [
+        {
+          "value": "CH'EEN",
+          "type": "logogram",
+          "confidence_level": 3,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1551",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1551bv",
+        "1551bt"
+      ],
+      "graph_translations": [
+        [
+          "to paint | to write",
+          2
+        ]
+      ],
+      "sign_translation": "to paint | to write",
+      "readings": [
+        {
+          "value": "TZ'IIB",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1554",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1554st",
+        "1554ex"
+      ],
+      "graph_translations": [
+        [
+          "Chaak (name of rain deity)",
+          2
+        ]
+      ],
+      "sign_translation": "Chaak (name of rain deity)",
+      "readings": [
+        {
+          "value": "CHAAK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1557",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1557bb",
+        "1557bv"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "cha",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1565",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1565bl",
+        "1565bh"
+      ],
+      "graph_translations": [
+        [
+          "to open | to split",
+          2
+        ]
+      ],
+      "sign_translation": "to open | to split",
+      "readings": [
+        {
+          "value": "KAL",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1566",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1566hc",
+        "1566st"
+      ],
+      "graph_translations": [
+        [
+          "plate",
+          2
+        ]
+      ],
+      "sign_translation": "plate",
+      "readings": [
+        {
+          "value": "LAK",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1578",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1578st",
+        "1578hh"
+      ],
+      "graph_translations": [
+        [
+          "twenty",
+          2
+        ]
+      ],
+      "sign_translation": "twenty",
+      "readings": [
+        {
+          "value": "WINAAK",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1579",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1579fc",
+        "1579st"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "LAJUUN",
+          "type": "logogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        },
+        {
+          "value": "10",
+          "type": "numeric",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "158",
+      "distinct_graph_images": 2,
+      "examples": [
+        "158bv",
+        "158bt"
+      ],
+      "graph_translations": [
+        [
+          "last | root",
+          2
+        ]
+      ],
+      "sign_translation": "last | root",
+      "readings": [
+        {
+          "value": "WI'",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1590",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1590st",
+        "1590fh"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "u",
+          "type": "phonogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1599",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1599ex",
+        "1599st"
+      ],
+      "graph_translations": [
+        [
+          "opener",
+          2
+        ]
+      ],
+      "sign_translation": "opener",
+      "readings": [
+        {
+          "value": "KALOOM",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "16",
+      "distinct_graph_images": 2,
+      "examples": [
+        "16md",
+        "16st"
+      ],
+      "graph_translations": [
+        [
+          "first | fresh | green",
+          2
+        ]
+      ],
+      "sign_translation": "first | fresh | green",
+      "readings": [
+        {
+          "value": "YAX",
+          "type": "logogram",
+          "confidence_level": 1,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1607",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1607br",
+        "1607bh"
+      ],
+      "graph_translations": [
+        [
+          "ballcourt",
+          2
+        ]
+      ],
+      "sign_translation": "ballcourt",
+      "readings": []
+    },
+    {
+      "sign_no": "1608",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1608ti",
+        "1608tv"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": [
+        {
+          "value": "tzo",
+          "type": "phonogram",
+          "confidence_level": 4,
+          "sign_reference_resolved": true
+        }
+      ]
+    },
+    {
+      "sign_no": "1610",
+      "distinct_graph_images": 2,
+      "examples": [
+        "1610bv",
+        "1610bb"
+      ],
+      "graph_translations": [],
+      "sign_translation": "",
+      "readings": []
+    }
+  ]
+}
