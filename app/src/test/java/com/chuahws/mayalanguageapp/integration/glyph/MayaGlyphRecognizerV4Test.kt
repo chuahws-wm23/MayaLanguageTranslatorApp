@@ -66,25 +66,6 @@ class MayaGlyphRecognizerV4Test {
         assertTrue(MayaGlyphRecognizerV4.reconcileLightingViews(first, null).reviewRecommended)
     }
 
-    @Test
-    fun threeViewsKeepOriginalWhenSupportedBySecondPass() {
-        val a = MayaGlyphRecognizerV4.interpret(FloatArray(10) { if (it == 0) 5f else 0f })
-        val b = MayaGlyphRecognizerV4.interpret(FloatArray(10) { if (it == 4) 5f else 0f })
-        val result = MayaGlyphRecognizerV4.reconcileThreeViews(a, b, a)
-        assertEquals(32, result.signNumber)
-        assertTrue(!result.reviewRecommended)
-    }
-
-    @Test
-    fun threeViewsFlagUnstableOrMissingInputs() {
-        val a = MayaGlyphRecognizerV4.interpret(FloatArray(10) { if (it == 0) 5f else 0f })
-        val b = MayaGlyphRecognizerV4.interpret(FloatArray(10) { if (it == 4) 5f else 0f })
-        val c = MayaGlyphRecognizerV4.interpret(FloatArray(10) { if (it == 7) 5f else 0f })
-        assertTrue(MayaGlyphRecognizerV4.reconcileThreeViews(a, b, c).reviewRecommended)
-        assertTrue(MayaGlyphRecognizerV4.reconcileThreeViews(a, null, null).reviewRecommended)
-        assertTrue(!MayaGlyphRecognizerV4.reconcileThreeViews(a, a, null).reviewRecommended)
-    }
-
     @Test(expected = IllegalArgumentException::class)
     fun refusesUnexpectedImageDimensions() {
         GlyphV2Preprocessor.fromGrayscale(IntArray(80 * 80) { 255 }, 80, 80, 192)

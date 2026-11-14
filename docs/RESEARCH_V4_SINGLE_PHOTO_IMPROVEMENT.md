@@ -1,46 +1,64 @@
-# Research v4 — single-sign photo reliability, 15 November 2026
+# Research v4 single-glyph focus — measured results, 15 Nov 2026
 
-## Scope
-Only the **single glyph** interface and v4 photo input handling were updated.
-The ten trained TWKM categories and the ONNX weights are **unchanged**.
-Existing multi-glyph features are preserved but moved behind an optional
-panel-tools button to avoid confusing them with the requested single-sign test.
+## Change that remains in the Android app
 
-## Why all existing datasets cannot be concatenated as one labelled set
-- **TWKM** contains visually labelled graphs and proposed readings. It is the
-  only source presently verified for the ten sign identities in the Android v4
-  classifier.
-- **Kaggle Mayan Glyphs** contains 80 usable font *keyboard-key* labels, but
-  no verified font-key-to-TWKM crosswalk. A generic font-key classification
-  pretraining experiment exists; its 100% synthetic accuracy is NOT
-  glyph-to-English accuracy, and its held-out font-style test was only 10.2%.
-- **Kaikki / modern Yucatec dictionary** is text/lexicon data, not labelled
-  images of Classical Maya glyphs.
-Training the ten-class head using any unrelated font-key or dictionary label
-would create false readings. Do not treat a coincidental Thompson/TWKM number
-as a validated mapping: the catalogues use different numbering schemes.
+- **Recognise this single glyph** is now the primary photo action.
+- The legacy automatic/grid panel functions are accessible behind
+  **Panel scanning tools (optional)**. No multi-block recognition change.
+- The same Research v4 10-sign ONNX weights, SHA256, sign-to-gloss map and
+  original + shadow-corrected photo views remain deployed.
 
-## Changes
-- Added a third (median-denoised) **image preprocessing view** for Research v4
-  single-glyph recognition. The trained ten-class model runs on each view;
-  the original guess must agree with at least one other view.
-- The result is still an experimental *possible match*, never a verified
-  reading. Agreement does not detect truly unsupported glyphs or increase
-  the trained class count.
-- Promoted **Recognise this single glyph** to the primary photo action.
-  Grouped the automatic/assisted panel scanners into optional tools.
-- Added unit tests for median noise reduction and three-view consensus.
+## Three-view proposal was evaluated and rejected
 
-## Acceptance tests to run on actual Android devices
-1. Use a clean, correctly labelled held-out TWKM image to verify the predicted
-   sign number; repeat with a photo of that same drawing under shadow/noise.
-2. Use different independently labelled real drawings of supported signs.
-   Count correct / total, uncertain / total, and incorrect accepted / total.
-3. Use signs outside the ten classes, blank/noise, arbitrary symbols and
-   full inscriptions. Record false accepted guesses.
-4. Check latency, repeated scans, gallery/camera, rotation and offline use.
-5. Keep each underlying source drawing entirely in one train/test partition.
+A third median-denoised photo view was trialled but **reverted** after a
+source-faithful TWKM evaluation showed no gain in correctly accepted
+supported signs and more false acceptance of unknown signs.
 
-**No new claimed recognition accuracy** can be stated until labelled independent
-photographs are evaluated. The prior 7/10 is the old catalogue-only figure.
-Research v4 remains unchanged in version and trained coverage.
+The evaluation ran the actual ONNX weights in Python with an approximation
+of Android preprocessing on the original TWKM drawing pixels. These figures
+are NOT independent phone photograph accuracy.
+
+| Task | Original two-view | Experimental three-view |
+| --- | --- | --- |
+| Clean supported validation, correct accepted | 8/10 | 8/10 |
+| Simulated-photo validation, correct accepted | 24/30 | 24/30 |
+| Exposed original supported holdout, correct accepted | 7/10 | 7/10 |
+| Unknown sign IDs accepted incorrectly | 77/80 | **80/80** |
+| Unknown sign IDs rejected | 3/80 | 0/80 |
+
+The extra view increased false positives, so it was not kept.
+
+Research run:
+https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/43627701899
+
+## Training experiment with datasets
+
+Reproducible same-v4 retraining uses the pinned TWKM drawing IDs for
+supervised learning and the Kaggle font images ONLY for unlabelled ink
+coverage/style statistics. There is no verified U_XXXX font-key-to-TWKM
+crosswalk. Modern Yucatec/Kaikki dictionary text cannot act as labelled
+Classic Maya glyph images.
+
+- Existing v4 on 10 known validation originals: **8/10**.
+- New style-augmented v4 candidate: **8/10**.
+- Existing v4 on 30 synthetic variations: **21/30**.
+- New candidate on 30 synthetic variations: **21/30**.
+
+As no validated gain occurred, the trained candidate was rejected and
+the original Android model weights were kept.
+
+Training run:
+https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/43626942105
+
+## Scientific limits
+
+The current v4 classifier supports only ten TWKM sign classes. Neither
+two-view agreement nor an attractive-looking English gloss proves a
+correct identification. The 77/80 wrongly accepted unknown-sign
+result shows the old classifier has poor open-set rejection.
+
+Meaningful gains require (1) independently labelled real photos for
+each target sign and extra unknown signs, (2) calibration for false
+acceptance, and (3) an untouched independent camera test before a
+release. We cannot claim that this update increases independent
+real-photo accuracy.

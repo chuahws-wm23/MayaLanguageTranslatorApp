@@ -69,25 +69,4 @@ internal object GlyphV4PhotoNormalizer {
         }
         return corrected
     }
-
-    /**
-     * Third *optional* view for isolated noisy photos. A 3x3 median removes
-     * isolated camera noise but can also erase very thin marks, so the original
-     * unsmoothed view remains authoritative in the v4 consensus.
-     */
-    fun medianDenoise(gray: IntArray, width: Int, height: Int): IntArray {
-        require(width >= 25 && height >= 25 && gray.size == width * height)
-        require(gray.all { it in 0..255 })
-        val dst = gray.copyOf()
-        val window = IntArray(9)
-        for (y in 1 until height - 1) for (x in 1 until width - 1) {
-            var count = 0
-            for (dy in -1..1) for (dx in -1..1) {
-                window[count++] = gray[(y + dy) * width + x + dx]
-            }
-            window.sort()
-            dst[y * width + x] = window[4]
-        }
-        return dst
-    }
 }

@@ -85,7 +85,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Maya glyph recognition", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text("Choose a photo showing ONE Maya sign. Crop tightly around the complete sign, " +
-                        "with a small margin. Research v4 tries three treatments for lighting/noise; " +
+                        "with a small margin. Research v4 compares normal and shadow-corrected photos; " +
                         "a suggested meaning is still unverified.")
                     FilledTonalButton(
                         onClick = {
@@ -165,7 +165,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                                 "It can reject valid drawings and still accept incorrect ones. Deer/Cacao NOT included."
                         GlyphModelMode.RESEARCH_V4 ->
                             "v4 (default): Ten TWKM sign categories. Works on photos chosen from Gallery or Camera " +
-                                "without a catalogue lookup. It compares three photo treatments and " +
+                                "without a catalogue lookup. It compares two photo treatments and " +
                                 "flags unstable results. Unknown signs can still be misidentified; Deer/Cacao are NOT included."
                     }
                     Text(modelDescription, style = MaterialTheme.typography.bodySmall)
@@ -292,7 +292,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         "NOT independent phone-photo accuracy."
                 GlyphModelMode.RESEARCH_V4 ->
                     "Research v4 · Same fine-tuned MobileNetV3 weights, ten sign categories; " +
-                        "three photo views (original, shadow-corrected, denoised). Agreement is NOT proof " +
+                        "two photo views (original and shadow-corrected). Agreement is NOT proof " +
                         "that an unfamiliar sign is supported. Previous 7/10 test came from " +
                         "catalogue drawings only; real photo accuracy is still unmeasured."
             }

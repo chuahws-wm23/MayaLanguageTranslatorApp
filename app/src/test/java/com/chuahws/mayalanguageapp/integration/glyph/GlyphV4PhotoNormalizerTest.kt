@@ -40,26 +40,6 @@ class GlyphV4PhotoNormalizerTest {
         GlyphV2Preprocessor.fromGrayscale(photo, 80, 80, 160)
     }
 
-    @Test
-    fun medianRemovesIsolatedCameraNoiseWithoutDestroyingSolidInk() {
-        val width = 80
-        val height = 80
-        val pixels = IntArray(width * height) { 225 }
-        for (y in 20..60) for (x in 20..60) pixels[y * width + x] = 25
-        pixels[10 * width + 10] = 0
-        pixels[40 * width + 40] = 245
-        val filtered = GlyphV4PhotoNormalizer.medianDenoise(pixels, width, height)
-        assertEquals(225, filtered[10 * width + 10])
-        assertEquals(25, filtered[40 * width + 40])
-        assertEquals(25, filtered[40 * width + 35])
-        assertEquals(225, filtered[5 * width + 5])
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun medianRejectsMalformedPhoto() {
-        GlyphV4PhotoNormalizer.medianDenoise(IntArray(8), 80, 80)
-    }
-
     @Test(expected = IllegalArgumentException::class)
     fun corruptedPixelBufferIsRejected() {
         GlyphV4PhotoNormalizer.correct(IntArray(6), 80, 80)

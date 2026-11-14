@@ -259,7 +259,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                                     }
                                     GlyphModelMode.RESEARCH_V4 -> {
                                         val result = MayaGlyphRecognizerV4.fromAssets(getApplication())
-                                            .recognize(cropped, singleSignMode = false)
+                                            .recognize(cropped)
                                         MultiGlyphItem(
                                             index + 1, region,
                                             if (result.reviewRecommended) null else result.reading,
