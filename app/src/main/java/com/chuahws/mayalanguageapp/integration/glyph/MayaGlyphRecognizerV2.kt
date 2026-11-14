@@ -25,6 +25,14 @@ data class GlyphV2Result(
     val status: String = "EXPERIMENTAL_CLOSED_SET_PREDICTION"
 }
 
+data class GlyphV3Result(
+    val possibleMatch: GlyphV2Result?,
+    val screenedOut: Boolean,
+) {
+    val status: String = if (screenedOut) "NO_RELIABLE_SUPPORTED_MATCH"
+        else "POSSIBLE_MATCH_UNVERIFIED"
+}
+
 class MayaGlyphRecognizerV2 private constructor(
     private val environment: OrtEnvironment,
     private val visual: OrtSession,
@@ -90,6 +98,24 @@ class MayaGlyphRecognizerV2 private constructor(
 
     /** Call from Dispatchers.Default, never directly from a Compose render. */
     fun recognize(bitmap: Bitmap): GlyphV2Result {
+        val (classIndex, _) = evaluate(bitmap)
+        return candidate(classIndex)
+    }
+
+    /** Same trained visual network and classifier, but reject uncertain predictions. */
+    internal fun recognizeWithScreening(bitmap: Bitmap, screening: GlyphV3Screening): GlyphV3Result {
+        val (classIndex, embeddings) = evaluate(bitmap)
+        val screened = screening.screen(embeddings, classIndex)
+        return GlyphV3Result(
+            possibleMatch = if (screened.accepted) candidate(classIndex) else null,
+            screenedOut = !screened.accepted,
+        )
+    }
+
+    private fun candidate(classIndex: Int): GlyphV2Result =
+        GlyphV2Result(signs[classIndex], readings[classIndex], meanings[classIndex])
+
+    private fun evaluate(bitmap: Bitmap): Pair<Int, FloatArray> {
         val tensorData = GlyphV2Preprocessor.fromBitmap(bitmap)
         val visualTensor = createTensor(
             environment, tensorData, longArrayOf(1, 3, 224, 224),
@@ -130,6 +156,6 @@ class MayaGlyphRecognizerV2 private constructor(
         require(classIndex in signs.indices) {
             "Classifier returned an unsupported class."
         }
-        return GlyphV2Result(signs[classIndex], readings[classIndex], meanings[classIndex])
+        return classIndex to embeddings
     }
 }
