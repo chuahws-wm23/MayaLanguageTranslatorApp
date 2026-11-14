@@ -148,7 +148,7 @@ internal object GlyphV2Preprocessor {
             val inkFraction = (a * (1.0 - dx) + b * dx) * (1.0 - dy) +
                 (c * (1.0 - dx) + d * dx) * dy
             // cv2 uint8 resize quantizes to nearest 8-bit value.
-            channel[y * SIDE + x] = (255.0 - (inkFraction * 255.0).roundToInt()) / 255.0f
+            channel[y * SIDE + x] = (255 - (inkFraction * 255.0).roundToInt()).toFloat() / 255f
         }
         val output = FloatArray(3 * channel.size)
         for (c in 0..2) for (i in channel.indices) {
