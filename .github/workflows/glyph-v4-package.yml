@@ -1,0 +1,49 @@
+name: Package Maya glyph v4 evaluated research model
+on:
+  push:
+    branches: [glyph-v4-expanded-training]
+    paths:
+      - 'ml/glyph_v4/RESULTS.md'
+      - '.github/workflows/glyph-v4-package.yml'
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: glyph-v4-expanded-training
+      - name: Create self-documented v4 research bundle
+        run: |
+          python - <<'PY'
+          import hashlib,zipfile
+          from pathlib import Path
+          root=Path('ml/glyph_v4')
+          names=[
+            'README.md','RESULTS.md','train_v4.py','export_onnx.py',
+            'outputs/evaluation.json','outputs/split_manifest.json',
+            'outputs/metadata.json','outputs/mobilenet_v4_finetuned.pt',
+            'outputs/gallery_v4.bin','outputs/android/maya_glyph_v4.onnx',
+            'outputs/android/metadata.json'
+          ]
+          zipfile_path=root/'releases/MayaGlyph_v4_Research_NotDeployed.zip'
+          zipfile_path.parent.mkdir(parents=True,exist_ok=True)
+          with zipfile.ZipFile(zipfile_path,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+            for n in names:
+              file=root/n
+              assert file.is_file(),file
+              z.write(file,str(Path('MayaGlyph_v4')/n))
+          with zipfile.ZipFile(zipfile_path) as z:
+            assert z.testzip() is None
+            assert len(z.namelist())==len(names)
+          data=zipfile_path.read_bytes()
+          print('v4 model package bytes',len(data),'sha256',hashlib.sha256(data).hexdigest())
+          PY
+      - name: Commit reproducible package to experiment branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f ml/glyph_v4/releases/
+          git commit -m 'Publish evaluated but not deployed v4 model and test report' || exit 0
+          git push origin HEAD:glyph-v4-expanded-training
