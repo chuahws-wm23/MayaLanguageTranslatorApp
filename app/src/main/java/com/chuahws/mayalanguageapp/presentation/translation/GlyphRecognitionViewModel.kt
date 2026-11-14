@@ -12,6 +12,8 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV3Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV3Screening
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphV4Result
+import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV4
 import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizer
 import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV2
 import kotlinx.coroutines.CancellationException
@@ -26,6 +28,7 @@ internal enum class GlyphModelMode {
     TINY_V1,
     RESEARCH_V2,
     RESEARCH_V3,
+    RESEARCH_V4,
 }
 
 internal data class GlyphUiState(
@@ -34,9 +37,17 @@ internal data class GlyphUiState(
     val result: GlyphNetwork.Result? = null,
     val resultV2: GlyphV2Result? = null,
     val resultV3: GlyphV3Result? = null,
+    val resultV4: GlyphV4Result? = null,
     val model: GlyphModelMode = GlyphModelMode.TINY_V1,
     val busy: Boolean = false,
     val message: String? = null,
+)
+
+private data class GlyphInferenceResult(
+    val v1: GlyphNetwork.Result? = null,
+    val v2: GlyphV2Result? = null,
+    val v3: GlyphV3Result? = null,
+    val v4: GlyphV4Result? = null,
 )
 
 /** Keeps unverified glyph predictions out of the modern-Yucatec dictionary/history pipeline. */
@@ -58,7 +69,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         if (mutable.value.busy || mutable.value.model == model) return
         version++
         mutable.value = mutable.value.copy(
-            model = model, result = null, resultV2 = null, resultV3 = null, message = null,
+            model = model, result = null, resultV2 = null, resultV3 = null,
+            resultV4 = null, message = null,
         )
     }
 
@@ -89,7 +101,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
     fun setCrop(crop: GlyphCrop) {
         if (mutable.value.busy) return
         mutable.value = mutable.value.copy(
-            crop = crop, result = null, resultV2 = null, resultV3 = null, message = null,
+            crop = crop, result = null, resultV2 = null, resultV3 = null,
+            resultV4 = null, message = null,
         )
     }
 
@@ -99,7 +112,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         val request = ++version
         val model = mutable.value.model
         mutable.value = mutable.value.copy(
-            busy = true, result = null, resultV2 = null, resultV3 = null, message = null,
+            busy = true, result = null, resultV2 = null, resultV3 = null,
+            resultV4 = null, message = null,
         )
         work = viewModelScope.launch {
             try {
@@ -129,11 +143,12 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         if (snapshot.busy) return
         val request = ++version
         mutable.value = snapshot.copy(
-            busy = true, result = null, resultV2 = null, resultV3 = null, message = null,
+            busy = true, result = null, resultV2 = null, resultV3 = null,
+            resultV4 = null, message = null,
         )
         work = viewModelScope.launch {
             try {
-                val outcome: Triple<GlyphNetwork.Result?, GlyphV2Result?, GlyphV3Result?> =
+                val outcome: GlyphInferenceResult =
                     withContext(Dispatchers.Default) {
                     val (x, y, w, h) = snapshot.crop.pixels(image.width, image.height)
                     require(w >= 25 && h >= 25) {
@@ -143,20 +158,23 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                     try {
                         when (snapshot.model) {
                             GlyphModelMode.TINY_V1 ->
-                                Triple(MayaGlyphRecognizer.fromAssets(getApplication()).recognize(cropped), null, null)
+                                GlyphInferenceResult(v1 = MayaGlyphRecognizer.fromAssets(getApplication()).recognize(cropped))
                             GlyphModelMode.RESEARCH_V2 ->
-                                Triple(null, MayaGlyphRecognizerV2.fromAssets(getApplication()).recognize(cropped), null)
+                                GlyphInferenceResult(v2 = MayaGlyphRecognizerV2.fromAssets(getApplication()).recognize(cropped))
                             GlyphModelMode.RESEARCH_V3 ->
-                                Triple(null, null, MayaGlyphRecognizerV2.fromAssets(getApplication())
+                                GlyphInferenceResult(v3 = MayaGlyphRecognizerV2.fromAssets(getApplication())
                                     .recognizeWithScreening(cropped, GlyphV3Screening.fromAssets(getApplication())))
+                            GlyphModelMode.RESEARCH_V4 ->
+                                GlyphInferenceResult(v4 = MayaGlyphRecognizerV4.fromAssets(getApplication())
+                                    .recognize(cropped))
                         }
                     } finally {
                         if (cropped !== image) cropped.recycle()
                     }
                 }
                 if (request == version) mutable.value = mutable.value.copy(
-                    busy = false, result = outcome.first, resultV2 = outcome.second,
-                    resultV3 = outcome.third,
+                    busy = false, result = outcome.v1, resultV2 = outcome.v2,
+                    resultV3 = outcome.v3, resultV4 = outcome.v4,
                 )
             } catch (cancelled: CancellationException) {
                 throw cancelled
