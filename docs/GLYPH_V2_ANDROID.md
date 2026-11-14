@@ -30,6 +30,8 @@ This branch adds an **opt-in Research v2** mode using actual exported pretrained
 
 The Research v2 model **DOES NOT include CHIJ (Deer) or KAKAW (Cacao)**. Continue to use Model v1 for demonstration of those experimental categories; its real-world accuracy also remains unverified.
 
+**Device requirement:** Android 7.0 / API level 24 or later, required by ONNX Runtime Android 1.31.1. The previous app supported API 23; this integration intentionally raises the minimum without a manifest override.
+
 ## Assets and runtime
 
 - `app/src/main/assets/maya_mobilenet_v2.onnx` — exported frozen visual backbone + normalized feature vector (~3.7 MB).
