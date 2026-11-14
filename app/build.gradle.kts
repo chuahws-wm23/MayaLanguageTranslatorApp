@@ -62,6 +62,10 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 
+    // On-device inference for the experimental MobileNetV3+SVM glyph model (v2).
+    // Research v1's custom small model remains supported for Deer/Cacao.
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.31.1")
+
     implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation("androidx.exifinterface:exifinterface:1.4.1")
 
