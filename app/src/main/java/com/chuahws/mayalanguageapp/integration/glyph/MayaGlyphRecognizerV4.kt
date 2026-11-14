@@ -18,6 +18,14 @@ import java.security.MessageDigest
  * Two lighting views are used to flag unstable photo predictions for review.
  * Agreement does not prove correctness, and coverage remains only ten signs.
  */
+data class GlyphV4Candidate(
+    val signNumber: Int,
+    val reading: String,
+    val englishGloss: String,
+    /** Softmax-relative score in percent, NOT probability of historical correctness. */
+    val relativeScorePercent: Float,
+)
+
 data class GlyphV4Result(
     val signNumber: Int,
     val reading: String,
@@ -25,6 +33,8 @@ data class GlyphV4Result(
     val modelVersion: String = "Research v4",
     val reviewRecommended: Boolean = false,
     val reviewReason: String? = null,
+    /** Ranked among the TEN supported signs; these are NOT calibrated accuracy estimates. */
+    val alternatives: List<GlyphV4Candidate> = emptyList(),
 )
 
 class MayaGlyphRecognizerV4 private constructor(
@@ -75,11 +85,21 @@ class MayaGlyphRecognizerV4 private constructor(
             require(logits.size == signs.size && logits.all { it.isFinite() }) {
                 "Invalid ten-sign model logits."
             }
-            var best = 0
-            for (i in 1 until logits.size) {
-                if (logits[i] > logits[best]) best = i
-            }
-            return GlyphV4Result(signs[best], readings[best], english[best])
+            val rankings = GlyphV4Ranker.rank(logits)
+            val best = rankings.first().index
+            return GlyphV4Result(
+                signNumber = signs[best],
+                reading = readings[best],
+                englishGloss = english[best],
+                alternatives = rankings.map { ranked ->
+                    GlyphV4Candidate(
+                        signNumber = signs[ranked.index],
+                        reading = readings[ranked.index],
+                        englishGloss = english[ranked.index],
+                        relativeScorePercent = ranked.relativeScorePercent,
+                    )
+                },
+            )
         }
 
         /** A disagreement means an uncertain photo candidate, not an unknown-sign proof. */

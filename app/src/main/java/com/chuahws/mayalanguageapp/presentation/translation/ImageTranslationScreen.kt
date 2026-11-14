@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -30,6 +31,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV3Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV4Result
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphV4CorrectionReport
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
 
@@ -268,7 +270,12 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             state.result?.let { GlyphResultCard(it) }
             state.resultV2?.let { GlyphV2ResultCard(it) }
             state.resultV3?.let { GlyphV3ResultCard(it) }
-            state.resultV4?.let { GlyphV4ResultCard(it) }
+            state.resultV4?.let { result ->
+                GlyphV4ResultCard(
+                    result = result,
+                    onTryAnother = { gallery.launch("image/*") },
+                )
+            }
             state.bitmap?.let { bitmap ->
                 if (state.multiple.isNotEmpty()) {
                     MultiGlyphResultsPanel(
@@ -422,49 +429,152 @@ private fun GlyphV3ResultCard(result: GlyphV3Result) {
 }
 
 @Composable
-private fun GlyphV4ResultCard(result: GlyphV4Result) {
+private fun GlyphV4ResultCard(result: GlyphV4Result, onTryAnother: () -> Unit) {
+    val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    var showCorrection by remember(result) { mutableStateOf(false) }
+    var selectedCorrection by remember(result) { mutableStateOf("UNKNOWN_OR_OTHER") }
+    var sourceDescription by remember(result) { mutableStateOf("") }
+    var notes by remember(result) { mutableStateOf("") }
+    var exportContent by remember { mutableStateOf<String?>(null) }
+    val export = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv"),
+    ) { uri ->
+        if (uri != null) {
+            val data = exportContent
+            val wrote = data != null && runCatching {
+                context.contentResolver.openOutputStream(uri)?.use { stream ->
+                    stream.write(data.toByteArray(Charsets.UTF_8))
+                    stream.flush()
+                } ?: error("Could not open the selected file")
+            }.isSuccess
+            Toast.makeText(
+                context,
+                if (wrote) "Unverified review report saved" else "Could not save the review report",
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
+        exportContent = null
+    }
+
     Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                if (result.reviewRecommended) "No stable supported match — review photo"
-                else "Research v4 — possible match (unverified)",
+                if (result.reviewRecommended) "Unrecognized / needs review"
+                else "Possible glyph match · Research v4",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
             if (result.reviewRecommended) {
-                Text(result.reviewReason ?: "Try a clearer picture of one complete glyph.")
+                Text(result.reviewReason ?: "Try a clearer crop of one complete glyph.")
             } else {
-                Text(result.englishGloss, style = MaterialTheme.typography.headlineSmall)
-                Text("Proposed reading: ${result.reading}")
-                Text("TWKM sign #${result.signNumber}", style = MaterialTheme.typography.bodySmall)
+                Text(result.reading, style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold)
+                Text(result.englishGloss, style = MaterialTheme.typography.bodyLarge)
+                Text("TWKM sign #${result.signNumber}", style = MaterialTheme.typography.labelMedium)
+            }
+
+            if (result.alternatives.isNotEmpty()) {
+                Text("Top 3 model candidates", style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold)
+                result.alternatives.take(3).forEachIndexed { index, choice ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Text("${index + 1}. ${choice.reading} · #${choice.signNumber}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f))
+                        Text(String.format(java.util.Locale.US, "%.1f%%", choice.relativeScorePercent),
+                            style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+                Text(
+                    "These percentages are relative neural-network scores, NOT calibrated " +
+                        "confidence or the chance a Maya reading is correct. " +
+                        "Unfamiliar signs may still produce a high score.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             Surface(
-                color = MaterialTheme.colorScheme.errorContainer,
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = MaterialTheme.shapes.medium,
             ) {
                 Text(
-                    "Research demo only. The model still covers just ten signs. Even when two " +
-                        "photo treatments agree, an unsupported sign may be guessed incorrectly. " +
-                        "The old 70% figure came from ten held-out catalogue drawings, NOT " +
-                        "phone photos. No verified translation or calibrated accuracy.",
-                    Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodySmall,
+                    "Experimental ten-sign classifier. All readings and English glosses " +
+                        "are provisional; no real-world phone-photo accuracy has been established. " +
+                        "A visually similar sign can still be misclassified.",
+                    Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall,
                 )
             }
             if (!result.reviewRecommended) {
                 FilledTonalButton(
                     onClick = {
                         clipboard.setText(AnnotatedString(
-                            "Unverified Maya glyph suggestion: ${result.reading} — ${result.englishGloss}, " +
-                                "TWKM sign ${result.signNumber}. Experimental closed-set v4; " +
-                                "not confirmed and may be incorrect.",
+                            "UNVERIFIED TWKM glyph candidate: ${result.reading}, #${result.signNumber} — " +
+                                "${result.englishGloss}. Requires expert review.",
                         ))
                     },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Copy with disclaimer") }
+                ) { Text("Copy possible reading") }
             }
+            OutlinedButton(
+                onClick = { showCorrection = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Report incorrect / unknown glyph") }
+            OutlinedButton(
+                onClick = onTryAnother,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Choose another image") }
         }
+    }
+
+    if (showCorrection) {
+        AlertDialog(
+            onDismissRequest = { showCorrection = false },
+            title = { Text("Review this result") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text("Choose the correct sign if known, or Unknown / other. " +
+                        "A specialist must verify this report before it becomes training data.",
+                        style = MaterialTheme.typography.bodySmall)
+                    val options = listOf("UNKNOWN_OR_OTHER" to "Unknown / other") +
+                        result.alternatives.map { it.signNumber.toString() to
+                            "${it.reading} · TWKM #${it.signNumber}" }
+                    options.distinctBy { it.first }.forEach { (id, label) ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = selectedCorrection == id,
+                                onClick = { selectedCorrection = id },
+                            )
+                            Text(label, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                    OutlinedTextField(
+                        value = sourceDescription, onValueChange = { sourceDescription = it },
+                        label = { Text("Image source / drawing ID (optional)") },
+                        singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = notes, onValueChange = { notes = it },
+                        label = { Text("Why is it wrong? (optional)") },
+                        minLines = 2, maxLines = 3, modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    exportContent = GlyphV4CorrectionReport.csv(
+                        result, selectedCorrection, sourceDescription, notes,
+                    )
+                    showCorrection = false
+                    export.launch("maya-glyph-v4-review.csv")
+                }) { Text("Export CSV") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCorrection = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 

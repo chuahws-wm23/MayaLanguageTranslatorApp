@@ -13,6 +13,9 @@ class MayaGlyphRecognizerV4Test {
         assertEquals(122, result.signNumber)
         assertEquals("K'AK'", result.reading)
         assertEquals("Fire", result.englishGloss)
+        assertEquals(3, result.alternatives.size)
+        assertEquals(122, result.alternatives.first().signNumber)
+        assertTrue(result.alternatives.first().relativeScorePercent in 0f..100f)
     }
 
     @Test
