@@ -80,7 +80,8 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Maya glyph recognition", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text("Choose one glyph drawing. Crop away words, borders and other symbols before recognising it.")
+                    Text("Choose a photo containing one glyph or many glyph blocks. " +
+    "Use Scan all glyphs for panels of several symbols, or crop an individual sign below.")
                     FilledTonalButton(
                         onClick = {
                             permissionMessage = null
@@ -168,7 +169,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             state.bitmap?.let { image ->
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Select one glyph", style = MaterialTheme.typography.titleMedium)
+                        Text("Single glyph (optional crop)", style = MaterialTheme.typography.titleMedium)
                         Text("Drag a rectangle over the complete glyph. Leave a small clear margin.", style = MaterialTheme.typography.bodySmall)
                         GlyphCropPreview(image, state.crop, !state.busy, glyphModel::setCrop)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -179,15 +180,25 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         }
                     }
                 }
-                Button(onClick = glyphModel::recognize, enabled = !state.busy,
+                Button(onClick = glyphModel::scanAll, enabled = !state.busy,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-                    Text("Recognise glyph")
+                    Text("Scan all glyphs automatically")
+                }
+                Text(
+                    "Automatically finds multiple blocks arranged in rows and columns. " +
+                        "No need to crop each one. Choose Research v3 for screening, " +
+                        "or v4 for ten-class unverified guesses.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                OutlinedButton(onClick = glyphModel::recognize, enabled = !state.busy,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                    Text("Recognise one selected glyph")
                 }
             }
             if (state.busy) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     CircularProgressIndicator(Modifier.size(24.dp))
-                    Text("Processing on this device…")
+                    Text(state.multipleProgress ?: "Processing on this device…")
                 }
             }
             (permissionMessage ?: state.message)?.let { message ->
@@ -199,6 +210,15 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             state.resultV2?.let { GlyphV2ResultCard(it) }
             state.resultV3?.let { GlyphV3ResultCard(it) }
             state.resultV4?.let { GlyphV4ResultCard(it) }
+            state.bitmap?.let { bitmap ->
+                if (state.multiple.isNotEmpty()) {
+                    MultiGlyphResultsPanel(
+                        bitmap = bitmap,
+                        results = state.multiple,
+                        onInspect = glyphModel::setCrop,
+                    )
+                }
+            }
             val modelLimitations = when (state.model) {
                 GlyphModelMode.TINY_V1 ->
                     "TinyGlyphNet v1 · Offline model · Real-world accuracy is not established."
