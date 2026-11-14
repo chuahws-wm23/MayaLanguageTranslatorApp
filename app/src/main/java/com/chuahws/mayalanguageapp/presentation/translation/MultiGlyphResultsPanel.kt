@@ -37,6 +37,7 @@ import kotlin.math.roundToInt
 internal fun MultiGlyphResultsPanel(
     bitmap: Bitmap,
     results: List<MultiGlyphItem>,
+    assisted: Boolean = false,
     onInspect: (GlyphCrop) -> Unit,
 ) {
     if (results.isEmpty()) return
@@ -58,9 +59,14 @@ internal fun MultiGlyphResultsPanel(
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
-                "Yellow boxes mark automatically separated BLOCKS. A block may contain multiple " +
-                    "signs. These are tentative visual matches, NOT a translation of the inscription. " +
-                    "Region order is for display only, not verified Maya reading order.",
+                if (assisted)
+                    "Yellow boxes are an APPROXIMATE user-chosen grid, not detected glyph boundaries. " +
+                        "Check each region and adjust crop/row/column counts if misaligned. " +
+                        "Each block may contain multiple signs; no whole-inscription translation."
+                else
+                    "Yellow boxes mark automatically separated BLOCKS. A block may contain multiple " +
+                        "signs. These are tentative visual matches, NOT a translation of the inscription. " +
+                        "Region order is for display only, not verified Maya reading order.",
                 style = MaterialTheme.typography.bodySmall,
             )
             MultiGlyphNumberedPreview(bitmap, results)

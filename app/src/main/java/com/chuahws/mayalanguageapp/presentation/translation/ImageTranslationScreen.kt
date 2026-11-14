@@ -53,6 +53,9 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
     val context = LocalContext.current
     val state by glyphModel.state.collectAsStateWithLifecycle()
     var showCamera by remember { mutableStateOf(false) }
+    var showAssistedGrid by remember { mutableStateOf(false) }
+    var gridRows by remember { mutableIntStateOf(9) }
+    var gridColumns by remember { mutableIntStateOf(9) }
     var permissionMessage by remember { mutableStateOf<String?>(null) }
     val hasCamera = remember(context) { context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY) }
     DisposableEffect(glyphModel) { onDispose { glyphModel.clear() } }
@@ -190,6 +193,54 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         "blocks with inconsistent lighting-view predictions.",
                     style = MaterialTheme.typography.bodySmall,
                 )
+                OutlinedButton(
+                    onClick = { showAssistedGrid = !showAssistedGrid },
+                    enabled = !state.busy, modifier = Modifier.fillMaxWidth(),
+                ) { Text(if (showAssistedGrid) "Hide grid-assisted scan" else "Grid-assisted scan (dense panels)") }
+                if (showAssistedGrid) {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text("For photos with many closely packed symbols",
+                                style = MaterialTheme.typography.titleSmall)
+                            Text("Drag one crop over the whole glyph panel above, then choose " +
+                                "its approximate rows and columns. This makes approximate " +
+                                "blocks without cropping each glyph separately. " +
+                                "Readings remain experimental and may be wrong.",
+                                style = MaterialTheme.typography.bodySmall)
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("Rows: $gridRows")
+                                    Slider(
+                                        value = gridRows.toFloat(),
+                                        onValueChange = { gridRows = it.toInt().coerceIn(2, 12) },
+                                        valueRange = 2f..12f, steps = 9,
+                                        enabled = !state.busy,
+                                    )
+                                }
+                                Column(Modifier.weight(1f)) {
+                                    Text("Columns: $gridColumns")
+                                    Slider(
+                                        value = gridColumns.toFloat(),
+                                        onValueChange = { gridColumns = it.toInt().coerceIn(2, 12) },
+                                        valueRange = 2f..12f, steps = 9,
+                                        enabled = !state.busy,
+                                    )
+                                }
+                            }
+                            Button(
+                                onClick = { glyphModel.scanGrid(gridRows, gridColumns) },
+                                enabled = !state.busy,
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
+                            ) { Text("Scan $gridRows × $gridColumns approximate blocks") }
+                        }
+                    }
+                }
                 OutlinedButton(onClick = glyphModel::recognize, enabled = !state.busy,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                     Text("Recognise one selected glyph")
@@ -215,6 +266,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     MultiGlyphResultsPanel(
                         bitmap = bitmap,
                         results = state.multiple,
+                        assisted = state.assistedGrid,
                         onInspect = glyphModel::setCrop,
                     )
                 }

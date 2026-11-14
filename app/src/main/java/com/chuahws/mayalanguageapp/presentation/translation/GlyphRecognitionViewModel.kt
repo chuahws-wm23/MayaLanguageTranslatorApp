@@ -7,6 +7,8 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGrid
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGuard
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageLoader
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphMultiDetector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphDetectedRegion
@@ -53,6 +55,7 @@ internal data class GlyphUiState(
     val resultV4: GlyphV4Result? = null,
     val multiple: List<MultiGlyphItem> = emptyList(),
     val multipleProgress: String? = null,
+    val assistedGrid: Boolean = false,
     val model: GlyphModelMode = GlyphModelMode.RESEARCH_V4,
     val busy: Boolean = false,
     val message: String? = null,
@@ -157,7 +160,13 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
      * crop each block, and try the selected model on every block offline.
      * This is not full-inscription translation or validated sign segmentation.
      */
-    fun scanAll() {
+    fun scanAll() = scanPanel(null)
+
+    /** Use one full-panel selection and a user-set grid when the strict automatic
+     * seam detector cannot separate densely carved or uneven blocks. */
+    fun scanGrid(rows: Int, columns: Int) = scanPanel(rows to columns)
+
+    private fun scanPanel(grid: Pair<Int, Int>?) {
         val snapshot = mutable.value
         val image = snapshot.bitmap ?: return
         if (snapshot.busy) return
@@ -166,21 +175,39 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         work?.cancel()
         mutable.value = snapshot.copy(
             busy = true, result = null, resultV2 = null, resultV3 = null,
-            resultV4 = null, multiple = emptyList(),
-            multipleProgress = "Finding glyph blocks…", message = null,
+            resultV4 = null, multiple = emptyList(), assistedGrid = false,
+            multipleProgress = if (grid == null) "Finding glyph blocks…" else "Preparing grid…",
+            message = null,
         )
         work = viewModelScope.launch {
             try {
                 val regions = withContext(Dispatchers.Default) {
-                    GlyphMultiDetector.detect(image)
+                    when {
+                        grid != null -> GlyphPanelGrid.regions(
+                            snapshot.crop, grid.first, grid.second,
+                        )
+                        snapshot.crop == GlyphCrop() -> GlyphMultiDetector.detect(image)
+                        else -> {
+                            val (x, y, w, h) = snapshot.crop.pixels(image.width, image.height)
+                            val selected = Bitmap.createBitmap(image, x, y, w, h)
+                            try {
+                                GlyphMultiDetector.detect(selected).map { region ->
+                                    GlyphPanelGrid.toOriginal(snapshot.crop, region)
+                                }
+                            } finally {
+                                if (selected !== image) selected.recycle()
+                            }
+                        }
+                    }
                 }
                 if (request != version) return@launch
                 if (regions.isEmpty()) {
                     mutable.value = mutable.value.copy(
                         busy = false, multipleProgress = null,
-                        message = "Could not automatically separate glyph blocks. " +
-                            "Use a straight-on photo where the glyphs form clearly visible rows and columns. " +
-                            "You can still scan a single glyph using the crop tool.",
+                        message = "Automatic block separation could not find a reliable grid. " +
+                            "Try Grid-assisted scan: drag one crop over the entire panel, " +
+                            "choose its approximate rows and columns, then scan. " +
+                            "You do not need to crop individual glyphs.",
                     )
                     return@launch
                 }
@@ -257,7 +284,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                 }
                 if (request == version) {
                     mutable.value = mutable.value.copy(
-                        busy = false, multiple = results, multipleProgress = null, message = null,
+                        busy = false, multiple = results, multipleProgress = null,
+                        assistedGrid = grid != null, message = null,
                     )
                 }
             } catch (cancelled: CancellationException) {
@@ -292,6 +320,18 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                     }
                     val cropped = Bitmap.createBitmap(image, x, y, w, h)
                     try {
+                        // A whole inscription is not a single sign. This is a
+                        // conservative image-complexity warning, not a recogniser.
+                        if (snapshot.model == GlyphModelMode.RESEARCH_V4 &&
+                            snapshot.crop == GlyphCrop() &&
+                            GlyphPanelGuard.looksLikeDensePanel(cropped)
+                        ) {
+                            throw IllegalArgumentException(
+                                "This image appears to contain many small glyphs. " +
+                                "Use Scan all glyphs or Grid-assisted scan; " +
+                                "do not treat the entire inscription as one sign."
+                            )
+                        }
                         when (snapshot.model) {
                             GlyphModelMode.TINY_V1 ->
                                 GlyphInferenceResult(v1 = MayaGlyphRecognizer.fromAssets(getApplication()).recognize(cropped))
