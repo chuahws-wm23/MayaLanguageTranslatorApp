@@ -28,6 +28,7 @@ import com.chuahws.mayalanguageapp.domain.model.InputType
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphV3Result
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
 
@@ -120,14 +121,30 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                                 enabled = !state.busy, modifier = Modifier.weight(1f)) { Text("Research v2", maxLines = 1) }
                         }
                     }
-                    Text(
-                        if (state.model == GlyphModelMode.TINY_V1)
+                    if (state.model == GlyphModelMode.RESEARCH_V3) {
+                        Button(
+                            onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_V3) },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        ) { Text("Research v3 (screened)") }
+                    } else {
+                        OutlinedButton(
+                            onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_V3) },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        ) { Text("Research v3 (screened)") }
+                    }
+                    val modelDescription = when (state.model) {
+                        GlyphModelMode.TINY_V1 ->
                             "v1: Deer, Hawk, Jaguar, Star, Cacao (KAKAW). Unknown drawings may be rejected."
-                        else
+                        GlyphModelMode.RESEARCH_V2 ->
                             "v2: God/deity, Resplendent, Siip deity, House/first, Cloud/mist. " +
-                                "Deer and Cacao are NOT included. It always chooses one of these five signs.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                                "Deer and Cacao are NOT included. v2 always chooses one of its five signs."
+                        GlyphModelMode.RESEARCH_V3 ->
+                            "v3: Same five signs as v2, with experimental unknown-glyph screening. " +
+                                "It can reject valid drawings and still accept incorrect ones. Deer/Cacao NOT included."
+                    }
+                    Text(modelDescription, style = MaterialTheme.typography.bodySmall)
                 }
             }
             state.bitmap?.let { image ->
@@ -162,15 +179,21 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             }
             state.result?.let { GlyphResultCard(it) }
             state.resultV2?.let { GlyphV2ResultCard(it) }
+            state.resultV3?.let { GlyphV3ResultCard(it) }
+            val modelLimitations = when (state.model) {
+                GlyphModelMode.TINY_V1 ->
+                    "TinyGlyphNet v1 · Offline model · Real-world accuracy is not established."
+                GlyphModelMode.RESEARCH_V2 ->
+                    "Research v2 · Offline MobileNetV3 + SVM. 35/38 correct in exploratory " +
+                        "catalogue cross-validation. The model cannot reject unfamiliar signs."
+                GlyphModelMode.RESEARCH_V3 ->
+                    "Research v3 · v2 model plus small reference-feature screening. " +
+                        "24/38 catalog originals correctly accepted; 90.6% mean rejection on " +
+                        "100 unknown sign drawings tested over five fold models. " +
+                        "NOT independent phone-photo accuracy."
+            }
             Text(
-                if (state.model == GlyphModelMode.TINY_V1)
-                    "TinyGlyphNet v1 · Offline recognition · 29 KB weights. " +
-                        "Real-world accuracy is not established."
-                else
-                    "Research v2 · Offline MobileNetV3 + SVM (ONNX). " +
-                        "35/38 original catalogue drawings correct in exploratory five-fold cross-validation; " +
-                        "phone-photo accuracy is NOT established.",
-                style = MaterialTheme.typography.bodySmall,
+                modelLimitations, style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text("All suggested readings require specialist review. Glyph scans are not saved as verified translations.",
@@ -241,6 +264,55 @@ private fun GlyphV2ResultCard(result: GlyphV2Result) {
                 )) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Copy with disclaimer") }
+        }
+    }
+}
+
+@Composable
+private fun GlyphV3ResultCard(result: GlyphV3Result) {
+    val clipboard = LocalClipboardManager.current
+    val candidate = result.possibleMatch
+    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                if (candidate == null) "No reliable supported match"
+                else "Research v3 — possible match (unverified)",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            if (candidate != null) {
+                Text(candidate.englishGloss, style = MaterialTheme.typography.headlineSmall)
+                Text("Proposed reading: ${candidate.reading}")
+                Text("TWKM sign #${candidate.signNumber}", style = MaterialTheme.typography.bodySmall)
+                FilledTonalButton(
+                    onClick = {
+                        clipboard.setText(AnnotatedString(
+                            "Experimental Maya glyph candidate: ${candidate.reading} — " +
+                                "${candidate.englishGloss}, TWKM sign ${candidate.signNumber}. " +
+                                "Unverified, may be incorrect.",
+                        ))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Copy with disclaimer") }
+            } else {
+                Text(
+                    "This model could not safely distinguish the drawing from unrelated signs. " +
+                        "Crop one glyph, or try a clearer picture. It might also be outside " +
+                        "the five supported v3 sign classes.",
+                )
+            }
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Text(
+                    "Experimental TWKM-based screening only. It may reject correct signs or " +
+                        "accept unknown ones. No verified translation or confidence percentage " +
+                        "is available. Real phone-photo accuracy has not been established.",
+                    Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
     }
 }
