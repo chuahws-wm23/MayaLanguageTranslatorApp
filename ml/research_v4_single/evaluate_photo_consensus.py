@@ -5,6 +5,8 @@ This test uses a close *Python approximation* of Android preprocessing, not
 a device execution. No user-image ground truth or independent real photographs
 are included. The old v4 labelled split is already known to researchers.
 """
+import hashlib
+import io
 import json
 import os
 import sys
@@ -14,6 +16,8 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 import torch
+from datasets import Image as HFImage, load_dataset
+from PIL import Image as PILImage
 sys.path.insert(0,str(Path("ml/glyph_v4").resolve()))
 import train_v4 as v4
 
@@ -22,10 +26,12 @@ ASSET=Path("app/src/main/assets/maya_glyph_v4.onnx")
 OUT=Path("ml/research_v4_single/output/photo_consensus_evaluation.json")
 
 def normalized_gray_photo(img, rng, stressed):
-    gray=cv2.resize(255-img,(96,96),interpolation=cv2.INTER_LINEAR)
+    # Raw TWKM drawing, not an already preprocessed 64x64 training tensor.
+    gray=img.copy()
+    h,w=gray.shape
     if stressed:
-        y,x=np.mgrid[0:96,0:96]
-        grad=rng.uniform(-40,40)*(x/95.0-.5)+rng.uniform(-35,35)*(y/95.0-.5)
+        y,x=np.mgrid[0:h,0:w]
+        grad=rng.uniform(-40,40)*(x/max(1,w-1)-.5)+rng.uniform(-35,35)*(y/max(1,h-1)-.5)
         gray=np.clip(gray.astype(np.float32)+grad+rng.normal(0,4,gray.shape),0,255).astype(np.uint8)
         if rng.random()<.6:gray=cv2.GaussianBlur(gray,(3,3),rng.uniform(.4,.9))
     return gray
@@ -86,7 +92,7 @@ def evaluate(session, rows, seed, stressed=False, unknown=False):
     for row in rows:
         repeats=3 if stressed else 1
         for _ in range(repeats):
-            photo=normalized_gray_photo(row["image"],rng,stressed)
+            photo=normalized_gray_photo(row["raw_gray"],rng,stressed)
             raw,corr,med=classify(session,photo)
             two=raw is not None and corr is not None and raw==corr
             three=raw is not None and ((corr is not None and raw==corr) or
@@ -106,8 +112,29 @@ def main():
     session=ort.InferenceSession(str(ASSET),providers=["CPUExecutionProvider"])
     bysign,_=v4.data()
     train,val,test,cal_unknown,unknown=v4.partitions(bysign)
+    # Load original source pixels by their original SHA256. The previous
+    # experiment unintentionally re-thresholded the already-normalised
+    # v4 64x64 tensor, causing an artificial domain shift.
+    graphs=load_dataset(v4.SOURCE,"graphs",split="train",revision=v4.REV,
+        cache_dir=os.environ.get("HF_DATASETS_CACHE","/tmp/maya-v4-hf")).cast_column(
+        "image",HFImage(decode=False))
+    wanted={r["sha"] for r in train+val+test+unknown}
+    raw_gray={}
+    for row in graphs:
+        im=row.get("image")
+        if not im: continue
+        data=im.get("bytes")
+        if data is None and im.get("path"):data=Path(im["path"]).read_bytes()
+        if not data:continue
+        h=hashlib.sha256(data).hexdigest()
+        if h not in wanted:continue
+        with PILImage.open(io.BytesIO(data)) as pic:
+            rgb=np.asarray(pic.convert("RGB"))
+            raw_gray[h]=cv2.cvtColor(rgb,cv2.COLOR_RGB2GRAY)
+    for row in train+val+test+unknown:
+        row["raw_gray"]=raw_gray[row["sha"]]
     report={
-        "test_type":"Python approximation of Android preprocessing + real v4 ONNX weights",
+        "test_type":"Python approximation of Android preprocessing + real v4 ONNX weights using RAW original TWKM drawings",
         "model_sha256":digest,
         "sign_classes":SIGN_NUMBERS,
         "validation_clean":evaluate(session,val,7788),
@@ -116,7 +143,7 @@ def main():
         "unknown_twkm_sign_test":evaluate(session,unknown,9922,unknown=True),
         "unknown_note":"Unknowns are drawn from the SAME catalogue, but have DIFFERENT sign identities",
         "independent_phone_photo_accuracy":"NOT TESTED",
-        "caveat":"Synthetic perturbation and Python preprocessor are not real Android device results.",
+        "caveat":"Original TWKM source images; synthetic perturbation and Python preprocessor are not real Android device results.",
     }
     OUT.parent.mkdir(parents=True,exist_ok=True)
     OUT.write_text(json.dumps(report,indent=2))
