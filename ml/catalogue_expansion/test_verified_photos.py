@@ -49,8 +49,8 @@ class VerifiedPhotoIntakeTests(unittest.TestCase):
             path=root/"image.png"
             image.save(path)
             manifest=root/"manifest.csv"
-            manifest.write_text("image_path,twkm_sign,source_group,source_url,license,verified_by,split\\n"+
-                                "image.png,32,source-1,https://example.org/source,CC BY 4.0,Human verified,train\\n",
+            manifest.write_text("image_path,twkm_sign,source_group,source_url,license,verified_by,split\n"+
+                                "image.png,32,source-1,https://example.org/source,CC BY 4.0,Human verified,train\n",
                                 encoding="utf-8")
             with self.assertRaisesRegex(ValueError,"exactly duplicates"):
                 load_verified_photos(manifest,root,[32,44],
