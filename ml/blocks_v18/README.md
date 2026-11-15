@@ -118,3 +118,38 @@ translation are separate problems.
   licence obligations before distributing a closed-source build.
 - This model detects **glyph blocks only**; it neither reads Maya syntax
   nor expands v4's 10 TWKM sign recognition categories.
+
+## Troubleshooting: "273 invalid YOLO rows"
+
+The earlier strict validator assumed every row had exactly five values:
+\`class cx cy width height\`. It could not tell whether a label was a valid
+*polygon* (YOLO segmentation), a coordinate slightly past the image border,
+or truly broken data.
+
+Update to the newest \`fyp-development\`, then **diagnose first**:
+
+\`\`\`powershell
+python .\ml\blocks_v18\train_export.py --dataset "$env:USERPROFILE\mb18" --diagnose-only
+\`\`\`
+
+Look at \`label_formats_and_reasons\` and \`first_issues\`. Examples:
+
+- \`polygon_to_box\`: valid YOLO segmentation polygon, but detector needs a box
+- \`clip_box_border\`: box only slightly outside normalized frame; 75% or more remains
+- \`out_of_normalized_range\`, \`unexpected_class\`, \`non_numeric\`: cannot safely auto-fix, investigate source labels
+
+**Only if all rows are repairable**, make a separate dataset copy:
+
+\`\`\`powershell
+python .\ml\blocks_v18\train_export.py --dataset "$env:USERPROFILE\mb18" --prepare-boxes
+python .\ml\blocks_v18\train_export.py --dataset "$env:USERPROFILE\mb18_boxes" --audit-only
+\`\`\`
+
+Images are hardlinked when possible to avoid duplicating 494 MB; labels are
+converted to five-number detection boxes. Original \`mb18\` remains unchanged,
+and an explicit \`conversion_report.json\` records what was transformed.
+If the command refuses to repair a category, do **not** delete or relabel
+the bad rows blindly; inspect the first issues and source annotations.
+
+Then use \`--dataset "$env:USERPROFILE\mb18_boxes"\` for training. The
+training script never silently alters untrusted labels.

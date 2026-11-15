@@ -11,6 +11,42 @@ spec.loader.exec_module(v18)
 
 
 class PreflightTests(unittest.TestCase):
+    def test_parser_recognizes_polygons_separately_from_boxes(self):
+        kind, box = v18.parse_annotation("0 .1 .2 .8 .2 .8 .9 .1 .9")
+        self.assertEqual(kind, "polygon_to_box")
+        self.assertEqual(len(box.split()), 5)
+        self.assertEqual(v18.parse_annotation("0 0.5 0.5 0.3 0.4")[0], "valid_box")
+        self.assertEqual(v18.parse_annotation("1 0.5 0.5 0.3 0.4")[0], "unexpected_class")
+
+    def test_diagnosis_describes_problem_without_training(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.make_dataset(root)
+            p = root / "train" / "labels" / "train-source.rf.train123.txt"
+            p.write_text("0 .1 .2 .8 .2 .8 .9 .1 .9\\n", encoding="utf8")
+            report = v18.preflight(root, diagnose=True)
+            self.assertEqual(report["split"]["train"]["invalid_or_non_box_rows"], 1)
+            self.assertEqual(report["split"]["train"]["label_formats_and_reasons"]["polygon_to_box"], 1)
+
+    def test_creates_new_boxes_without_modifying_original(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "raw"; self.make_dataset(root)
+            p = root / "train" / "labels" / "train-source.rf.train123.txt"
+            p.write_text("0 .1 .2 .8 .2 .8 .9 .1 .9\\n", encoding="utf8")
+            target = Path(tmp) / "converted"
+            v18.prepare_boxes(root, target)
+            self.assertEqual(len((target / "train" / "labels" / p.name).read_text().split()), 5)
+            self.assertEqual(len(p.read_text().split()), 9)
+            self.assertEqual(v18.preflight(target)["split"]["train"]["invalid_or_non_box_rows"], 0)
+
+    def test_rejects_unrepairable_unknown_class(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "raw"; self.make_dataset(root)
+            p = root / "train" / "labels" / "train-source.rf.train123.txt"
+            p.write_text("1 .5 .5 .2 .3\\n", encoding="utf8")
+            with self.assertRaisesRegex(ValueError, "Cannot safely convert"):
+                v18.prepare_boxes(root, Path(tmp) / "converted")
+
+
     def make_dataset(self, root):
         (root / "data.yaml").write_text("names: ['glyph-blocks']\nnc: 1\n", encoding="utf8")
         for split in ("train", "valid", "test"):
