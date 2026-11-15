@@ -1,0 +1,29 @@
+name: Glyph v18 block detector training preflight
+
+on:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/blocks_v18/train_export.py'
+      - 'ml/blocks_v18/test_train_export.py'
+      - '.github/workflows/maya-v18-block-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install YAML parser
+        run: python -m pip install PyYAML
+      - name: Compile scripts and run synthetic source-split checks
+        run: |
+          python -m py_compile ml/blocks_v18/train_export.py
+          python -m unittest discover -s ml/blocks_v18 -p "test_train_export.py" -v

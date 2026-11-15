@@ -65,3 +65,10 @@ maya_roboflow_v11_gallery.npz
 maya_roboflow_v11_full_gallery.npz
 Maya_Glyphs_v11.zip
 Maya-Glyphs-segmentation-model-11/
+
+# 494MB Roboflow block images and locally trained YOLO weights (never commit)
+Maya_Block_Detection_v18.zip
+maya_blocks_v18/
+mb18/
+ml/blocks_v18/output/
+ml/blocks_v18/runs/
