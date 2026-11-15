@@ -135,7 +135,7 @@ def preflight(root: Path, diagnose: bool = False) -> dict:
             if not label.is_file():
                 missing_labels += 1
                 continue
-            content = label.read_text(encoding="utf8-sig").strip()
+            content = label.read_text(encoding="utf-8-sig").strip()
             if not content:
                 empty += 1
                 continue
@@ -234,7 +234,7 @@ def prepare_boxes(root: Path, target: Path) -> dict:
                 shutil.copy2(img, dest)
             label = label_dir / f"{img.stem}.txt"
             normalized = []
-            for line in label.read_text(encoding="utf8-sig").splitlines():
+            for line in label.read_text(encoding="utf-8-sig").splitlines():
                 if not line.strip():
                     continue
                 status, value = parse_annotation(line)

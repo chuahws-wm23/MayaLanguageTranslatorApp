@@ -48,6 +48,7 @@ class PreflightTests(unittest.TestCase):
 
 
     def make_dataset(self, root):
+        root.mkdir(parents=True, exist_ok=True)
         (root / "data.yaml").write_text("names: ['glyph-blocks']\nnc: 1\n", encoding="utf8")
         for split in ("train", "valid", "test"):
             (root / split / "images").mkdir(parents=True)
