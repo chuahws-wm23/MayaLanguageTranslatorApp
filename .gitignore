@@ -72,3 +72,13 @@ maya_blocks_v18/
 mb18/
 ml/blocks_v18/output/
 ml/blocks_v18/runs/
+
+# Optional TWKM 25 research model — generated locally and supplied as CI artifact
+ml/catalogue_expansion/output/
+ml/catalogue_expansion/pretrained_output/
+ml/catalogue_expansion/android_export/
+ml/catalogue_expansion/android_export_with_photos/
+app/src/main/assets/maya_twkm25_feature.onnx
+app/src/main/assets/maya_twkm25_svm.onnx
+app/src/main/assets/maya_twkm25_gallery.bin
+app/src/main/assets/maya_twkm25_metadata.json
