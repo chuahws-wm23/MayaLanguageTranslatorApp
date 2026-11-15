@@ -1,0 +1,60 @@
+name: Evaluate ImageNet pretrained few-shot Maya sign features
+
+on:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/research_v4_single/frozen_pretrained_features.py'
+      - '.github/workflows/maya-frozen-pretrained-features.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned TWKM source preparation
+        run: |
+          mkdir -p ml/glyph_v4/outputs ml/glyph_v2
+          git fetch --depth=1 origin glyph-v4-expanded-training
+          git show FETCH_HEAD:ml/glyph_v4/train_v4.py > ml/glyph_v4/train_v4.py
+          git fetch --depth=1 origin glyph-model-v2-experiment
+          git show FETCH_HEAD:ml/glyph_v2/train.py > ml/glyph_v2/train.py
+          git show FETCH_HEAD:ml/glyph_v2/train_transfer.py > ml/glyph_v2/train_transfer.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU PyTorch and statistics
+        run: |
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'datasets>=4.0,<5' 'Pillow>=11,<13' opencv-python-headless scikit-learn scikit-image joblib
+      - name: Compile research script
+        run: python -m py_compile ml/research_v4_single/frozen_pretrained_features.py
+      - name: Extract frozen ImageNet features and evaluate source-grouped CV
+        run: python ml/research_v4_single/frozen_pretrained_features.py
+      - name: Summarize results
+        run: |
+          python - <<'PY'
+          import json,os
+          d=json.load(open("ml/research_v4_single/frozen_features_results/results.json"))
+          c=d['research_selection'];v=d['validation'];t=d['historical_exposed_test']
+          s=("## ImageNet frozen feature second opinion\n\n"
+             f"* Selected on training-original CV: {c['backbone']} / {c['representation']} / {c['kernel']} / C={c['C']}\n"
+             f"* CV correctly classified: {c['cv']['correct']}/{c['cv']['total']}\n"
+             f"* Validation correctly classified: {v['correct']}/{v['total']}\n"
+             f"* Previously exposed known test correctly classified: {t['correct']}/{t['total']}\n"
+             "* No real camera accuracy or unknown-sign rejection established. No Android weights changed.\n")
+          print(s)
+          open(os.environ['GITHUB_STEP_SUMMARY'],'a').write(s)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MayaImageNetFrozenFeaturesTWKMComparison
+          path: ml/research_v4_single/frozen_features_results/
+          if-no-files-found: warn
+          retention-days: 14
