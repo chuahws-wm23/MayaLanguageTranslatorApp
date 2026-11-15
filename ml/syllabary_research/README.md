@@ -58,3 +58,23 @@ syllable reader or claim 60–70% on this evidence.
    automatically presenting guesses as translated text.
 
 No Android files or model weights were modified by this benchmark.
+
+## Next candidate: pretrained MobileNetV3 embeddings
+
+A separate [learned visual-feature evaluator](evaluate_pretrained_embeddings.py)
+has been added for the SAME local 152-reference index. This is a **new
+candidate script, not yet a measured improvement**. The first run may
+download pretrained ImageNet weights; no chart images are uploaded.
+
+```powershell
+python -m pip install torch torchvision Pillow
+python ml/syllabary_research/evaluate_pretrained_embeddings.py `
+  --index "Maya_Syllabary_Expanded_Study/study/expanded_draft_reference_index.npz" `
+  --output "ml/syllabary_research/pretrained_local_results.json"
+```
+
+Compare the measured top-1/top-3 outcomes against the 5/45 and 13/45
+expanded-gallery baseline, but do not select on these chart holdouts and
+then report them as unbiased test accuracy. We still need independently
+verified glyph images from distinct original sources for a credible
+60–70% target.
