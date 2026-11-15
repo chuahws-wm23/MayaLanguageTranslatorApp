@@ -22,7 +22,7 @@ class PreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); self.make_dataset(root)
             p = root / "train" / "labels" / "train-source.rf.train123.txt"
-            p.write_text("0 .1 .2 .8 .2 .8 .9 .1 .9\\n", encoding="utf8")
+            p.write_text("0 .1 .2 .8 .2 .8 .9 .1 .9\n", encoding="utf8")
             report = v18.preflight(root, diagnose=True)
             self.assertEqual(report["split"]["train"]["invalid_or_non_box_rows"], 1)
             self.assertEqual(report["split"]["train"]["label_formats_and_reasons"]["polygon_to_box"], 1)
@@ -31,7 +31,7 @@ class PreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "raw"; self.make_dataset(root)
             p = root / "train" / "labels" / "train-source.rf.train123.txt"
-            p.write_text("0 .1 .2 .8 .2 .8 .9 .1 .9\\n", encoding="utf8")
+            p.write_text("0 .1 .2 .8 .2 .8 .9 .1 .9\n", encoding="utf8")
             target = Path(tmp) / "converted"
             v18.prepare_boxes(root, target)
             self.assertEqual(len((target / "train" / "labels" / p.name).read_text().split()), 5)
@@ -42,7 +42,7 @@ class PreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "raw"; self.make_dataset(root)
             p = root / "train" / "labels" / "train-source.rf.train123.txt"
-            p.write_text("1 .5 .5 .2 .3\\n", encoding="utf8")
+            p.write_text("1 .5 .5 .2 .3\n", encoding="utf8")
             with self.assertRaisesRegex(ValueError, "Cannot safely convert"):
                 v18.prepare_boxes(root, Path(tmp) / "converted")
 
@@ -62,13 +62,13 @@ class PreflightTests(unittest.TestCase):
             root = Path(tmp); self.make_dataset(root)
             audit = v18.preflight(root)
             self.assertEqual(audit["split"]["train"]["images"], 1)
-            self.assertEqual(audit["split"]["test"]["boxes"], 1)
+            self.assertEqual(audit["split"]["test"]["valid_detection_boxes"], 1)
     def test_rejects_wrong_class(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); self.make_dataset(root)
             (root / "test" / "labels" / "test-source.rf.test123.txt").write_text(
                 "1 .5 .5 .2 .3\n", encoding="utf8")
-            with self.assertRaisesRegex(ValueError, "invalid YOLO rows"):
+            with self.assertRaisesRegex(ValueError, "unexpected_class"):
                 v18.preflight(root)
     def test_rejects_same_source_cross_split(self):
         with tempfile.TemporaryDirectory() as tmp:
