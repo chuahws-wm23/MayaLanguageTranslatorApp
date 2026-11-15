@@ -1,0 +1,47 @@
+name: OpenCV preprocessing comparison for Maya Research v4
+
+on:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/research_v4_single/opencv_single_glyph.py'
+      - 'ml/research_v4_single/evaluate_opencv_single.py'
+      - 'ml/research_v4_single/test_opencv_single.py'
+      - '.github/workflows/research-v4-opencv.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore pinned TWKM research loader only
+        run: |
+          mkdir -p ml/glyph_v4/outputs ml/glyph_v2
+          git fetch --depth=1 origin glyph-v4-expanded-training
+          git show FETCH_HEAD:ml/glyph_v4/train_v4.py > ml/glyph_v4/train_v4.py
+          git fetch --depth=1 origin glyph-model-v2-experiment
+          git show FETCH_HEAD:ml/glyph_v2/train.py > ml/glyph_v2/train.py
+          git show FETCH_HEAD:ml/glyph_v2/train_transfer.py > ml/glyph_v2/train_transfer.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU neural-inference and OpenCV evaluation libraries
+        run: |
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'datasets>=4.0,<5' 'pillow>=11,<13' opencv-python-headless scikit-learn scikit-image joblib onnxruntime
+      - name: Run synthetic image integrity and preprocessing tests
+        run: python ml/research_v4_single/test_opencv_single.py -v
+      - name: Compare original and OpenCV treatments on fixed TWKM splits
+        run: python ml/research_v4_single/evaluate_opencv_single.py
+      - name: Publish measured results
+        run: cat ml/research_v4_single/opencv_results/RESULTS.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MayaResearchV4OpenCVPreprocessingResults
+          path: ml/research_v4_single/opencv_results/
+          retention-days: 14
