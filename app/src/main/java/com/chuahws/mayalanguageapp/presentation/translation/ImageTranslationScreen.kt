@@ -36,6 +36,8 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV3Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV4Result
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphV25Result
+import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV25
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV4CorrectionReport
 import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV4
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
@@ -121,9 +123,11 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        if (state.model == GlyphModelMode.RESEARCH_V4)
-                            "Research v4 · 10 supported signs · offline"
-                        else "Experimental legacy recognition mode",
+                        when (state.model) {
+                            GlyphModelMode.RESEARCH_V4 -> "Research v4 · 10 supported signs · offline"
+                            GlyphModelMode.RESEARCH_25 -> "TWKM 25-sign study · optional research model"
+                            else -> "Experimental legacy recognition mode"
+                        },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -174,6 +178,19 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                         ) { Text("Research v4 (10 signs)") }
                     }
+                    if (state.model == GlyphModelMode.RESEARCH_25) {
+                        Button(
+                            onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_25) },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        ) { Text("TWKM 25 (research)") }
+                    } else {
+                        OutlinedButton(
+                            onClick = { glyphModel.setModel(GlyphModelMode.RESEARCH_25) },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        ) { Text("TWKM 25 (research)") }
+                    }
                     }
                     val modelDescription = when (state.model) {
                         GlyphModelMode.TINY_V1 ->
@@ -188,8 +205,22 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                             "v4 (default): Ten TWKM sign categories. Works on photos chosen from Gallery or Camera " +
                                 "without a catalogue lookup. It compares two photo treatments and " +
                                 "flags unstable results. Unknown signs can still be misidentified; Deer/Cacao are NOT included."
+                        GlyphModelMode.RESEARCH_25 ->
+                            "EXPERIMENTAL research: 25 sign IDs (NOT 25 verified readings). " +
+                                "Choose ONE isolated sign, not a multi-sign block. " +
+                                "Requires separately installed ONNX research assets; " +
+                                "catalogue accuracy is not phone-photo accuracy."
                     }
                     Text(modelDescription, style = MaterialTheme.typography.bodySmall)
+                    if (state.model == GlyphModelMode.RESEARCH_25 &&
+                        !MayaGlyphRecognizerV25.isInstalled(context)) {
+                        Text(
+                            "Experimental 25-sign model not installed. Download the verified four-file " +
+                                "model artifact and copy it into app/src/main/assets before rebuilding.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
             }
             state.bitmap?.let { image ->
@@ -297,6 +328,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     onTryAnother = { gallery.launch("image/*") },
                 )
             }
+            state.resultV25?.let { result -> GlyphV25ResultCard(result) }
             state.bitmap?.let { bitmap ->
                 if (state.multiple.isNotEmpty()) {
                     MultiGlyphResultsPanel(
@@ -324,6 +356,10 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         "two photo views (original and shadow-corrected). Agreement is NOT proof " +
                         "that an unfamiliar sign is supported. Previous 7/10 test came from " +
                         "catalogue drawings only; real photo accuracy is still unmeasured."
+                GlyphModelMode.RESEARCH_25 ->
+                    "TWKM 25-sign experimental frozen MobileNetV3+SVM: 17/25 on a small, " +
+                        "previously exposed catalogue cohort; only 12/25 were correctly accepted. " +
+                        "No independent photo accuracy established; do not treat signs as translated text."
             }
             Text(
                 modelLimitations, style = MaterialTheme.typography.bodySmall,
@@ -446,6 +482,27 @@ private fun GlyphV3ResultCard(result: GlyphV3Result) {
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun GlyphV25ResultCard(result: GlyphV25Result) {
+    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("TWKM 25 · experimental visual identification",
+                style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                if (result.accepted && result.proposedSignNumber != null)
+                    "Possible catalogue sign #${result.proposedSignNumber} (UNVERIFIED)"
+                else "Not identified / needs review",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(result.explanation, style = MaterialTheme.typography.bodySmall)
+            Text("This result is NOT a Classical Maya reading or an English translation. " +
+                "Do not use it as an archaeological identification without expert review.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
