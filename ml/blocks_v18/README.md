@@ -236,3 +236,43 @@ Keep these new photos out of the final independent test set.
 The script does NOT retrain weights, change the ONNX, alter APK behavior,
 or improve Maya sign **translation**. The user-uploaded seven examples
 were already inspected and cannot fairly serve as fresh blind test data.
+
+## Why the first tiled comparison underestimated recall (fixed)
+
+The first full validation scan capped predictions at **48 blocks per image**
+in `preview_detector.py`, reflecting a conservative Android UI/inference
+limit rather than YOLO11n's validated output capacity of up to 300.
+Several v18 images have 56–249 labelled glyph blocks each. **Eight of the
+67 validation images alone require at least 603 boxes beyond the 48-box
+limit**, so this cap necessarily counted at least 603 true blocks as missed.
+
+The first tiled run using that cap reported baseline 1067 TP / 83 FP /
+821 FN (F1=.7024), versus tiled 1102 TP / 290 FP / 786 FN (F1=.6720).
+This comparison did **not** justify enabling tiling: the added FP cost
+far exceeded the TP gain. It also is not comparable to the original
+Ultralytics validation metrics (different maximum boxes/thresholds).
+**Do not publish these capped numbers as the unconstrained model recall.**
+
+The revised tool defaults to `--max-blocks 300` to match
+`ultralytics.model.predict(max_det=300)`, and explicitly reports
+how many ground-truth labels were structurally excluded by the selected
+cap. Results use separate output names suffixed `cap300` or `cap48`.
+The Android app retains its 48-block UI cap for now because passing
+249 boxes to ten-sign recognition may be too slow or memory-intensive.
+
+Re-run the same **full validation split** under the corrected cap:
+
+```powershell
+python .\ml\blocks_v18\preview_detector.py --dataset "$env:USERPROFILE\mb18_boxes" --model ".\ml\blocks_v18\output\maya_blocks_v18.onnx" --split valid --mode tiled --count 0 --device cpu --max-blocks 300
+```
+
+Compare with the original Android-sized cap (optional):
+
+```powershell
+python .\ml\blocks_v18\preview_detector.py --dataset "$env:USERPROFILE\mb18_boxes" --model ".\ml\blocks_v18\output\maya_blocks_v18.onnx" --split valid --mode tiled --count 0 --device cpu --max-blocks 48
+```
+
+A higher cap does **not** train the model and does not cure faint carvings
+or figure-art false positives. It simply removes an evaluation bottleneck,
+allowing a fairer comparison. Do not deploy tiled detection until corrected
+validation comparison establishes a worthwhile precision/recall trade-off.

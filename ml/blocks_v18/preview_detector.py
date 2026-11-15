@@ -26,10 +26,10 @@ def box_iou(a, b):
     return overlap/denom if denom > 0 else 0.
 
 
-def suppress(boxes, threshold=.45, limit=48):
+def suppress(boxes, threshold=.45, limit=300):
     """One-class NMS; coordinates in ORIGINAL image pixels, not crop pixels."""
-    if not 0 <= threshold <= 1:
-        raise ValueError("Invalid overlap threshold")
+    if not 0 <= threshold <= 1 or not 1 <= limit <= 300:
+        raise ValueError("Invalid overlap threshold or maximum block count (1..300)")
     ordered = sorted(boxes, key=lambda b: (-b[4], b[1], b[0]))
     out = []
     for box in ordered:
@@ -132,7 +132,7 @@ def yolo_predict(model, image, confidence, device):
     return [tuple(float(v) for v in row)+(float(p),) for row, p in zip(boxes, conf)]
 
 
-def candidate_boxes(model, image, mode, confidence, device, iou=.45):
+def candidate_boxes(model, image, mode, confidence, device, iou=.45, limit=300):
     """Start with baseline. Merge rotated or tiled proposals in original pixels."""
     import cv2
     h, w = image.shape[:2]
@@ -166,7 +166,7 @@ def candidate_boxes(model, image, mode, confidence, device, iou=.45):
                             bottom<h and y2 >= crop.shape[0]-3):
                             continue
                         found.append((x1+left,y1+top,x2+left,y2+top,p))
-    return suppress(found, iou, 48)
+    return suppress(found, iou, limit)
 
 
 def render_view(image, boxes, title, color, max_long=900):
@@ -200,12 +200,14 @@ def main():
     parser.add_argument("--split",choices=("valid","test"),default="valid")
     parser.add_argument("--mode",choices=("baseline","tiled","rotated","hybrid"),default="tiled")
     parser.add_argument("--count",type=int,default=8,help="0 means all images in this split")
+    parser.add_argument("--max-blocks",type=int,default=300,
+                        help="Max distinct boxes per image (default 300 for unbiased research; Android currently limits to 48)")
     parser.add_argument("--confidence",type=float,default=.35)
     parser.add_argument("--device",default="cpu",help="CPU avoids your missing CUDA TorchVision NMS kernel")
     parser.add_argument("--output",type=Path,default=Path("ml/blocks_v18/output/diagnostics"))
     args=parser.parse_args()
-    if args.count < 0 or args.count > 150 or not 0 < args.confidence < 1:
-        parser.error("Count must be 0..150 and confidence between 0 and 1.")
+    if args.count < 0 or args.count > 150 or not 0 < args.confidence < 1 or not 1 <= args.max_blocks <= 300:
+        parser.error("Count 0..150; confidence (0,1); max-blocks 1..300.")
     import cv2
     from ultralytics import YOLO
     root=args.dataset.expanduser().resolve()
@@ -226,9 +228,11 @@ def main():
             raise RuntimeError("Cannot read image: " + str(path))
         height,width=original.shape[:2]
         truth=read_yolo_boxes(root/args.split/"labels"/(path.stem+".txt"),width,height)
-        baseline=suppress(yolo_predict(model,original,args.confidence,args.device))
+        baseline=suppress(yolo_predict(model,original,args.confidence,args.device),
+                          limit=args.max_blocks)
         advanced=(baseline if args.mode=="baseline" else
-                  candidate_boxes(model,original,args.mode,args.confidence,args.device))
+                  candidate_boxes(model,original,args.mode,args.confidence,args.device,
+                                  limit=args.max_blocks))
         bscore=count_matches(baseline,truth)
         ascore=count_matches(advanced,truth)
         if args.count:  # produce annotated contact sheets for a few varied images
@@ -242,13 +246,15 @@ def main():
                 panels.append(render_view(original,advanced,
                              args.mode.upper()+" TP=%d FP=%d FN=%d" %
                              (ascore["tp"],ascore["fp"],ascore["fn"]), (49,174,241)))
-            preview=args.output/("compare_%s_%s_%02d.jpg" % (args.split,args.mode,idx))
+            preview=args.output/("compare_%s_%s_cap%d_%02d.jpg" %
+                                 (args.split,args.mode,args.max_blocks,idx))
             if not cv2.imwrite(str(preview),cv2.hconcat(panels)):
                 raise RuntimeError("Cannot save preview: "+str(preview))
         rows.append({
             "image":path.name,"true_blocks":len(truth),
             "baseline_predicted":len(baseline),
             "candidate_predicted":len(advanced),
+            "gt_exceeds_per_image_cap":len(truth)>args.max_blocks,
             "baseline":bscore,"candidate":ascore
         })
         print("[%d/%d] %s GT=%d base(TP/FP/FN)=%s %s=%s" % (
@@ -257,6 +263,10 @@ def main():
     report={
         "dataset_split":args.split,"model":str(args.model),"mode":args.mode,
         "fixed_confidence":args.confidence,"nms_iou":.45,"match_iou":.50,
+        "research_max_blocks_per_image":args.max_blocks,
+        "images_with_more_gt_blocks_than_cap":sum(r["gt_exceeds_per_image_cap"] for r in rows),
+        "minimum_forced_misses_due_to_cap":sum(max(0,r["true_blocks"]-args.max_blocks) for r in rows),
+        "note_on_device_limit":"Android decoder still caps at 48 boxes for UI/inference resource protection; this research result uses a separate configured cap.",
         "only_selected_images":bool(args.count),
         "selected_image_count":len(images),
         "baseline":measure([r["baseline"] for r in rows]),
@@ -269,10 +279,13 @@ def main():
                   "Choose methods/settings on FULL validation, not cherry-picked previews.",
         "android_change":"NONE: these alternative inference modes are not deployed."
     }
-    output=args.output/("comparison_%s_%s.json" % (args.split,args.mode))
+    output=args.output/("comparison_%s_%s_cap%d.json" %
+                         (args.split,args.mode,args.max_blocks))
     output.write_text(json.dumps(report,indent=2),encoding="utf8")
     print("\nSUMMARY",json.dumps({k:report[k] for k in
-         ("dataset_split","mode","selected_image_count","baseline","candidate")},indent=2))
+         ("dataset_split","mode","selected_image_count",
+          "research_max_blocks_per_image","images_with_more_gt_blocks_than_cap",
+          "minimum_forced_misses_due_to_cap","baseline","candidate")},indent=2))
     print("Saved:",output)
     if args.count: print("Contact sheets in",args.output)
 

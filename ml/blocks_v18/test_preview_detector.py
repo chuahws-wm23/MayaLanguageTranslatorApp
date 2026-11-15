@@ -10,6 +10,23 @@ spec.loader.exec_module(m)
 
 
 class ComparisonGeometryTests(unittest.TestCase):
+    def test_research_gallery_can_score_more_than_48_boxes(self):
+        """No artificial cap when comparing against dense, annotated panels."""
+        boxes = []
+        for i in range(75):
+            x, y = (i % 15) * 30, (i // 15) * 30
+            boxes.append((x,y,x+20,y+20,.95 - i*.0001))
+        full = m.suppress(boxes,.45)
+        capped = m.suppress(boxes,.45,limit=48)
+        self.assertEqual(len(full),75)
+        self.assertEqual(len(capped),48)
+        self.assertEqual(m.count_matches(full,boxes), {"tp":75,"fp":0,"fn":0})
+        self.assertEqual(m.count_matches(capped,boxes), {"tp":48,"fp":0,"fn":27})
+
+    def test_rejects_unbounded_nms_limit(self):
+        with self.assertRaisesRegex(ValueError,"maximum block"):
+            m.suppress([],limit=301)
+
     def test_nms_keeps_distinct_blocks_and_best_duplicate(self):
         boxes=[
             (10,10,80,80,.80),
