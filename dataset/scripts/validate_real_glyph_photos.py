@@ -19,7 +19,13 @@ COLUMNS=("image_path","twkm_sign","source_group","source_url",
          "license","verified_by","split")
 EXTS={".png",".jpg",".jpeg",".webp"}
 
-def audit(manifest:Path,root:Path):
+def audit(manifest:Path,root:Path,allowed_signs=None):
+    # Default retains the historical ten-sign Research v4 gate.
+    # The optional expanded label set comes from a model export manifest,
+    # never from an unverified handwritten guess in the image CSV.
+    labels=SIGNS if allowed_signs is None else set(allowed_signs)
+    if not labels or any(not isinstance(n,int) or n <= 0 for n in labels):
+        raise ValueError("Allowed TWKM signs must be positive verified integer IDs.")
     root=root.resolve()
     with manifest.open(newline="",encoding="utf-8-sig") as f:
         reader=csv.DictReader(f)
@@ -43,7 +49,7 @@ def audit(manifest:Path,root:Path):
             errors.append(f"row {number}: missing {', '.join(missing)}")
             continue
         if sign!="UNKNOWN":
-            if not sign.isdigit() or int(sign) not in SIGNS:
+            if not sign.isdigit() or int(sign) not in labels:
                 errors.append(f"row {number}: unsupported or unverified sign {sign!r}; use UNKNOWN for explicit out-of-scope")
                 continue
         if split not in SPLITS:
@@ -104,7 +110,7 @@ def audit(manifest:Path,root:Path):
             if a[1]!=b[1] and a[2]==b[2] and (a[4]^b[4]).bit_count()<=3:
                 warnings.append(f"Possible near-duplicate across splits for sign {a[2]} (rows {a[0]}, {b[0]}); check source_group")
     readiness=[]
-    for sign in sorted(SIGNS):
+    for sign in sorted(labels):
         n=class_counts[str(sign)]
         if n["train"]<8 or n["validation"]<3 or n["test"]<5:
             readiness.append(f"TWKM {sign}: need >=8 training, >=3 validation and >=5 independent test photos; now {dict(n)}")
@@ -112,6 +118,7 @@ def audit(manifest:Path,root:Path):
     if unknown["validation"]<20 or unknown["test"]<50:
         readiness.append(f"UNKNOWN negatives: need >=20 validation and >=50 independent test photos; now {dict(unknown)}")
     report={
+        "allowed_twkm_signs":sorted(labels),
         "total_manifest_rows":len(rows),
         "valid_photo_rows":sum(sum(v.values()) for v in class_counts.values()),
         "class_counts":{s:dict(v) for s,v in sorted(class_counts.items())},
@@ -132,8 +139,14 @@ def main():
     ap.add_argument("--out",type=Path,default=None)
     ap.add_argument("--strict",action="store_true",
         help="also fail when per-class counts or near-duplicate review gaps remain")
+    ap.add_argument("--model-metadata",type=Path,
+        help="Optional maya_twkm25_metadata.json; expands the verified allowed labels beyond v4")
     args=ap.parse_args()
-    report=audit(args.manifest,args.root)
+    sign_ids=None
+    if args.model_metadata:
+        meta=json.loads(args.model_metadata.read_text(encoding="utf-8"))
+        sign_ids=set(meta["supported_twkm_sign_numbers"])
+    report=audit(args.manifest,args.root,allowed_signs=sign_ids)
     if args.out:
         args.out.parent.mkdir(parents=True,exist_ok=True)
         args.out.write_text(json.dumps(report,indent=2),encoding="utf-8")
