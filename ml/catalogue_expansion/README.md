@@ -32,7 +32,7 @@ Review `output/catalogue_audit.json` first: it reports exactly how many signs ha
 
 ## Release criteria
 
-**No Android recognizer change is authorized by this research job.** Before deployment, establish independent source/artifact-grouped labelled examples, per-sign recall and macro F1, incorrect-unknown acceptance, a validated sign/reading mapping, on-device preprocessing parity and latency. New model weights or reference image matches without these checks are not reliable translations.
+**The original Research v4 Android recognizer remains the default and has not been replaced.** A separate manually installed `TWKM 25 (research)` mode now exists for *experimental* isolated-sign tests, using ONNX visual features, SVM and training-only reference screening. This optional mode is NOT a validated release. See [Android installation and verified photo intake](../../docs/TWKM25_ANDROID_INSTALL_AND_NEW_DATA.md) and [exact 25 sign IDs](../../docs/TWKM25_EXACT_SIGN_IDS_AND_DATA_PLAN.md). Before any accuracy claim, establish independent source/artifact-grouped labelled photos, per-sign recall and macro F1, incorrect-unknown acceptance, on-device preprocessing parity and latency. An approximate catalogue match is not a verified translation.
 
 For a fast FYP improvement, a separate manual searchable **reference catalogue** may expose much broader coverage while clearly not promising automatic photo recognition. If and only if a tested expanded visual model beats the existing 10-sign workflow on genuine independently labelled photos should automatic recognition move beyond Research v4.
 
