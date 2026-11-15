@@ -220,9 +220,10 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         Text("Scan all glyphs automatically")
                     }
                 Text(
-                    "Automatically finds multiple blocks arranged in rows and columns. " +
-                        "No need to crop each one. Research v4 is the default and flags " +
-                        "blocks with inconsistent lighting-view predictions.",
+                    "Uses a trained offline v18 block detector when installed and validated; " +
+                        "otherwise retains the original regular-grid fallback. " +
+                        "No need to crop each block manually. Research v4 recognition " +
+                        "still provides only unverified ten-sign suggestions.",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 OutlinedButton(
@@ -303,6 +304,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         bitmap = bitmap,
                         results = state.multiple,
                         assisted = state.assistedGrid,
+                        detectorNote = state.detectorNote,
                         onInspect = glyphModel::setCrop,
                     )
                 }

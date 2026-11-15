@@ -38,6 +38,7 @@ internal fun MultiGlyphResultsPanel(
     bitmap: Bitmap,
     results: List<MultiGlyphItem>,
     assisted: Boolean = false,
+    detectorNote: String? = null,
     onInspect: (GlyphCrop) -> Unit,
 ) {
     if (results.isEmpty()) return
@@ -58,6 +59,10 @@ internal fun MultiGlyphResultsPanel(
                     recognized + " have model suggestions.",
                 style = MaterialTheme.typography.bodyMedium,
             )
+            detectorNote?.let { note ->
+                Text(note, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             Text(
                 if (assisted)
                     "Yellow boxes are an APPROXIMATE user-chosen grid, not detected glyph boundaries. " +

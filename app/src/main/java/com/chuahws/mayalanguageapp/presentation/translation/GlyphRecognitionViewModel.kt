@@ -11,6 +11,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGrid
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGuard
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageLoader
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphMultiDetector
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphV18Detector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphDetectedRegion
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
@@ -56,6 +57,7 @@ internal data class GlyphUiState(
     val multiple: List<MultiGlyphItem> = emptyList(),
     val multipleProgress: String? = null,
     val assistedGrid: Boolean = false,
+    val detectorNote: String? = null,
     val model: GlyphModelMode = GlyphModelMode.RESEARCH_V4,
     val busy: Boolean = false,
     val message: String? = null,
@@ -175,28 +177,49 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         work?.cancel()
         mutable.value = snapshot.copy(
             busy = true, result = null, resultV2 = null, resultV3 = null,
-            resultV4 = null, multiple = emptyList(), assistedGrid = false,
+            resultV4 = null, multiple = emptyList(), assistedGrid = false, detectorNote = null,
             multipleProgress = if (grid == null) "Finding glyph blocks…" else "Preparing grid…",
             message = null,
         )
         work = viewModelScope.launch {
             try {
-                val regions = withContext(Dispatchers.Default) {
-                    when {
-                        grid != null -> GlyphPanelGrid.regions(
-                            snapshot.crop, grid.first, grid.second,
-                        )
-                        snapshot.crop == GlyphCrop() -> GlyphMultiDetector.detect(image)
-                        else -> {
+                val (regions, detectorNote) = withContext(Dispatchers.Default) {
+                    if (grid != null) {
+                        GlyphPanelGrid.regions(snapshot.crop, grid.first, grid.second) to
+                            "User-chosen approximate grid. Adjust rows and columns as needed."
+                    } else {
+                        // Run the trained v18 block detector FIRST when its ONNX
+                        // asset has been added after validation. Otherwise keep
+                        // the existing offline seam/grid fallback.
+                        val selected = if (snapshot.crop == GlyphCrop()) image else {
                             val (x, y, w, h) = snapshot.crop.pixels(image.width, image.height)
-                            val selected = Bitmap.createBitmap(image, x, y, w, h)
-                            try {
-                                GlyphMultiDetector.detect(selected).map { region ->
+                            Bitmap.createBitmap(image, x, y, w, h)
+                        }
+                        try {
+                            val trained = runCatching {
+                                GlyphV18Detector.fromAssetsOrNull(getApplication())?.detect(selected)
+                            }.getOrNull()
+                            val separated = if (!trained.isNullOrEmpty()) trained
+                                else GlyphMultiDetector.detect(selected)
+                            val note = when {
+                                !trained.isNullOrEmpty() ->
+                                    "Trained offline YOLO11n v18 detected these block candidates. " +
+                                        "Boxes and reading order are provisional, not translations."
+                                trained != null ->
+                                    "v18 model found no usable boxes; used the original " +
+                                        "grid/seam fallback instead."
+                                else ->
+                                    "No active trained v18 detector (or it could not load). " +
+                                        "Using existing offline grid/seam detection."
+                            }
+                            val restored = if (snapshot.crop == GlyphCrop()) separated else {
+                                separated.map { region ->
                                     GlyphPanelGrid.toOriginal(snapshot.crop, region)
                                 }
-                            } finally {
-                                if (selected !== image) selected.recycle()
                             }
+                            restored to note
+                        } finally {
+                            if (selected !== image) selected.recycle()
                         }
                     }
                 }
@@ -204,7 +227,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                 if (regions.isEmpty()) {
                     mutable.value = mutable.value.copy(
                         busy = false, multipleProgress = null,
-                        message = "Automatic block separation could not find a reliable grid. " +
+                        message = "No reliable glyph-block boundaries found. " +
                             "Try Grid-assisted scan: drag one crop over the entire panel, " +
                             "choose its approximate rows and columns, then scan. " +
                             "You do not need to crop individual glyphs.",
@@ -285,7 +308,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                 if (request == version) {
                     mutable.value = mutable.value.copy(
                         busy = false, multiple = results, multipleProgress = null,
-                        assistedGrid = grid != null, message = null,
+                        assistedGrid = grid != null, detectorNote = detectorNote,
+                        message = null,
                     )
                 }
             } catch (cancelled: CancellationException) {
