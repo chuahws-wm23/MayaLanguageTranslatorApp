@@ -111,7 +111,7 @@ def prepare(rows,raw,mode,views=1):
         for k in range(views):
             img=orig if k==0 else augment(orig,int(row["sha"][:12],16)+SEED+31*k)
             all_vectors.append(vector(img,mode))
-            signs.append(SIGNS.index(row["sign"]))
+            signs.append(SIGNS.index(row["sign"]) if row["sign"] in SIGNS else -1)
             hashes.append(row["sha"])
     return np.stack(all_vectors),np.asarray(signs),hashes
 
