@@ -21,7 +21,7 @@ class PreflightTests(unittest.TestCase):
                 self.is_cuda = device == "cuda"
                 self.value = value
             def to(self, device):
-                return Tensor(device, self.value)
+                return Tensor(device.type if hasattr(device, "type") else device, self.value)
             def detach(self):
                 return self
 
