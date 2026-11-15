@@ -90,7 +90,7 @@ def paired(logits,labels,variant,baseline="original"):
     if variant=="original":
         accepted=np.isfinite(original).all(axis=1)
     result={
-        "n":len(labels),"correct_accepted":int((accepted&(prediction==labels)).sum()) if labels is not None else None,
+        "n":len(prediction),"correct_accepted":int((accepted&(prediction==labels)).sum()) if labels is not None else None,
         "wrong_accepted":int((accepted&(prediction!=labels)).sum()) if labels is not None else int(accepted.sum()),
         "rejected":int((~accepted).sum()),
         "accepted_total":int(accepted.sum()),
