@@ -59,3 +59,9 @@ Maya_v11_Spatial_Research_Kit.zip
 
 # Local research only: calibrated template-gallery bank and evaluation
 ml/research_v4_single/template_match_results/
+
+# Large local Roboflow reference-galleries and raw v11 ZIP
+maya_roboflow_v11_gallery.npz
+maya_roboflow_v11_full_gallery.npz
+Maya_Glyphs_v11.zip
+Maya-Glyphs-segmentation-model-11/
