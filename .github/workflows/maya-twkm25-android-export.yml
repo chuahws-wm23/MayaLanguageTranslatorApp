@@ -1,0 +1,62 @@
+name: Export opt-in 25-sign Android research model
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/catalogue_expansion/export_android_candidate.py'
+      - '.github/workflows/maya-twkm25-android-export.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    name: Train and verify paired ONNX research assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU training, export and parity dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'datasets>=4.0,<5' Pillow numpy opencv-python-headless scikit-image scikit-learn skl2onnx onnx onnxruntime onnxscript
+      - name: Check code and existing research tests
+        run: |
+          python -m py_compile ml/catalogue_expansion/benchmark.py ml/catalogue_expansion/pretrained_pilot.py ml/catalogue_expansion/export_android_candidate.py
+          python -m unittest discover -s ml/catalogue_expansion -p 'test_*.py' -v
+      - name: Build research candidate and validate ONNX feature plus classifier parity
+        run: |
+          python ml/catalogue_expansion/export_android_candidate.py
+      - name: Show paired model report
+        if: always()
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          report=Path('ml/catalogue_expansion/android_export/maya_twkm25_metadata.json')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as o:
+              o.write('## TWKM 25-sign ONNX research candidate\n\n')
+              if not report.exists():
+                  o.write('Export failed or rejected parity: inspect logs. Android unchanged.\n')
+              else:
+                  d=json.loads(report.read_text())
+                  o.write(f"**Sign categories:** {len(d['supported_twkm_sign_numbers'])}  \n")
+                  o.write(f"**Exposed catalogue test:** {d['evaluation']['previously_exposed_test']}  \n")
+                  o.write(f"**Unknown test:** {d['evaluation']['unknown_disjoint_test']}  \n")
+                  o.write(f"**ONNX parity:** {d['onnx_parity']}  \n")
+                  o.write('**Real phone-photo accuracy: NOT MEASURED.** Research assets are not automatically installed.\n')
+          PY
+      - name: Package opt-in Android assets and validation report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Maya-TWKM25-Android-Research-Assets
+          path: ml/catalogue_expansion/android_export/
+          if-no-files-found: error
+          retention-days: 14
