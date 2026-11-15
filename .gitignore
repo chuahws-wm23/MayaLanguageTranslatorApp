@@ -44,3 +44,11 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Roboflow Maya glyph local research downloads, crops, and model weights
+Maya_v11_Research_Kit/
+Maya_v11_All_Crops/
+Maya_Glyphs_v11.zip
+Maya_v11_Research_Kit.zip
+Maya_v11_All_Crops.zip
+ml/research_roboflow_v11/output/
