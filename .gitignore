@@ -83,3 +83,6 @@ app/src/main/assets/maya_twkm25_svm.onnx
 app/src/main/assets/maya_twkm25_gallery.bin
 app/src/main/assets/maya_twkm25_metadata.json
 ml/catalogue_expansion/twkm_background_output/
+
+# Local-only Maya syllabary research results and CC BY drawing indexes
+ml/syllabary_ml/output/
