@@ -11,6 +11,89 @@ spec.loader.exec_module(v18)
 
 
 class PreflightTests(unittest.TestCase):
+    def test_cpu_nms_fallback_preserves_gpu_indices(self):
+        """Simulate the specific CPU-only TorchVision install from user logs."""
+        from types import SimpleNamespace
+
+        class Tensor:
+            def __init__(self, device, value=1):
+                self.device = SimpleNamespace(type=device)
+                self.is_cuda = device == "cuda"
+                self.value = value
+            def to(self, device):
+                return Tensor(device, self.value)
+            def detach(self):
+                return self
+
+        called = []
+        def cpu_only_nms(boxes, scores, threshold):
+            called.append((boxes.device.type, scores.device.type, threshold))
+            if boxes.is_cuda:
+                raise NotImplementedError(
+                    "Could not run 'torchvision::nms' with arguments from the 'CUDA' backend."
+                )
+            return Tensor("cpu", value=42)
+
+        torch_stub = SimpleNamespace(
+            float32="float32",
+            tensor=lambda x, dtype, device: Tensor(device),
+            cuda=SimpleNamespace(is_available=lambda: True),
+        )
+        vision_stub = SimpleNamespace(ops=SimpleNamespace(nms=cpu_only_nms))
+        patched = v18.enable_cpu_nms_fallback_if_cuda_missing(
+            torch_stub, vision_stub, "0",
+        )
+        self.assertTrue(patched)
+        selected = vision_stub.ops.nms(Tensor("cuda"), Tensor("cuda"), 0.5)
+        self.assertEqual(selected.device.type, "cuda")
+        self.assertEqual(selected.value, 42)
+        self.assertEqual(called[-1], ("cpu", "cpu", 0.5))
+        # CPU boxes still use the original CPU operator without a round trip.
+        selected_cpu = vision_stub.ops.nms(Tensor("cpu"), Tensor("cpu"), .4)
+        self.assertEqual(selected_cpu.device.type, "cpu")
+
+    def test_gpu_nms_no_patch_when_cuda_kernel_works(self):
+        from types import SimpleNamespace
+        class Tensor:
+            def __init__(self, device):
+                self.device = SimpleNamespace(type=device)
+                self.is_cuda = device == "cuda"
+        fake_torch = SimpleNamespace(
+            float32="float32", tensor=lambda x, dtype, device: Tensor(device),
+            cuda=SimpleNamespace(is_available=lambda: True),
+        )
+        nms=lambda boxes,scores,iou: Tensor(boxes.device.type)
+        vision=SimpleNamespace(ops=SimpleNamespace(nms=nms))
+        self.assertFalse(v18.enable_cpu_nms_fallback_if_cuda_missing(
+            fake_torch, vision, "0",
+        ))
+        self.assertIs(vision.ops.nms, nms)
+
+    def test_cpu_device_skips_cuda_probe(self):
+        from types import SimpleNamespace
+        fake_torch=SimpleNamespace(
+            cuda=SimpleNamespace(is_available=lambda: True),
+        )
+        self.assertFalse(v18.enable_cpu_nms_fallback_if_cuda_missing(
+            fake_torch, SimpleNamespace(), "cpu",
+        ))
+
+    def test_unrelated_cuda_nms_error_not_hidden(self):
+        from types import SimpleNamespace
+        class Tensor:
+            def __init__(self, device):
+                self.device=SimpleNamespace(type=device)
+                self.is_cuda=device=="cuda"
+        fake_torch=SimpleNamespace(
+            float32="float32",tensor=lambda x,dtype,device:Tensor(device),
+            cuda=SimpleNamespace(is_available=lambda: True),
+        )
+        def nms(boxes,scores,iou):
+            raise NotImplementedError("Another unsupported operation, unrelated to torchvision::nms")
+        vision=SimpleNamespace(ops=SimpleNamespace(nms=nms))
+        with self.assertRaisesRegex(NotImplementedError,"Another unsupported operation"):
+            v18.enable_cpu_nms_fallback_if_cuda_missing(fake_torch,vision,"0")
+
     def test_parser_recognizes_polygons_separately_from_boxes(self):
         kind, box = v18.parse_annotation("0 .1 .2 .8 .2 .8 .9 .1 .9")
         self.assertEqual(kind, "polygon_to_box")

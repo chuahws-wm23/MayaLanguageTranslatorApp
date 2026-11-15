@@ -153,3 +153,35 @@ the bad rows blindly; inspect the first issues and source annotations.
 
 Then use \`--dataset "$env:USERPROFILE\mb18_boxes"\` for training. The
 training script never silently alters untrusted labels.
+
+## Troubleshooting: training crashes after epoch 1 with `torchvision::nms` CUDA
+
+If the dataset passes its audit, the YOLO model begins GPU training, and
+epoch validation fails with:
+
+```text
+NotImplementedError: Could not run 'torchvision::nms' with arguments from the 'CUDA' backend
+```
+
+the local PyTorch/TorchVision installation has CUDA training support but
+**does not have a CUDA TorchVision NMS kernel**. This is an environment issue,
+not invalid glyph-block labels.
+
+The trainer now **probes TorchVision CUDA NMS before epoch 1**. If only the
+CPU NMS kernel is available, it installs a **process-local** fallback: only
+NMS boxes/scores transfer to CPU, and the selected indices return to GPU.
+All YOLO convolutions, gradients and validation forward passes remain on GPU.
+Your installed libraries, dataset and checkpoint files are not modified.
+
+After updating from GitHub, just run the same command again:
+
+```powershell
+python .\ml\blocks_v18\train_export.py --dataset "$env:USERPROFILE\mb18_boxes" --epochs 45 --batch 8 --device auto
+```
+
+The console should say `CPU NMS compatibility fallback: enabled`. The
+fallback may make validation somewhat slower and can differ in tie-breaking
+when boxes have equal scores. To restore full-speed CUDA NMS later, install
+a compatible CUDA-enabled Torch/TorchVision pair from
+https://pytorch.org/get-started/locally/ in a dedicated Python environment.
+Do not randomly uninstall or mix wheel indexes during a live FYP training run.

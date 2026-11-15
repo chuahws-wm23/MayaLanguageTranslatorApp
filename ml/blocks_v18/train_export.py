@@ -259,10 +259,74 @@ def prepare_boxes(root: Path, target: Path) -> dict:
     return report
 
 
+def enable_cpu_nms_fallback_if_cuda_missing(
+    torch_module, torchvision_module, requested_device: str,
+) -> bool:
+    """Use torchvision CPU NMS only when its CUDA kernel is unavailable.
+
+    Keeps YOLO forward/backprop AND loss on the selected GPU; transfers only
+    the postprocessing boxes/scores to CPU, returning selected indices to
+    their original device. Never hides other NMS errors. In particular, this
+    is NOT equivalent to training the full model on CPU.
+
+    Ultralytics 8.4.x accesses torchvision.ops.nms dynamically during
+    epoch validation. The process-local monkey patch therefore covers
+    training validation and later explicit validation without modifying
+    the user's site-packages or model weights.
+    """
+    if str(requested_device).lower() == "cpu" or not torch_module.cuda.is_available():
+        return False
+
+    original_nms = torchvision_module.ops.nms
+    cuda_boxes = torch_module.tensor(
+        [[0., 0., 10., 10.], [1., 1., 9., 9.]],
+        dtype=torch_module.float32, device="cuda",
+    )
+    cuda_scores = torch_module.tensor(
+        [.9, .8], dtype=torch_module.float32, device="cuda",
+    )
+    try:
+        selected = original_nms(cuda_boxes, cuda_scores, .5)
+        if selected.device.type != "cuda":
+            raise RuntimeError("TorchVision CUDA NMS returned indices on the wrong device.")
+        return False  # Already has a functioning CUDA implementation.
+    except NotImplementedError as exc:
+        message = str(exc).lower()
+        if "torchvision::nms" not in message or "cuda" not in message:
+            raise  # Missing CPU NMS or other errors should NOT be suppressed.
+
+    # Probe the actual CPU operator before patching, so we fail immediately
+    # instead of wasting another training epoch.
+    original_nms(cuda_boxes.to("cpu"), cuda_scores.to("cpu"), .5)
+
+    def nms_with_cpu_fallback(boxes, scores, iou_threshold):
+        if boxes.is_cuda:
+            # The original torchvision CPU kernel does the SAME IoU NMS
+            # algorithm, but can have different tie-breaking for equal scores.
+            # Ultralytics expects the resulting indices on the input device.
+            indices = original_nms(boxes.detach().to("cpu"),
+                                   scores.detach().to("cpu"), iou_threshold)
+            return indices.to(boxes.device)
+        return original_nms(boxes, scores, iou_threshold)
+
+    torchvision_module.ops.nms = nms_with_cpu_fallback
+    print(
+        "Compatibility fix: installed torchvision lacks CUDA NMS. "
+        "YOLO training remains on GPU; only detection NMS runs on CPU. "
+        "Use matching CUDA-enabled TorchVision/Torch wheels for a permanent fix.",
+        flush=True,
+    )
+    return True
+
+
 def train(args, audit: dict):
-    from ultralytics import YOLO
-    import yaml
     import torch
+    import torchvision
+    import yaml
+    # Inspect CUDA NMS before starting any epochs. TorchVision installed
+    # with only CPU kernels otherwise crashes after each training epoch.
+    # Keep the selected GPU for all model learning and forward passes.
+    from ultralytics import YOLO
     # YOLO's YAML path resolution differs from Roboflow's relative '../train/images'.
     # Use one generated YAML with absolute paths to avoid Windows parent-directory bugs.
     root = Path(args.dataset).expanduser().resolve()
@@ -284,6 +348,11 @@ def train(args, audit: dict):
     print("Device:", requested, "CUDA available:", torch.cuda.is_available(), flush=True)
     if torch.cuda.is_available():
         print("CUDA GPU:", torch.cuda.get_device_name(0), flush=True)
+    cpu_nms_fallback = enable_cpu_nms_fallback_if_cuda_missing(
+        torch, torchvision, requested,
+    )
+    print("CPU NMS compatibility fallback:", "enabled" if cpu_nms_fallback else "not needed",
+          flush=True)
     print("Training only on train split; selecting weights by VALIDATION. "
           "Final test is evaluated once after training.", flush=True)
     model = YOLO("yolo11n.pt")
@@ -333,6 +402,7 @@ def train(args, audit: dict):
     shutil.copy2(export, target)
     report = {
         "dataset_audit": audit, "backbone": "YOLO11n",
+        "torchvision_cuda_nms_cpu_fallback": cpu_nms_fallback,
         "model_source": "locally trained on Roboflow Maya Epigraphy v18 YOLO labels",
         "validation": valid_stats, "test_once": test_stats,
         "gate_passed": gate, "model_path": str(target),
