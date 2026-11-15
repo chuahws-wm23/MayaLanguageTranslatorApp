@@ -56,3 +56,6 @@ ml/research_roboflow_v11/output/
 # Standalone 21-class spatial-HOG audit kit (not Android assets)
 Maya_v11_Spatial_Research_Kit/
 Maya_v11_Spatial_Research_Kit.zip
+
+# Local research only: calibrated template-gallery bank and evaluation
+ml/research_v4_single/template_match_results/
