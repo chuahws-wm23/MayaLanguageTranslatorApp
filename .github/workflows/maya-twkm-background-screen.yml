@@ -1,0 +1,65 @@
+name: Test larger TWKM catalogue as unknown-sign negatives
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/catalogue_expansion/twkm_background_screen.py'
+      - 'ml/catalogue_expansion/test_twkm_background_screen.py'
+      - '.github/workflows/maya-twkm-background-screen.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    name: Evaluate known-vs-unknown on disjoint TWKM identities
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU vision research dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'datasets>=4,<5' 'Pillow>=11,<13' numpy opencv-python-headless scikit-image scikit-learn
+      - name: Run offline integrity tests
+        run: |
+          python -m py_compile ml/catalogue_expansion/twkm_background_screen.py
+          python -m unittest discover -s ml/catalogue_expansion -p 'test_twkm_background_screen.py' -v
+      - name: Fit using additional labelled TWKM sign identities only
+        run: |
+          python ml/catalogue_expansion/twkm_background_screen.py
+      - name: Report actual catalogue-only test results
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path('ml/catalogue_expansion/twkm_background_output/wider_twkm_background_screen.json')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as out:
+              out.write('## Wider TWKM catalogue as negative sign training\n\n')
+              if not p.exists():
+                  out.write('No complete comparison; inspect logs. Android model unchanged.\n')
+              else:
+                  m = json.loads(p.read_text())
+                  out.write(f"Training negative sign identities: **{m['other_sign_id_count_trained']}**  \n")
+                  out.write(f"Baseline known historical: {m['baseline']['previously_exposed_known']}  \n")
+                  out.write(f"Baseline unknown: {m['baseline']['unknown_disjoint_test']}  \n")
+                  out.write(f"New eligible candidate: {m['selected_val_cal_only'] is not None}  \n")
+                  out.write(f"Candidate exposed-known: {m['previously_exposed_historical_known']}  \n")
+                  out.write(f"Candidate unknown-disjoint: {m['different_sign_unknown_test']}  \n")
+                  out.write('**No Android deployment.** Catalogue drawings do not measure camera accuracy.\n')
+          PY
+      - name: Upload reproducible evaluation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TWKM-Wider-Catalogue-Unknown-Screen-Results
+          path: ml/catalogue_expansion/twkm_background_output/
+          if-no-files-found: warn
+          retention-days: 14
