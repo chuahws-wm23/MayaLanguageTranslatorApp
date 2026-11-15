@@ -72,3 +72,60 @@ This raw one-class YOLO11 output is compatible *in shape* with the Android decod
 ## Credit and distribution
 
 Images/boxes: Maya Epigraphy, Roboflow v18 (advertised CC BY 4.0; check source rights). Model training/export uses Ultralytics, whose AGPL/Enterprise conditions need review before distributing the Android app.
+
+## Full 67-image validation: corrected fixed-threshold 300-box comparison
+
+A second **user-run** evaluation uses original YOLO11n ONNX, fixed confidence
+`0.35`, box matching IoU `0.50`, NMS IoU `0.45`, `--split valid --count 0`,
+with `--max-blocks 300`. This removes the earlier script's artificial
+**48-box** truncation; the full validation split has 1,888 labelled blocks.
+The fixed operating-point counts are not mAP and should not be confused with
+Ultralytics's confidence-swept precision/recall reported above.
+
+| Fixed-threshold metric | Full image baseline | Baseline plus overlapping tiles |
+|---|---:|---:|
+| Correct detections (TP) | 1,623 | 1,696 |
+| False detections (FP) | **170** | 430 |
+| Missed ground-truth blocks (FN) | 265 | 192 |
+| Precision | **0.9052** | 0.7977 |
+| Recall | 0.8596 | **0.8983** |
+| F1 @ IoU 0.50 | **0.8818** | 0.8450 |
+
+Tiling found **73** extra true positive boxes and missed **73** fewer boxes,
+but it added **260** false positives. It lowered fixed-threshold precision by
+**10.75 percentage points** and F1 by **3.68 points**.
+**Disposition: reject tiling as the default detector.** A higher
+recall alone does not outweigh figure-art false positives and duplicate boxes.
+Tiling is a Python experiment only; no Android code or model change was made.
+
+The corrected evaluation reports `images_with_more_gt_blocks_than_cap=0`
+and `minimum_forced_misses_due_to_cap=0` at cap 300.
+The older **48-box** run (baseline TP 1,067, FP 83, FN 821,
+F1 0.7024; tiled TP 1,102, FP 290, FN 786, F1 0.6720)
+was artificially truncated and must not be quoted as full model recall.
+
+### Important Android limitation, separate from Python results
+
+`GlyphV18Postprocessor.kt` currently keeps **at most 48 blocks** per image
+to limit phone inference costs and UI density, regardless of how many
+instances the detector outputs. In the validation set alone,
+`PalaceTablet` had **249** labelled blocks and `TC` had **230**.
+Therefore this cap cannot represent all blocks of a dense inscription.
+It is an application product/latency limitation rather than a detector
+learning limitation. For dense panels, user-selected subregion or
+grid-assisted inspection is needed until on-phone memory/latency and UI
+handling have been evaluated for higher limits.
+
+### Next controlled experiment
+
+Compare `rotated` versus `baseline` with the same
+**300-box** limit on the unchanged **validation** split:
+
+```powershell
+python .\ml\blocks_v18\preview_detector.py --dataset "$env:USERPROFILE\mb18_boxes" --model ".\ml\blocks_v18\output\maya_blocks_v18.onnx" --split valid --mode rotated --count 0 --device cpu --max-blocks 300
+```
+
+Do not enable rotated/tiling/hybrid on Android until a validation improvement
+in correct detections and precision/F1 is demonstrated and original-image
+preprocessing/output-coordinate parity is tested on a phone. Do not tune
+using the already visually exposed test images.
