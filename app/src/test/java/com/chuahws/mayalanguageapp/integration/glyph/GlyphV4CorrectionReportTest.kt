@@ -12,6 +12,15 @@ class GlyphV4CorrectionReportTest {
         assertTrue(csv.contains("\"UNKNOWN\""))
         assertTrue(csv.contains("\"line, \"\"thin\"\"\""))
     }
+    @Test fun supportsCorrectionToSignNotInModelTopThree() {
+        val prediction = MayaGlyphRecognizerV4.interpret(FloatArray(10) { if (it == 4) 5f else 0f })
+        assertTrue(GlyphV4CorrectionReport.csv(prediction, "1030", "independent source", "")
+            .contains("\"1030\""))
+    }
+    @Test(expected = IllegalArgumentException::class)
+    fun preventsArbitrarySignNumbersInLocalReview() {
+        GlyphV4CorrectionReport.csv(GlyphV4Result(44, "TOK", "Cloud / mist"), "9999", "", "")
+    }
     @Test(expected = IllegalArgumentException::class)
     fun emptyReviewSelectionIsRejected() {
         GlyphV4CorrectionReport.csv(GlyphV4Result(32,"K'UH","God"), " ", "", "")

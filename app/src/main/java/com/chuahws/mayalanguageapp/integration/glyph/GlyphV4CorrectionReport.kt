@@ -18,6 +18,12 @@ object GlyphV4CorrectionReport {
         notes: String,
     ): String {
         require(selected.isNotBlank()) { "Choose a correction or Unknown." }
+        // Prevent unlisted/mistyped numbers from silently entering a reviewed label queue.
+        // Legacy UNKNOWN remains readable alongside the current UI's UNKNOWN_OR_OTHER.
+        require(selected == "UNKNOWN" || selected == "UNKNOWN_OR_OTHER" ||
+            MayaGlyphRecognizerV4.supportedSigns().any { it.signNumber.toString() == selected }) {
+            "Correction must be a supported TWKM sign or Unknown / other."
+        }
         val row = listOf(
             prediction.modelVersion, prediction.signNumber.toString(),
             selected, source, notes, "UNVERIFIED_USER_FEEDBACK",
