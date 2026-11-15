@@ -94,7 +94,7 @@ def canonical_glyph(gray: np.ndarray) -> np.ndarray:
     border = np.r_[gray[0,:],gray[-1,:],gray[:,0],gray[:,-1]]
     oriented = 255-gray if float(np.median(border)) < 110 else gray
     threshold,_ = cv2.threshold(oriented,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    mask = oriented < max(1,int(threshold))  # handles black=0/white=255 binary images
+    mask = oriented <= int(threshold)  # include ink equal to Otsu cutoff (e.g., clean two-tone glyphs)
     amount = int(mask.sum())
     if amount < 30 or amount/(h*w) < .003 or amount/(h*w) > .85:
         raise UnreadableGlyph("No clear isolated sign. Crop around one complete glyph.")
