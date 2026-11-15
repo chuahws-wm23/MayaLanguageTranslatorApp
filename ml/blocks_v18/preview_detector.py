@@ -3,8 +3,9 @@
 
 Generates 2/3-panel images:
   GREEN = labelled ground truth, BLUE = baseline 512px, ORANGE = candidate.
-Candidate inference uses a 512px detector on rotated full images or overlapping
-native-resolution tiles. Candidate behavior is NOT deployed to Android.
+Candidate inference uses only the original image or optional overlapping
+native-resolution tiles. No rotated inference is performed or evaluated.
+Candidate tiling is NOT deployed to Android.
 
 Use validation data to compare settings; test screenshots are already exposed.
 All reported TP/FP/FN are at IoU>=.50 for the chosen fixed score threshold,
@@ -40,23 +41,6 @@ def suppress(boxes, threshold=.45, limit=300):
             if len(out) >= limit:
                 break
     return out
-
-
-def unrotate(box, clockwise_quarters, original_width, original_height):
-    """Map rotated-image xyxy back to the original orientation."""
-    k = clockwise_quarters % 4
-    x1, y1, x2, y2, conf = box
-    w, h = original_width, original_height
-    if k == 0:
-        ans = (x1, y1, x2, y2, conf)
-    elif k == 1:
-        ans = (y1, h-x2, y2, h-x1, conf)
-    elif k == 2:
-        ans = (w-x2, h-y2, w-x1, h-y1, conf)
-    else:
-        ans = (w-y2, x1, w-y1, x2, conf)
-    return (max(0., min(w, ans[0])), max(0., min(h, ans[1])),
-            max(0., min(w, ans[2])), max(0., min(h, ans[3])), ans[4])
 
 
 def tile_starts(length, tile, overlap=.25):
@@ -133,18 +117,12 @@ def yolo_predict(model, image, confidence, device):
 
 
 def candidate_boxes(model, image, mode, confidence, device, iou=.45, limit=300):
-    """Start with baseline. Merge rotated or tiled proposals in original pixels."""
-    import cv2
+    """Merge whole-image and overlapping tile boxes; never rotate an image."""
+    if mode != "tiled":
+        raise ValueError("Only non-rotated tiled detection is supported.")
     h, w = image.shape[:2]
     found = yolo_predict(model, image, confidence, device)
-    if mode in ("rotated", "hybrid"):
-        for k in (1,2,3):
-            rotation = [None, cv2.ROTATE_90_CLOCKWISE,
-                        cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE][k]
-            rotated = cv2.rotate(image, rotation)
-            found.extend(unrotate(box, k, w, h) for box in
-                         yolo_predict(model, rotated, confidence, device))
-    if mode in ("tiled", "hybrid"):
+    if mode == "tiled":
         # Always include the whole image above. Tiling keeps small signs
         # visible instead of shrinking a 2–10MP scene to 512px.
         tile = max(512, (max(w,h)+2)//3)
@@ -198,7 +176,8 @@ def main():
     parser.add_argument("--dataset",type=Path,required=True)
     parser.add_argument("--model",type=Path,required=True)
     parser.add_argument("--split",choices=("valid","test"),default="valid")
-    parser.add_argument("--mode",choices=("baseline","tiled","rotated","hybrid"),default="tiled")
+    parser.add_argument("--mode", choices=("baseline","tiled"), default="baseline",
+                        help="Baseline or experimental overlapping tiles; rotation is disabled")
     parser.add_argument("--count",type=int,default=8,help="0 means all images in this split")
     parser.add_argument("--max-blocks",type=int,default=300,
                         help="Max distinct boxes per image (default 300 for unbiased research; Android currently limits to 48)")
@@ -222,7 +201,7 @@ def main():
     args.output.mkdir(parents=True,exist_ok=True)
     rows=[]
     for idx,path in enumerate(images,1):
-        # cv2 loads actual pixels; don't auto-rotate source after labels are set.
+        # cv2 loads source pixels as stored; no additional rotation of test images.
         original=cv2.imread(str(path), cv2.IMREAD_COLOR)
         if original is None:
             raise RuntimeError("Cannot read image: " + str(path))

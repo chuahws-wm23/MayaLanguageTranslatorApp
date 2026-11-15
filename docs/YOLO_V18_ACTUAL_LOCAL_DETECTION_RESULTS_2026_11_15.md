@@ -116,16 +116,13 @@ learning limitation. For dense panels, user-selected subregion or
 grid-assisted inspection is needed until on-phone memory/latency and UI
 handling have been evaluated for higher limits.
 
-### Next controlled experiment
+### Final decision for current FYP build
 
-Compare `rotated` versus `baseline` with the same
-**300-box** limit on the unchanged **validation** split:
+**Baseline detector retained; tiling not deployed; rotation modes removed
+on user request.** The remaining release tasks are ONNX asset installation
+and real Android phone tests for box location, speed and memory. The existing
+48-region cap must be disclosed for dense panels. Do not tune model or
+thresholds using the already visually exposed test images.
 
-```powershell
-python .\ml\blocks_v18\preview_detector.py --dataset "$env:USERPROFILE\mb18_boxes" --model ".\ml\blocks_v18\output\maya_blocks_v18.onnx" --split valid --mode rotated --count 0 --device cpu --max-blocks 300
-```
-
-Do not enable rotated/tiling/hybrid on Android until a validation improvement
-in correct detections and precision/F1 is demonstrated and original-image
-preprocessing/output-coordinate parity is tested on a phone. Do not tune
-using the already visually exposed test images.
+**Ready for local FYP prototype integration:** yes, with measured limitations.
+**Validated for arbitrary inscriptions or reliable Maya translation:** no.

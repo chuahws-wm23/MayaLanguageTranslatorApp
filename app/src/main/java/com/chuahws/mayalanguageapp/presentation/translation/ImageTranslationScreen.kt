@@ -198,12 +198,11 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         Text("Single glyph (optional crop)", style = MaterialTheme.typography.titleMedium)
                         Text("Drag a rectangle over the complete glyph. Leave a small clear margin.", style = MaterialTheme.typography.bodySmall)
                         GlyphCropPreview(image, state.crop, !state.busy, glyphModel::setCrop)
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(onClick = { glyphModel.setCrop(GlyphCrop()) }, enabled = !state.busy,
-                                modifier = Modifier.weight(1f)) { Text("Full image") }
-                            OutlinedButton(onClick = glyphModel::rotate, enabled = !state.busy,
-                                modifier = Modifier.weight(1f)) { Text("Rotate") }
-                        }
+                        OutlinedButton(
+                            onClick = { glyphModel.setCrop(GlyphCrop()) },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Full image") }
                     }
                 }
                 Button(onClick = glyphModel::recognize, enabled = !state.busy,

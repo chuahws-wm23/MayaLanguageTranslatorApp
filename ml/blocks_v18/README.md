@@ -199,15 +199,12 @@ blue=single-image baseline at threshold .35, orange=candidate. Use short
 number tags rather than overlarge `glyph-blocks 0.xx` text.
 
 Use `valid` (67 images), **not the previously inspected 44 test images**,
-to choose between alternate multi-scale strategies. These are diagnostic
-Python candidates and are **NOT deployed to Android**:
+to compare baseline and optional tiling. No rotated inference is supported.
+The tiled candidate is **NOT deployed to Android**:
 
 ```powershell
 # Preview eight spaced-apart validation images, baseline vs tiled candidate
 python .\ml\blocks_v18\preview_detector.py --dataset "$env:USERPROFILE\mb18_boxes" --model ".\ml\blocks_v18\output\maya_blocks_v18.onnx" --split valid --mode tiled --count 8 --device cpu
-
-# Preview rotation-sensitive candidates (0°, 90°, 180°, 270°)
-python .\ml\blocks_v18\preview_detector.py --dataset "$env:USERPROFILE\mb18_boxes" --model ".\ml\blocks_v18\output\maya_blocks_v18.onnx" --split valid --mode rotated --count 8 --device cpu
 
 explorer ".\ml\blocks_v18\output\diagnostics"
 
@@ -229,7 +226,7 @@ validation precision/F1 unacceptably. Multi-view and tiling can introduce
 extra false positives. A box around two signs will still be wrong if the
 annotations require two boxes. Review the source label style first.
 For long-term generalization, add verified high-contrast/low-contrast,
-rotation, weathered stone, circular inscriptions and **negative figure-art**
+weathered stone, circular inscriptions and **negative figure-art**
 training photos with correctly drawn boxes; preserve monument/source grouping.
 Keep these new photos out of the final independent test set.
 
@@ -276,3 +273,26 @@ A higher cap does **not** train the model and does not cure faint carvings
 or figure-art false positives. It simply removes an evaluation bottleneck,
 allowing a fairer comparison. Do not deploy tiled detection until corrected
 validation comparison establishes a worthwhile precision/recall trade-off.
+
+## Rotation removed; readiness status
+
+At the user's request, the evaluation CLI now supports only `--mode
+baseline` (default) and experimental `--mode tiled`. The
+`rotated`/`hybrid` modes and their coordinate transforms have been removed,
+and the manual **Rotate** button was removed from the Android image screen.
+Exif/camera orientation correction during image loading is preserved.
+
+**Model status:** the actual v18 ONNX detector completed training and passed
+a provisional numeric gate on the original 44 test images (mAP50 0.78510,
+mAP50–95 0.57286, precision 0.88148, recall 0.72546). At fixed
+confidence 0.35 on validation (max 300), baseline F1=0.8818 and tiled
+F1=0.8450. **Tiled was rejected** because FP went from 170 to 430 for
+73 extra TP.
+
+The detector is ready for **local Android integration and supervised FYP
+demonstration testing**, *not* as a dependable reader of arbitrary unseen
+inscriptions. The ONNX binary has to be copied to Android assets on the
+user's laptop (it was not included in GitHub). Test actual bounding boxes
+and performance on-device. Android limits output to 48 blocks.
+Research v4 still recognizes only 10 TWKM categories and can misclassify
+unknowns. Block detection accuracy is not Maya translation accuracy.

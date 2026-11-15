@@ -44,18 +44,11 @@ class ComparisonGeometryTests(unittest.TestCase):
         self.assertEqual(starts[-1],896)
         self.assertTrue(all(b-a<=512 for a,b in zip(starts,starts[1:])))
 
-    def test_unrotate_90_and_270(self):
-        # A 100x60 original box (20,15)-(40,35) transforms clockwise to
-        # a 60x100 image box (25,20)-(45,40).
-        box=(25.,20.,45.,40.,.8)
-        self.assertEqual(m.unrotate(box,1,100,60),
-                         (20.,15.,40.,35.,.8))
-        # 90 degrees counterclockwise gives (15,60)-(35,80).
-        box2=(15.,60.,35.,80.,.8)
-        self.assertEqual(m.unrotate(box2,3,100,60),
-                         (20.,15.,40.,35.,.8))
-        self.assertEqual(m.unrotate((60.,25.,80.,45.,.8),2,100,60),
-                         (20.,15.,40.,35.,.8))
+    def test_rotation_mode_is_not_supported(self):
+        class Image:
+            shape = (100, 200, 3)
+        with self.assertRaisesRegex(ValueError, "non-rotated"):
+            m.candidate_boxes(None, Image(), "rotated", .35, "cpu")
 
     def test_count_tp_fp_fn_and_read_labels(self):
         with tempfile.TemporaryDirectory() as tmp:

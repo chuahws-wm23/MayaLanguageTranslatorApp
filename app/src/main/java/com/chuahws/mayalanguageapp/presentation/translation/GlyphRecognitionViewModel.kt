@@ -2,7 +2,6 @@ package com.chuahws.mayalanguageapp.presentation.translation
 
 import android.app.Application
 import android.graphics.Bitmap
-import android.graphics.Matrix
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -124,37 +123,6 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
             crop = crop, result = null, resultV2 = null, resultV3 = null,
             resultV4 = null, multiple = emptyList(), multipleProgress = null, message = null,
         )
-    }
-
-    fun rotate() {
-        val image = mutable.value.bitmap ?: return
-        if (mutable.value.busy) return
-        val request = ++version
-        val model = mutable.value.model
-        mutable.value = mutable.value.copy(
-            busy = true, result = null, resultV2 = null, resultV3 = null,
-            resultV4 = null, multiple = emptyList(), multipleProgress = null, message = null,
-        )
-        work = viewModelScope.launch {
-            try {
-                val rotated = withContext(Dispatchers.Default) {
-                    Bitmap.createBitmap(
-                        image, 0, 0, image.width, image.height,
-                        Matrix().apply { postRotate(90f) }, true,
-                    )
-                }
-                if (request == version) mutable.value = GlyphUiState(
-                    bitmap = rotated, model = model,
-                )
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (_: Exception) {
-                if (request == version) mutable.value = mutable.value.copy(
-                    busy = false,
-                    message = "Could not rotate the photo. Please choose it again.",
-                )
-            }
-        }
     }
 
     /**
