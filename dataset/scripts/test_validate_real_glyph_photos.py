@@ -51,4 +51,15 @@ class RealPhotoManifestTest(unittest.TestCase):
         report=audit(self.manifest([item]),self.root)
         self.assertTrue(any("verified_by" in s for s in report["errors"]))
 
+    def test_expanded_twkm_signs_only_with_explicit_model_manifest(self):
+        # Sign 999 is outside the legacy 10 supported classes, but an
+        # expanded, verified label list may intentionally include it.
+        path=self.manifest([self.rec(0,sign="999")])
+        legacy=audit(path,self.root)
+        self.assertTrue(any("unsupported or unverified" in x for x in legacy["errors"]))
+        candidate=audit(path,self.root,allowed_signs={32,44,999})
+        self.assertEqual([],candidate["errors"])
+        self.assertEqual([32,44,999],candidate["allowed_twkm_signs"])
+        self.assertFalse(candidate["ready_for_independent_evaluation"])
+
 if __name__=="__main__":unittest.main()
