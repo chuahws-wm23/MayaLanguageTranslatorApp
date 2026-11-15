@@ -99,6 +99,29 @@ internal object GlyphV2Preprocessor {
                 bottom = max(bottom, y)
             }
         }
+        // Some legitimate two-tone photos have ink EXACTLY at the Otsu
+        // threshold (e.g. 25-valued lines on a 235-valued background).
+        // The training-compatible strict mask can then appear empty.
+        // Retry inclusively ONLY for near-empty results; do not modify
+        // already-detectable drawings or invent a matching sign.
+        var inclusiveFallback = false
+        if (dark.toFloat() / gray.size < 0.003f) {
+            inclusiveFallback = true
+            left = width
+            top = height
+            right = -1
+            bottom = -1
+            dark = 0
+            for (y in 0 until height) for (x in 0 until width) {
+                if (gray[y * width + x] <= threshold) {
+                    dark++
+                    left = min(left, x)
+                    right = max(right, x)
+                    top = min(top, y)
+                    bottom = max(bottom, y)
+                }
+            }
+        }
         require(right >= left && dark.toFloat() / gray.size in 0.003f..0.85f) {
             "No clear isolated glyph detected. Crop to one dark drawing on light background."
         }
@@ -111,7 +134,10 @@ internal object GlyphV2Preprocessor {
         val bh = bottom - top + 1
         val ink = ByteArray(bw * bh)
         for (y in 0 until bh) for (x in 0 until bw) {
-            ink[y * bw + x] = if (gray[(y + top) * width + x + left] < threshold) 1 else 0
+            ink[y * bw + x] = if (
+                gray[(y + top) * width + x + left] < threshold ||
+                (inclusiveFallback && gray[(y + top) * width + x + left] == threshold)
+            ) 1 else 0
         }
         val ratio = 56.0 / max(bw, bh)
         val nw = max(1, (bw * ratio).roundToInt())

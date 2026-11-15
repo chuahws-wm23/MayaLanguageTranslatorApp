@@ -28,6 +28,20 @@ class GlyphV2PreprocessorTest {
         assertTrue(out.all { it.isFinite() })
     }
 
+    @Test
+    fun grayscaleTwoToneInkAtOtsuCutoffStillRecognized() {
+        // OpenCV regression discovered that Otsu may select the ink intensity
+        // itself, leaving a '< threshold' mask empty on perfectly clear photos.
+        val input = IntArray(80 * 80) { 235 }
+        for (y in 16..64) for (x in 19..62) {
+            if (x <= 23 || x >= 58 || y <= 20 || y >= 60) input[y * 80 + x] = 25
+        }
+        val tensor = GlyphV2Preprocessor.fromGrayscale(input, 80, 80, 160)
+        assertEquals(3 * 160 * 160, tensor.size)
+        assertTrue(tensor.all { it.isFinite() })
+        assertTrue(tensor.maxOrNull()!! > tensor.minOrNull()!!)
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun blankWhiteImageIsRejected() {
         GlyphV2Preprocessor.fromGrayscale(IntArray(100 * 100) { 255 }, 100, 100)
