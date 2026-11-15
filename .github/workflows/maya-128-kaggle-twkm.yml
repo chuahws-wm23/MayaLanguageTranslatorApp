@@ -1,0 +1,84 @@
+name: Train 128px Kaggle and TWKM Maya single-glyph candidate
+
+on:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/research_128_candidate/**'
+      - '.github/workflows/maya-128-kaggle-twkm.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  train-and-compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned TWKM preparation and existing Research v4 baseline
+        run: |
+          mkdir -p ml/glyph_v4/outputs ml/glyph_v2/outputs/transfer
+          git fetch --depth=1 origin glyph-v4-expanded-training
+          git show FETCH_HEAD:ml/glyph_v4/train_v4.py > ml/glyph_v4/train_v4.py
+          git show FETCH_HEAD:ml/glyph_v4/outputs/mobilenet_v4_finetuned.pt > ml/glyph_v4/outputs/mobilenet_v4_finetuned.pt
+          git fetch --depth=1 origin glyph-model-v2-experiment
+          git show FETCH_HEAD:ml/glyph_v2/train.py > ml/glyph_v2/train.py
+          git show FETCH_HEAD:ml/glyph_v2/train_transfer.py > ml/glyph_v2/train_transfer.py
+          test -s ml/glyph_v4/outputs/mobilenet_v4_finetuned.pt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PyTorch and image / evaluation dependencies
+        run: |
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'datasets>=4.0,<5' 'Pillow>=11,<13' opencv-python-headless scikit-learn scikit-image joblib kagglehub onnx onnxruntime
+      - name: Download Kaggle font-key images for 80-class visual pretraining
+        run: |
+          python - <<'PY'
+          import kagglehub
+          from pathlib import Path
+          p=Path(kagglehub.dataset_download("sayantanroy10121999/mayan-glyphs-dataset"))
+          n=len(list(p.rglob("*.png")))
+          assert n>=16000, (n,p)
+          print("Kaggle image files",n,flush=True)
+          Path("/tmp/maya_kaggle_path").write_text(str(p))
+          PY
+      - name: Check 128px candidate script syntax
+        run: python -m py_compile ml/research_128_candidate/train_128.py
+      - name: Train 128px control and Kaggle/TWKM transfer models
+        run: |
+          python ml/research_128_candidate/train_128.py \
+            --kaggle-dir "$(cat /tmp/maya_kaggle_path)" \
+            --output ml/research_128_candidate/out \
+            --per-style 20 --font-epochs 3 --twkm-epochs 9
+      - name: Publish actual comparison metrics
+        run: |
+          python - <<'PY'
+          import json,os
+          x=json.load(open("ml/research_128_candidate/out/evaluation.json"))
+          s=("## 128px Maya glyph training experiment\n\n"
+            "| Model | Clean known validation | Synthetic photo variants | Previously exposed test |\n"
+            "|---|---:|---:|---:|\n")
+          for label,key in [
+             ("Existing v4","baseline_existing_v4"),
+             ("128px TWKM control","control_128_without_kaggle"),
+             ("128px Kaggle + TWKM","candidate_128_with_kaggle")]:
+            v=x[key]
+            s+=f"| {label} | {v['clean']['top1']}/{v['clean']['n']} | {v['synthetic']['top1']}/{v['synthetic']['n']} | {v['exposed_test']['top1']}/{v['exposed_test']['n']} |\n"
+          s+=f"\n* Validation winner: {x['winner_by_validation']}\n"
+          s+=f"* Passed predeclared improvement gate: {x['passes_predeclared_improvement_gate']}\n"
+          s+="* No independently labelled camera-photo accuracy has been measured.\n"
+          s+="* Existing Android v4 ONNX is unchanged. Exposed test is NOT blind.\n"
+          print(s)
+          open(os.environ["GITHUB_STEP_SUMMARY"],"a").write(s)
+          PY
+      - name: Retain trained PyTorch, ONNX candidates and reproducible evaluation
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Maya128KaggleTwkmResearchModels
+          path: ml/research_128_candidate/out/
+          if-no-files-found: warn
+          retention-days: 14
