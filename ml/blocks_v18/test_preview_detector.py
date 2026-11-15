@@ -1,0 +1,61 @@
+import importlib.util
+from pathlib import Path
+import tempfile
+import unittest
+
+spec=importlib.util.spec_from_file_location("block_preview_compare",
+     Path(__file__).with_name("preview_detector.py"))
+m=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+
+
+class ComparisonGeometryTests(unittest.TestCase):
+    def test_nms_keeps_distinct_blocks_and_best_duplicate(self):
+        boxes=[
+            (10,10,80,80,.80),
+            (12,12,82,82,.90),
+            (120,10,180,80,.60),
+        ]
+        selected=m.suppress(boxes,.45)
+        self.assertEqual(len(selected),2)
+        self.assertEqual(selected[0][4],.9)
+        self.assertEqual(selected[1][0],120)
+
+    def test_tile_windows_cover_full_width(self):
+        starts=m.tile_starts(1408,512,.25)
+        self.assertEqual(starts[0],0)
+        self.assertEqual(starts[-1],896)
+        self.assertTrue(all(b-a<=512 for a,b in zip(starts,starts[1:])))
+
+    def test_unrotate_90_and_270(self):
+        # A 100x60 original box (20,15)-(40,35) transforms clockwise to
+        # a 60x100 image box (25,20)-(45,40).
+        box=(25.,20.,45.,40.,.8)
+        self.assertEqual(m.unrotate(box,1,100,60),
+                         (20.,15.,40.,35.,.8))
+        # 90 degrees counterclockwise gives (15,60)-(35,80).
+        box2=(15.,60.,35.,80.,.8)
+        self.assertEqual(m.unrotate(box2,3,100,60),
+                         (20.,15.,40.,35.,.8))
+        self.assertEqual(m.unrotate((60.,25.,80.,45.,.8),2,100,60),
+                         (20.,15.,40.,35.,.8))
+
+    def test_count_tp_fp_fn_and_read_labels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"test.txt"
+            path.write_text("0 .5 .5 .4 .4\n0 .15 .15 .2 .2\n",encoding="utf8")
+            truth=m.read_yolo_boxes(path,100,100)
+            guesses=[(30,30,70,70,.9),(31,31,69,69,.8),(1,75,20,95,.7)]
+            self.assertEqual(m.count_matches(guesses,truth),
+                             {"tp":1,"fp":2,"fn":1})
+
+    def test_wrong_label_type_is_not_silently_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"test.txt"
+            path.write_text("0 .1 .2 .4 .6 .8 .9\n")
+            with self.assertRaisesRegex(ValueError,"five-number"):
+                m.read_yolo_boxes(path,200,100)
+
+
+if __name__=="__main__":
+    unittest.main()

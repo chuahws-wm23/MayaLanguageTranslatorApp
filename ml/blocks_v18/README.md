@@ -185,3 +185,54 @@ when boxes have equal scores. To restore full-speed CUDA NMS later, install
 a compatible CUDA-enabled Torch/TorchVision pair from
 https://pytorch.org/get-started/locally/ in a dedicated Python environment.
 Do not randomly uninstall or mix wheel indexes during a live FYP training run.
+
+## Visual failure analysis: stop guessing which boxes are correct
+
+The current 45-epoch v18 YOLO11n scored mAP50=0.78510, mAP50-95=0.57286,
+precision=0.88148, recall=0.72546 on 44 test images (1,097 boxes).
+Uploaded previews show genuine missed small/faint glyphs, non-glyph artwork
+false positives, and boxes covering several different blocks.
+
+**Do not claim this detector is finished from mAP alone.** Inspect the
+labelled ground truth. Side-by-side previews show green=annotated box,
+blue=single-image baseline at threshold .35, orange=candidate. Use short
+number tags rather than overlarge `glyph-blocks 0.xx` text.
+
+Use `valid` (67 images), **not the previously inspected 44 test images**,
+to choose between alternate multi-scale strategies. These are diagnostic
+Python candidates and are **NOT deployed to Android**:
+
+```powershell
+# Preview eight spaced-apart validation images, baseline vs tiled candidate
+python .\ml\blocks_v18\preview_detector.py --dataset "$env:USERPROFILE\mb18_boxes" --model ".\ml\blocks_v18\output\maya_blocks_v18.onnx" --split valid --mode tiled --count 8 --device cpu
+
+# Preview rotation-sensitive candidates (0°, 90°, 180°, 270°)
+python .\ml\blocks_v18\preview_detector.py --dataset "$env:USERPROFILE\mb18_boxes" --model ".\ml\blocks_v18\output\maya_blocks_v18.onnx" --split valid --mode rotated --count 8 --device cpu
+
+explorer ".\ml\blocks_v18\output\diagnostics"
+
+# Only after previews look plausible, compare whole validation split
+python .\ml\blocks_v18\preview_detector.py --dataset "$env:USERPROFILE\mb18_boxes" --model ".\ml\blocks_v18\output\maya_blocks_v18.onnx" --split valid --mode tiled --count 0 --device cpu
+```
+
+This runs on **CPU** because the current TorchVision install has no CUDA
+NMS kernel. CPU-only inference can be slower. `--count 0` processes all
+images and emits numeric counts without writing dozens of giant images.
+The script uses confidence .35, NMS IoU .45 (matching Android) and one-to-one
+GT matching at IoU .50. It saves
+`ml/blocks_v18/output/diagnostics/comparison_valid_tiled.json`
+with **TP, FP, FN, precision, recall and F1** for baseline and candidate.
+
+Don't pick the variant with the most rectangles. Prefer a candidate that
+raises **correctly matched** blocks and validation recall *without* reducing
+validation precision/F1 unacceptably. Multi-view and tiling can introduce
+extra false positives. A box around two signs will still be wrong if the
+annotations require two boxes. Review the source label style first.
+For long-term generalization, add verified high-contrast/low-contrast,
+rotation, weathered stone, circular inscriptions and **negative figure-art**
+training photos with correctly drawn boxes; preserve monument/source grouping.
+Keep these new photos out of the final independent test set.
+
+The script does NOT retrain weights, change the ONNX, alter APK behavior,
+or improve Maya sign **translation**. The user-uploaded seven examples
+were already inspected and cannot fairly serve as fresh blind test data.
