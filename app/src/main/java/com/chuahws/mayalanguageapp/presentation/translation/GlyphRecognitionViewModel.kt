@@ -17,6 +17,8 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV3Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV3Screening
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV4Result
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphV25Result
+import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV25
 import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV4
 import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizer
 import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV2
@@ -35,6 +37,7 @@ internal enum class GlyphModelMode {
     RESEARCH_V2,
     RESEARCH_V3,
     RESEARCH_V4,
+    RESEARCH_25,
 }
 
 /** One AUTOMATICALLY detected block. A block may contain more than one sign. */
@@ -53,6 +56,7 @@ internal data class GlyphUiState(
     val resultV2: GlyphV2Result? = null,
     val resultV3: GlyphV3Result? = null,
     val resultV4: GlyphV4Result? = null,
+    val resultV25: GlyphV25Result? = null,
     val multiple: List<MultiGlyphItem> = emptyList(),
     val multipleProgress: String? = null,
     val assistedGrid: Boolean = false,
@@ -67,6 +71,7 @@ private data class GlyphInferenceResult(
     val v2: GlyphV2Result? = null,
     val v3: GlyphV3Result? = null,
     val v4: GlyphV4Result? = null,
+    val v25: GlyphV25Result? = null,
 )
 
 /** Keeps unverified glyph predictions out of the modern-Yucatec dictionary/history pipeline. */
@@ -89,7 +94,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         version++
         mutable.value = mutable.value.copy(
             model = model, result = null, resultV2 = null, resultV3 = null,
-            resultV4 = null, multiple = emptyList(), multipleProgress = null, message = null,
+            resultV4 = null, resultV25 = null, multiple = emptyList(), multipleProgress = null, message = null,
         )
     }
 
@@ -121,7 +126,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         if (mutable.value.busy) return
         mutable.value = mutable.value.copy(
             crop = crop, result = null, resultV2 = null, resultV3 = null,
-            resultV4 = null, multiple = emptyList(), multipleProgress = null, message = null,
+            resultV4 = null, resultV25 = null, multiple = emptyList(), multipleProgress = null, message = null,
         )
     }
 
@@ -145,7 +150,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         work?.cancel()
         mutable.value = snapshot.copy(
             busy = true, result = null, resultV2 = null, resultV3 = null,
-            resultV4 = null, multiple = emptyList(), assistedGrid = false, detectorNote = null,
+            resultV4 = null, resultV25 = null, multiple = emptyList(), assistedGrid = false, detectorNote = null,
             multipleProgress = if (grid == null) "Finding glyph blocks…" else "Preparing grid…",
             message = null,
         )
@@ -259,6 +264,16 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                                                 ?: "Two lighting views agree; still an UNVERIFIED ten-sign guess",
                                         )
                                     }
+                                    GlyphModelMode.RESEARCH_25 -> {
+                                        // A YOLO glyph block may contain multiple independent signs.
+                                        // Do not feed it into this *single-sign* classifier.
+                                        MultiGlyphItem(
+                                            index + 1, region, null, null,
+                                            "Experimental 25-sign model expects ONE isolated sign. " +
+                                                "Use Inspect and crop a single sign; " +
+                                                "automatic multi-sign block reading is not validated.",
+                                        )
+                                    }
                                 }
                             } finally {
                                 if (cropped !== image) cropped.recycle()
@@ -300,7 +315,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         val request = ++version
         mutable.value = snapshot.copy(
             busy = true, result = null, resultV2 = null, resultV3 = null,
-            resultV4 = null, multiple = emptyList(), multipleProgress = null, message = null,
+            resultV4 = null, resultV25 = null, multiple = emptyList(), multipleProgress = null, message = null,
         )
         work = viewModelScope.launch {
             try {
@@ -314,7 +329,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                     try {
                         // A whole inscription is not a single sign. This is a
                         // conservative image-complexity warning, not a recogniser.
-                        if (snapshot.model == GlyphModelMode.RESEARCH_V4 &&
+                        if (snapshot.model in setOf(GlyphModelMode.RESEARCH_V4, GlyphModelMode.RESEARCH_25) &&
                             snapshot.crop == GlyphCrop() &&
                             GlyphPanelGuard.looksLikeDensePanel(cropped)
                         ) {
@@ -335,6 +350,9 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                             GlyphModelMode.RESEARCH_V4 ->
                                 GlyphInferenceResult(v4 = MayaGlyphRecognizerV4.fromAssets(getApplication())
                                     .recognize(cropped))
+                            GlyphModelMode.RESEARCH_25 ->
+                                GlyphInferenceResult(v25 = MayaGlyphRecognizerV25.fromAssets(getApplication())
+                                    .recognize(cropped))
                         }
                     } finally {
                         if (cropped !== image) cropped.recycle()
@@ -342,7 +360,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                 }
                 if (request == version) mutable.value = mutable.value.copy(
                     busy = false, result = outcome.v1, resultV2 = outcome.v2,
-                    resultV3 = outcome.v3, resultV4 = outcome.v4,
+                    resultV3 = outcome.v3, resultV4 = outcome.v4, resultV25 = outcome.v25,
                 )
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -353,7 +371,10 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
             } catch (_: Exception) {
                 if (request == version) mutable.value = mutable.value.copy(
                     busy = false,
-                    message = "Glyph inference failed. Please check that this app build contains its local model assets.",
+                    message = if (snapshot.model == GlyphModelMode.RESEARCH_25)
+                        "The optional 25-sign model could not load or run. Install the verified " +
+                            "four-file research artifact in app/src/main/assets, then rebuild."
+                    else "Glyph inference failed. Please check that this app build contains its local model assets.",
                 )
             }
         }
