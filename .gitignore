@@ -52,3 +52,7 @@ Maya_Glyphs_v11.zip
 Maya_v11_Research_Kit.zip
 Maya_v11_All_Crops.zip
 ml/research_roboflow_v11/output/
+
+# Standalone 21-class spatial-HOG audit kit (not Android assets)
+Maya_v11_Spatial_Research_Kit/
+Maya_v11_Spatial_Research_Kit.zip
