@@ -82,3 +82,4 @@ app/src/main/assets/maya_twkm25_feature.onnx
 app/src/main/assets/maya_twkm25_svm.onnx
 app/src/main/assets/maya_twkm25_gallery.bin
 app/src/main/assets/maya_twkm25_metadata.json
+ml/catalogue_expansion/twkm_background_output/
