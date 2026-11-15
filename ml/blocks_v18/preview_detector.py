@@ -14,7 +14,6 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from statistics import mean
 
 
 def box_iou(a, b):
@@ -77,7 +76,7 @@ def read_yolo_boxes(label_path: Path, width: int, height: int):
     if not label_path.is_file():
         raise FileNotFoundError("Ground-truth label not found: " + str(label_path))
     result = []
-    for line in label_path.read_text(encoding="utf8-sig").splitlines():
+    for line in label_path.read_text(encoding="utf-8-sig").splitlines():
         if not line.strip():
             continue
         parts = line.split()
