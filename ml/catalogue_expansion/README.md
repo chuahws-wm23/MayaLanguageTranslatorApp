@@ -39,3 +39,41 @@ For a fast FYP improvement, a separate manual searchable **reference catalogue**
 ## Attribution and rights
 
 Original source: Text Database and Dictionary of Classic Mayan (TWKM), University of Bonn, standardized graph drawings by Christian Prager, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The [catalogue legal notice](https://classicmayan.org/portal/doc/246) excludes third-party copyrighted photographs from that licence. The Hugging Face snapshot is an independent interoperability publication; the live TWKM catalogue remains authoritative. Metadata may have different reuse rights. Clearly credit creators if using or distributing drawings. No third-party images are bundled here.
+
+## Wider pinned TWKM dataset as negative-sign supervision
+
+No new dataset upload is needed. The research scripts download the same
+pinned Hugging Face `tadad/twkm-maya-glyphs` snapshot already used by
+Research v4 and the 25-sign MobileNetV3+SVM candidate.
+
+The [extra-sign negative experiment](twkm_background_screen.py) deliberately
+uses TWKM signs *outside* the selected 25 as examples of what a supported
+sign should **not** be. It selects at most one graph per extra sign identity,
+then trains a separate known-versus-other binary SVM using the same frozen
+MobileNetV3 image features. The 25-sign classifier remains unchanged.
+
+- All 25 known validation drawings and 40 unknown calibration sign IDs are
+  used to select a conservative acceptance rule.
+- Another 40 unknown sign IDs and the 25 previously exposed known test
+  drawings remain out of model training and rule selection.
+- A candidate screen qualifies only if unknown false acceptance improves
+  on calibration without losing more than 15% of correctly accepted known
+  drawings. Even if it passes this limited research rule, it is **NOT
+  automatically added to the app**.
+- Related allographs or source artifacts can still produce overly optimistic
+  results in drawing-hash-separated splits. Neither catalogue-only
+  screening nor an Android build establishes independent stone-photo
+  accuracy.
+
+[GitHub Actions workflow](../../.github/workflows/maya-twkm-background-screen.yml)
+runs the research and publishes numerical before/after measurements. Locally:
+
+```powershell
+python ml/catalogue_expansion/twkm_background_screen.py
+```
+
+A full dataset sign listing can improve a manual reference catalogue, but
+the original Hugging Face `train` split denotes **the entire snapshot**,
+not independently assigned experiment training examples. Do not train on
+the same drawings or sign identities that you will later count as
+independent test examples.
