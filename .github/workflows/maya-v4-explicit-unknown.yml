@@ -1,0 +1,63 @@
+name: Evaluate Research v4 explicit unknown-sign detector
+
+on:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/research_v4_single/explicit_unknown_detector.py'
+      - '.github/workflows/maya-v4-explicit-unknown.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore original pinned TWKM loader
+        run: |
+          mkdir -p ml/glyph_v4/outputs ml/glyph_v2
+          git fetch --depth=1 origin glyph-v4-expanded-training
+          git show FETCH_HEAD:ml/glyph_v4/train_v4.py > ml/glyph_v4/train_v4.py
+          git fetch --depth=1 origin glyph-model-v2-experiment
+          git show FETCH_HEAD:ml/glyph_v2/train.py > ml/glyph_v2/train.py
+          git show FETCH_HEAD:ml/glyph_v2/train_transfer.py > ml/glyph_v2/train_transfer.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU ONNX and machine-learning dependencies
+        run: |
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'datasets>=4.0,<5' 'Pillow>=11,<13' opencv-python-headless scikit-learn scikit-image onnxruntime
+      - name: Compile research code
+        run: python -m py_compile ml/research_v4_single/explicit_unknown_detector.py
+      - name: Train detector with disjoint unknown sign identities and evaluate
+        run: python ml/research_v4_single/explicit_unknown_detector.py
+      - name: Publish measured known/unknown balance
+        run: |
+          python - <<'PY'
+          import json,os
+          r=json.load(open('ml/research_v4_single/unknown_detector_results/results.json'))
+          s='## Explicit v4 unknown-sign research\n\n'
+          if r['candidate_available']:
+            for label,key in [('Validation known','val_known'),('Validation unknown','val_unknown'),
+                              ('Exposed known test','exposed_known_test'),
+                              ('Unseen sign identities','unseen_sign_identity_test')]:
+                s+=f"* {label}: {r[key]}\n"
+            s+=f"* Provisional test gate passed: {r['passes_provisional_test_gate']}\n"
+          else:
+            s+='* No viable candidate met known acceptance and unknown rejection calibration gates.\n'
+          s+='* No independent phone-photo evaluation or Android model deployment.\n'
+          print(s)
+          open(os.environ['GITHUB_STEP_SUMMARY'],'a').write(s)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MayaV4ExplicitUnknownDetectorExperiment
+          path: ml/research_v4_single/unknown_detector_results/
+          if-no-files-found: warn
+          retention-days: 14
