@@ -6,6 +6,18 @@ import org.junit.Test
 
 class MayaGlyphRecognizerV4Test {
     @Test
+    fun allTenSupportedSignsAreAvailableForManualCorrections() {
+        val supported = MayaGlyphRecognizerV4.supportedSigns()
+        assertEquals(10, supported.size)
+        assertEquals(listOf(32, 184, 291, 4, 44, 507, 548, 122, 187, 1030),
+            supported.map { it.signNumber })
+        assertEquals(10, supported.map { it.signNumber }.toSet().size)
+        assertEquals("TOK", supported.first { it.signNumber == 44 }.reading)
+        assertEquals("Cloud / mist", supported.first { it.signNumber == 44 }.englishGloss)
+        assertTrue(supported.all { it.reading.isNotBlank() && it.englishGloss.isNotBlank() })
+    }
+
+    @Test
     fun mapsTenClassesInTrainedOrder() {
         val logits = FloatArray(10) { -1f }
         logits[7] = 5f

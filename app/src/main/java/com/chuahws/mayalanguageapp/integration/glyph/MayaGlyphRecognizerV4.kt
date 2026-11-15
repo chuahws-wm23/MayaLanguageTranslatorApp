@@ -26,6 +26,9 @@ data class GlyphV4Candidate(
     val relativeScorePercent: Float,
 )
 
+/** Exact supported TWKM catalogue identity; never inferred from a Roboflow code. */
+internal data class GlyphV4SupportedSign(val signNumber: Int, val reading: String, val englishGloss: String)
+
 data class GlyphV4Result(
     val signNumber: Int,
     val reading: String,
@@ -56,6 +59,11 @@ class MayaGlyphRecognizerV4 private constructor(
             "God / deity", "Resplendent / sunny", "Name of a deity",
             "House / first", "Cloud / mist", "Gourd", "Year", "Fire", "Name", "Name of a deity",
         )
+
+        /** The full set of classes the shipped ONNX model can actually predict. */
+        internal fun supportedSigns(): List<GlyphV4SupportedSign> = signs.indices.map { index ->
+            GlyphV4SupportedSign(signs[index], readings[index], english[index])
+        }
 
         @Volatile private var cached: MayaGlyphRecognizerV4? = null
 

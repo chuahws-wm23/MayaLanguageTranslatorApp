@@ -2,6 +2,7 @@ package com.chuahws.mayalanguageapp.presentation.translation
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -36,6 +37,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV3Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV4Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV4CorrectionReport
+import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV4
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
 
@@ -290,6 +292,8 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             state.resultV4?.let { result ->
                 GlyphV4ResultCard(
                     result = result,
+                    image = state.bitmap,
+                    crop = state.crop,
                     onTryAnother = { gallery.launch("image/*") },
                 )
             }
@@ -446,7 +450,7 @@ private fun GlyphV3ResultCard(result: GlyphV3Result) {
 }
 
 @Composable
-private fun GlyphV4ResultCard(result: GlyphV4Result, onTryAnother: () -> Unit) {
+private fun GlyphV4ResultCard(result: GlyphV4Result, image: Bitmap?, crop: GlyphCrop, onTryAnother: () -> Unit) {
     val context = LocalContext.current
     val reference = remember(context, result.signNumber) {
         runCatching {
@@ -458,6 +462,8 @@ private fun GlyphV4ResultCard(result: GlyphV4Result, onTryAnother: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     var showCorrection by remember(result) { mutableStateOf(false) }
     var selectedCorrection by remember(result) { mutableStateOf("UNKNOWN_OR_OTHER") }
+    // Explicit user rejection: do not present an unsupported glyph as a translation.
+    var markedUnsupported by remember(result) { mutableStateOf(false) }
     var sourceDescription by remember(result) { mutableStateOf("") }
     var notes by remember(result) { mutableStateOf("") }
     var exportContent by remember { mutableStateOf<String?>(null) }
@@ -481,15 +487,50 @@ private fun GlyphV4ResultCard(result: GlyphV4Result, onTryAnother: () -> Unit) {
         exportContent = null
     }
 
+
+    // User opt-in only. Save the exact selected crop alongside a correction CSV.
+    // No image or annotation is uploaded or silently used for training.
+    val imageExport = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("image/png"),
+    ) { uri ->
+        if (uri != null) {
+            val saved = runCatching {
+                val source = requireNotNull(image) { "Source picture no longer available" }
+                val (x, y, w, h) = crop.pixels(source.width, source.height)
+                require(w >= 25 && h >= 25) { "Select a complete glyph before exporting" }
+                val selected = Bitmap.createBitmap(source, x, y, w, h)
+                try {
+                    context.contentResolver.openOutputStream(uri)?.use { stream ->
+                        check(selected.compress(Bitmap.CompressFormat.PNG, 100, stream)) {
+                            "PNG encoding failed"
+                        }
+                        stream.flush()
+                    } ?: error("Could not open selected PNG document")
+                } finally {
+                    if (selected !== source) selected.recycle()
+                }
+            }.isSuccess
+            Toast.makeText(
+                context,
+                if (saved) "Selected glyph crop saved" else "Could not save selected glyph crop",
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
+    }
+
     Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                if (result.reviewRecommended) "Unrecognized / needs review"
+                if (result.reviewRecommended || markedUnsupported) "No glyph confirmed · needs review"
                 else "Possible glyph match · Research v4",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
-            if (result.reviewRecommended) {
+            if (markedUnsupported) {
+                Text("You marked this as an unsupported or incorrect sign. " +
+                    "The AI alternatives below are only guesses, not verified translations. " +
+                    "Choose a different image or export this case for review.")
+            } else if (result.reviewRecommended) {
                 Text(result.reviewReason ?: "Try a clearer crop of one complete glyph.")
             } else {
                 Text(result.reading, style = MaterialTheme.typography.headlineSmall,
@@ -560,7 +601,7 @@ private fun GlyphV4ResultCard(result: GlyphV4Result, onTryAnother: () -> Unit) {
                     Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall,
                 )
             }
-            if (!result.reviewRecommended) {
+            if (!result.reviewRecommended && !markedUnsupported) {
                 FilledTonalButton(
                     onClick = {
                         clipboard.setText(AnnotatedString(
@@ -572,9 +613,13 @@ private fun GlyphV4ResultCard(result: GlyphV4Result, onTryAnother: () -> Unit) {
                 ) { Text("Copy possible reading") }
             }
             OutlinedButton(
+                onClick = { markedUnsupported = !markedUnsupported },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(if (markedUnsupported) "Show possible model suggestion" else "Not my glyph / unsupported sign") }
+            OutlinedButton(
                 onClick = { showCorrection = true },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Report incorrect / unknown glyph") }
+            ) { Text("Review / correct the glyph label") }
             OutlinedButton(
                 onClick = onTryAnother,
                 modifier = Modifier.fillMaxWidth(),
@@ -589,19 +634,41 @@ private fun GlyphV4ResultCard(result: GlyphV4Result, onTryAnother: () -> Unit) {
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text("Choose the correct sign if known, or Unknown / other. " +
+                    Text("Choose from ALL ten supported TWKM signs, or Unknown / other. " +
+                        "Use the reference drawings for visual comparison. " +
                         "A specialist must verify this report before it becomes training data.",
                         style = MaterialTheme.typography.bodySmall)
                     val options = listOf("UNKNOWN_OR_OTHER" to "Unknown / other") +
-                        result.alternatives.map { it.signNumber.toString() to
-                            "${it.reading} · TWKM #${it.signNumber}" }
-                    options.distinctBy { it.first }.forEach { (id, label) ->
+                        MayaGlyphRecognizerV4.supportedSigns().map { sign ->
+                            sign.signNumber.toString() to "${sign.reading} · TWKM #${sign.signNumber}"
+                        }
+                    options.forEach { (id, label) ->
+                        val signId = id.toIntOrNull()
+                        val example = remember(context, signId) {
+                            signId?.let { sign ->
+                                runCatching {
+                                    context.assets.open("research_v4_ref_${sign}.png").use {
+                                        BitmapFactory.decodeStream(it)
+                                    }
+                                }.getOrNull()
+                            }
+                        }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
                                 selected = selectedCorrection == id,
                                 onClick = { selectedCorrection = id },
                             )
-                            Text(label, style = MaterialTheme.typography.bodyMedium)
+                            if (example != null) {
+                                Image(
+                                    bitmap = example.asImageBitmap(),
+                                    contentDescription = "Reference for TWKM sign ${signId}",
+                                    modifier = Modifier.size(48.dp),
+                                    contentScale = ContentScale.Fit,
+                                )
+                                Spacer(Modifier.width(8.dp))
+                            }
+                            Text(label, style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f))
                         }
                     }
                     OutlinedTextField(
@@ -614,6 +681,15 @@ private fun GlyphV4ResultCard(result: GlyphV4Result, onTryAnother: () -> Unit) {
                         label = { Text("Why is it wrong? (optional)") },
                         minLines = 2, maxLines = 3, modifier = Modifier.fillMaxWidth(),
                     )
+                    Text("To build a future training set, save BOTH the CSV and the matching cropped PNG. " +
+                        "They stay on your device until you explicitly share them. " +
+                        "Only include images you have permission to use.",
+                        style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(
+                        onClick = { imageExport.launch("maya-glyph-v4-review-crop.png") },
+                        enabled = image != null,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Export selected glyph crop (PNG)") }
                 }
             },
             confirmButton = {
