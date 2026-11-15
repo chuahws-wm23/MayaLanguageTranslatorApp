@@ -1,0 +1,36 @@
+name: Audit source-linked TWKM syllabogram drawings
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/syllabary_ml/twkm_phonograms_audit.py'
+      - '.github/workflows/maya-twkm-phonograms.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Hugging Face datasets loader
+        run: python -m pip install 'datasets>=4,<5'
+      - name: Audit reading-to-graph crosswalk (no model release)
+        run: |
+          python -m py_compile ml/syllabary_ml/twkm_phonograms_audit.py
+          python ml/syllabary_ml/twkm_phonograms_audit.py
+      - name: Upload counts and source IDs only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TWKM-Syllabic-Reading-Graph-Coverage
+          path: ml/syllabary_ml/output/twkm_phonograms_audit.json
+          retention-days: 14
+          if-no-files-found: warn
