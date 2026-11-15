@@ -22,6 +22,7 @@ from sklearn.svm import SVC
 
 import benchmark as baseline
 import pretrained_pilot as pilot
+import verified_photos as local_photos
 
 FILES = {
     "feature": "maya_twkm25_feature.onnx",
@@ -88,12 +89,32 @@ def evaluate_parity(exported, classifier, network, source_rows, expected, featur
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--output", type=Path, default=Path("ml/catalogue_expansion/android_export"))
+    ap.add_argument("--photo-manifest", type=Path,
+                    help="CSV of source-verified single-sign photos, kept locally")
+    ap.add_argument("--photo-root", type=Path,
+                    help="Local image directory; never uploaded by this script")
     args = ap.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
+    if bool(args.photo_manifest) != bool(args.photo_root):
+        ap.error("Supply BOTH --photo-manifest and --photo-root, or neither")
 
     bysign, rejected = baseline.load_graphs()
     chosen, train, val, historical, negcal, negtest = baseline.split(bysign, 5, 25)
     assert len(chosen) == 25
+    catalogue_original_count = len(train)
+    new_photo_splits = None
+    new_photo_audit = None
+    if args.photo_manifest:
+        all_catalogue_shas = {row["sha"] for group in (train, val, historical,
+                               negcal, negtest) for row in group}
+        new_photo_splits, new_photo_audit = local_photos.load_verified_photos(
+            args.photo_manifest, args.photo_root, chosen, all_catalogue_shas)
+        additions, ignored = local_photos.split_for_training(new_photo_splits)
+        if not additions:
+            raise ValueError("Photo manifest contains no verified train-split images. " +
+                             "No retraining was performed.")
+        train = train + additions
+        new_photo_audit["unknown_train_not_used_as_known"] = ignored
     net = pilot.load_backbone("mobilenet_v3_small")
     xtrain = pilot.extract(net, train, 3)
     ytrain = np.asarray([r["sign"] for r in train], dtype=np.int64)
@@ -144,6 +165,10 @@ def main():
     all_checked = val + historical + negcal + negtest
     expected = [r["sign"] for r in valpred + histpred + calpred + unpred]
     parity = evaluate_parity(args.output, svm, net, all_checked, expected, xtrain.shape[1])
+    photo_results = None
+    if new_photo_splits is not None:
+        photo_results = local_photos.score_photos(new_photo_splits, svm, net,
+                                                 train, rule)
 
     metadata = {
         "format_version": 1,
@@ -153,7 +178,10 @@ def main():
         "feature_dim": int(xtrain.shape[1]),
         "image_side": 224,
         "gallery_size": int(len(ytrain)),
-        "original_train_source_hashes": len(train),
+        "original_train_source_hashes": catalogue_original_count,
+        "additional_training_photo_count": len(train) - catalogue_original_count,
+        "new_photo_audit": new_photo_audit,
+        "new_photo_metrics": photo_results,
         "rejection": rule,
         "files": {key: {"name": FILES[key],
                          "sha256": sha256(args.output / FILES[key]),
@@ -175,6 +203,8 @@ def main():
         "rule": rule,
         "metrics": evaluated,
         "onnx_parity": parity,
+        "added_training_photos": len(train) - catalogue_original_count,
+        "external_photo_metrics": photo_results,
         "release_approved": False
     }, indent=2), flush=True)
 
