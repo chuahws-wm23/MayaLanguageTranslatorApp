@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.InputType
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
@@ -64,6 +65,8 @@ fun ImageTranslationScreen(
 private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(key = "glyph-photo-v1")) {
     val context = LocalContext.current
     val state by glyphModel.state.collectAsStateWithLifecycle()
+    val screenScroll = rememberScrollState()
+    val screenScope = rememberCoroutineScope()
     var showCamera by remember { mutableStateOf(false) }
     var showAssistedGrid by remember { mutableStateOf(false) }
     var showAdvancedPanelTools by remember { mutableStateOf(false) }
@@ -95,7 +98,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
     }
     AppGradientBackground {
         Column(
-            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp),
+            modifier = Modifier.fillMaxWidth().verticalScroll(screenScroll).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
@@ -157,12 +160,12 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = !browseSyllables, onClick = { browseSyllables = false },
-                        label = { Text("English meanings · 135", maxLines = 1) },
+                        label = { Text("Meanings (135)", maxLines = 1) },
                         modifier = Modifier.weight(1f),
                     )
                     FilterChip(
                         selected = browseSyllables, onClick = { browseSyllables = true },
-                        label = { Text("Syllables · 86", maxLines = 1) },
+                        label = { Text("Syllables (86)", maxLines = 1) },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -451,7 +454,10 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         assisted = state.assistedGrid,
                         individualComponents = state.individualComponents,
                         detectorNote = state.detectorNote,
-                        onInspect = glyphModel::setCrop,
+                        onInspect = { selected ->
+                            glyphModel.setCrop(selected)
+                            screenScope.launch { screenScroll.animateScrollTo(0) }
+                        },
                     )
                 }
             }
