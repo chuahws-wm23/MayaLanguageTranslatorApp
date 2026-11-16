@@ -11,7 +11,7 @@ data class TranslationRecord(
     val inputType: String = InputType.TEXT.name,
     val createdAtMillis: Long = 0L,
     /** True only for a deliberately recorded glyph scan; old photo OCR records remain unchanged. */
-    val isGlyphScan: Boolean = false,
+    val glyphScanRecord: Boolean = false,
     val glyphImageBase64: String = "",
     val glyphCandidates: List<GlyphScanCandidate> = emptyList(),
     val glyphScanKind: String = "",
