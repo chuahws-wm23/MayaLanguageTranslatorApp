@@ -75,6 +75,14 @@ internal fun EnglishMeaningExploreCard(
                         "English glosses depend on surrounding signs.",
                     style=MaterialTheme.typography.bodySmall,
                 )
+                Text(
+                    "Research accuracy warning: in a small same-source drawing study, " +
+                        "only 10/135 first matches and 18/135 top-three matches were correct. " +
+                        "Do not use visual lookalikes as automatic English translations. " +
+                        "This catalogue is best used for study and manual comparison.",
+                    style=MaterialTheme.typography.bodySmall,
+                    color=MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 if(bitmap!=null) {
                     Button(
                         onClick = {
