@@ -123,24 +123,29 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         fontWeight = FontWeight.SemiBold)
                     Text("Upload a clear glyph or inscription. Then select one sign to compare " +
                         "with the reference catalogue.", style = MaterialTheme.typography.bodySmall)
-                    Button(
-                        onClick = { gallery.launch("image/*") }, enabled = !state.busy,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
-                    ) {
-                        Icon(Icons.Rounded.PhotoLibrary, contentDescription = null)
-                        Spacer(Modifier.width(8.dp)); Text("Upload glyph image")
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            permissionMessage = null
-                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                                showCamera = true
-                            } else permission.launch(Manifest.permission.CAMERA)
-                        }, enabled = hasCamera && !state.busy,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
-                    ) {
-                        Icon(Icons.Rounded.CameraAlt, contentDescription = null)
-                        Spacer(Modifier.width(8.dp)); Text("Take a photo")
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(
+                            onClick = { gallery.launch("image/*") }, enabled = !state.busy,
+                            modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+                        ) {
+                            Icon(Icons.Rounded.PhotoLibrary, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text(if (state.bitmap == null) "Gallery" else "Change photo", maxLines = 1)
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                permissionMessage = null
+                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                                    == PackageManager.PERMISSION_GRANTED) {
+                                    showCamera = true
+                                } else permission.launch(Manifest.permission.CAMERA)
+                            }, enabled = hasCamera && !state.busy,
+                            modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+                        ) {
+                            Icon(Icons.Rounded.CameraAlt, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Camera", maxLines = 1)
+                        }
                     }
                     if (!hasCamera) Text("No camera found. Use Gallery instead.", style = MaterialTheme.typography.bodySmall)
                 }
@@ -293,11 +298,12 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                             "For an inscription with many signs, use component scanning instead.",
                             style = MaterialTheme.typography.bodySmall)
                         GlyphCropPreview(image, state.crop, !state.busy, glyphModel::setCrop)
-                        OutlinedButton(
-                            onClick = { glyphModel.setCrop(GlyphCrop()) },
-                            enabled = !state.busy,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) { Text("Full image") }
+                        if (state.crop != GlyphCrop()) {
+                            TextButton(
+                                onClick = { glyphModel.setCrop(GlyphCrop()) },
+                                enabled = !state.busy,
+                            ) { Text("Reset crop") }
+                        }
                     }
                 }
                 EnglishMeaningExploreCard(
@@ -331,11 +337,12 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         Text("Try experimental 10-sign recognition")
                     }
                 }
+                if (showAdvancedTools) {
                 OutlinedButton(
                     onClick = { showAdvancedPanelTools = !showAdvancedPanelTools },
                     enabled = !state.busy, modifier = Modifier.fillMaxWidth(),
                 ) { Text(if (showAdvancedPanelTools) "Hide dense-panel tools" else
-                    "Advanced: block detection and manual grid") }
+                    "Block detection and manual grid") }
                 if (showAdvancedPanelTools) {
                     if (GlyphV11SegDetector.isInstalled(context)) {
                         FilledTonalButton(
@@ -409,6 +416,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                             ) { Text("Scan $gridRows × $gridColumns approximate blocks") }
                         }
                     }
+                }
                 }
                 }
             }
