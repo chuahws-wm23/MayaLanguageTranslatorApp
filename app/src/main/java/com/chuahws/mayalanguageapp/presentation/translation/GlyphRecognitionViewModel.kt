@@ -11,6 +11,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGuard
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageLoader
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphMultiDetector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV18Detector
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphV11SegDetector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphDetectedRegion
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
@@ -58,6 +59,7 @@ internal data class GlyphUiState(
     val resultV4: GlyphV4Result? = null,
     val resultV25: GlyphV25Result? = null,
     val multiple: List<MultiGlyphItem> = emptyList(),
+    val individualComponents: Boolean = false,
     val multipleProgress: String? = null,
     val assistedGrid: Boolean = false,
     val detectorNote: String? = null,
@@ -94,7 +96,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         version++
         mutable.value = mutable.value.copy(
             model = model, result = null, resultV2 = null, resultV3 = null,
-            resultV4 = null, resultV25 = null, multiple = emptyList(), multipleProgress = null, message = null,
+            resultV4 = null, resultV25 = null, multiple = emptyList(), individualComponents = false,
+            multipleProgress = null, message = null,
         )
     }
 
@@ -126,7 +129,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         if (mutable.value.busy) return
         mutable.value = mutable.value.copy(
             crop = crop, result = null, resultV2 = null, resultV3 = null,
-            resultV4 = null, resultV25 = null, multiple = emptyList(), multipleProgress = null, message = null,
+            resultV4 = null, resultV25 = null, multiple = emptyList(), individualComponents = false,
+            multipleProgress = null, message = null,
         )
     }
 
@@ -136,6 +140,80 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
      * This is not full-inscription translation or validated sign segmentation.
      */
     fun scanAll() = scanPanel(null)
+
+    /**
+     * Scan graphic COMPONENTS with the separately installed v11 mask model.
+     * Never apply a TWKM recognizer or propose a reading for these shapes:
+     * Roboflow object codes are not verified TWKM or syllable mappings.
+     */
+    fun scanComponents() {
+        val snapshot = mutable.value
+        val image = snapshot.bitmap ?: return
+        if (snapshot.busy) return
+        if (!GlyphV11SegDetector.isInstalled(getApplication())) {
+            mutable.value = snapshot.copy(
+                message = "Individual-sign segmentation model is not installed. " +
+                    "Export best.pt to ONNX and install maya_signs_v11_seg.onnx in app/src/main/assets.",
+            )
+            return
+        }
+        val request = ++version
+        work?.cancel()
+        mutable.value = snapshot.copy(
+            busy = true, result = null, resultV2 = null, resultV3 = null,
+            resultV4 = null, resultV25 = null, multiple = emptyList(),
+            individualComponents = true, assistedGrid = false,
+            detectorNote = null, multipleProgress = "Finding individual glyph components…",
+            message = null,
+        )
+        work = viewModelScope.launch {
+            try {
+                val components = withContext(Dispatchers.Default) {
+                    val selected = if (snapshot.crop == GlyphCrop()) image else {
+                        val (x,y,w,h) = snapshot.crop.pixels(image.width,image.height)
+                        Bitmap.createBitmap(image,x,y,w,h)
+                    }
+                    try {
+                        val detected = GlyphV11SegDetector.fromAssetsOrNull(getApplication())
+                            ?.detect(selected).orEmpty()
+                        if (selected === image) detected
+                        else detected.map { GlyphPanelGrid.toOriginal(snapshot.crop,it) }
+                    } finally {
+                        if (selected !== image) selected.recycle()
+                    }
+                }
+                if (request != version) return@launch
+                val items = components.mapIndexed { index, region ->
+                    MultiGlyphItem(
+                        index+1, region, null, null,
+                        "v11 mask-derived component, NOT an identified Maya sign or reading. " +
+                            "Tap Inspect to review the crop manually."
+                    )
+                }
+                mutable.value = mutable.value.copy(
+                    busy = false, multiple = items, individualComponents = true,
+                    multipleProgress = null,
+                    detectorNote = "Experimental YOLO11n-seg v11 masks: shapes in the " +
+                        "source dataset are primarily drawings. Yellow rectangles enclose " +
+                        "predicted masks; no decipherment or photograph accuracy is established.",
+                    message = if (items.isEmpty())
+                        "No individual components passed the mask filter. Try a clear drawing, " +
+                        "a smaller region, or use the original block detector."
+                    else null,
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                if (request == version) {
+                    mutable.value = mutable.value.copy(
+                        busy = false, multipleProgress = null,
+                        message = "Component segmentation failed. Check that the v11 " +
+                            "ONNX model has raw [1,37,N] and [1,32,128,128] outputs.",
+                    )
+                }
+            }
+        }
+    }
 
     /** Use one full-panel selection and a user-set grid when the strict automatic
      * seam detector cannot separate densely carved or uneven blocks. */
@@ -150,7 +228,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         work?.cancel()
         mutable.value = snapshot.copy(
             busy = true, result = null, resultV2 = null, resultV3 = null,
-            resultV4 = null, resultV25 = null, multiple = emptyList(), assistedGrid = false, detectorNote = null,
+            resultV4 = null, resultV25 = null, multiple = emptyList(), individualComponents = false,
+            assistedGrid = false, detectorNote = null,
             multipleProgress = if (grid == null) "Finding glyph blocks…" else "Preparing grid…",
             message = null,
         )
