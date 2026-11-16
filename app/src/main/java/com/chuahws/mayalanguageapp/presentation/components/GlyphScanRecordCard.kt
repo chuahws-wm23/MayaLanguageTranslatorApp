@@ -79,6 +79,7 @@ fun GlyphScanDetailsDialog(
     candidates: List<GlyphScanCandidate>,
     secondaryText: String,
     onDismiss: () -> Unit,
+    scanKind: String = "WORD_SIGN",
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
@@ -132,13 +133,18 @@ fun GlyphScanDetailsDialog(
                                 verticalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 Text(
-                                    "${index+1}. ${candidate.reading}",
+                                    (if (candidate.regionIndex > 0)
+                                        "Region ${candidate.regionIndex} · " else "") +
+                                        "${index+1}. ${candidate.reading}",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold,
                                 )
                                 Text(candidate.englishGloss)
                                 Text(
-                                    "TWKM #${candidate.twkmSign} · ${String.format(Locale.US,"%.0f",
+                                    if (scanKind == "RESEARCH" || candidate.visualOverlap <= 0.0)
+                                        "TWKM #${candidate.twkmSign} · experimental research model; " +
+                                            "not verified from this photograph"
+                                    else "TWKM #${candidate.twkmSign} · ${String.format(Locale.US,"%.0f",
                                         candidate.visualOverlap*100)}% shape resemblance " +
                                         "(NOT translation confidence)",
                                     style = MaterialTheme.typography.bodySmall,
