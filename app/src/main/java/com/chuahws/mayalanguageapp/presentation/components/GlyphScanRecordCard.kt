@@ -22,11 +22,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -84,6 +88,7 @@ fun GlyphScanDetailsDialog(
     onAction: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
+    val uri = LocalUriHandler.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -127,6 +132,9 @@ fun GlyphScanDetailsDialog(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold)
                     candidates.take(10).forEachIndexed { index, candidate ->
+                        var expanded by remember(index,candidate.twkmSign) {
+                            mutableStateOf(index == 0)
+                        }
                         Card(Modifier.fillMaxWidth()) {
                             Column(
                                 Modifier.padding(12.dp),
@@ -162,6 +170,26 @@ fun GlyphScanDetailsDialog(
                                             "its meaning depends on the other signs in the inscription.",
                                         style = MaterialTheme.typography.bodySmall,
                                     )
+                                }
+                                TextButton(onClick = { expanded = !expanded }) {
+                                    Text(if (expanded) "Hide learning notes" else
+                                        "Learn about this sign")
+                                }
+                                if (expanded) {
+                                    if (note != null) {
+                                        Text("Historical context",
+                                            fontWeight = FontWeight.SemiBold)
+                                        Text(note.historicalContext,
+                                            style = MaterialTheme.typography.bodySmall)
+                                        Text("Worth knowing",
+                                            fontWeight = FontWeight.SemiBold)
+                                        Text(note.remember,
+                                            style = MaterialTheme.typography.bodySmall)
+                                    }
+                                    TextButton(onClick = {
+                                        uri.openUri(note?.sourceUrl ?:
+                                            "https://classicmayan.org/portal/signcatalog")
+                                    }) { Text("Read original source") }
                                 }
                             }
                         }
