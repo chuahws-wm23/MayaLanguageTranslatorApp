@@ -102,8 +102,8 @@ fun HomeScreen(
                         onClick = onDictionary,
                     ),
                     right = Feature(
-                        title = "Saved",
-                        subtitle = "Words you saved",
+                        title = "Favourites",
+                        subtitle = "Glyphs and saved words",
                         icon = Icons.Rounded.Bookmark,
                         color = MayaOrange,
                         onClick = onSaved,
