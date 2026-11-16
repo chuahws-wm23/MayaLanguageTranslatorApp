@@ -92,3 +92,6 @@ ml/syllabary_ml/output/
 yolo_v11_components/
 maya_v11_yolo_signs/
 ml/research_roboflow_v11/v11_model_training_output/
+
+# Optional locally exported one-class v11 instance segmentation model
+app/src/main/assets/maya_signs_v11_seg.onnx
