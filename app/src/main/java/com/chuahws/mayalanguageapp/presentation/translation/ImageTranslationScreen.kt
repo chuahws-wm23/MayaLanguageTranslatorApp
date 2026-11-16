@@ -543,11 +543,20 @@ private fun GlyphPhotoScreen(
                 )
             }
             state.resultV25?.let { result -> GlyphV25ResultCard(result) }
+            state.detectorNote?.let { note ->
+                Text(note, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             state.bitmap?.let { bitmap ->
                 if (state.multiple.isNotEmpty()) {
                     MultiGlyphResultsPanel(
                         bitmap = bitmap,
                         results = state.multiple,
+                        onInspect = { item ->
+                            multipleGlyphs = false
+                            glyphModel.setCrop(item.region.crop)
+                            screenScope.launch { screenScroll.animateScrollTo(0) }
+                        },
                     )
                 }
             }

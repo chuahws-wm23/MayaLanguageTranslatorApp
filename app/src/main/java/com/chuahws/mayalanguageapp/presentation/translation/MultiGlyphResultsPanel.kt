@@ -2,6 +2,12 @@ package com.chuahws.mayalanguageapp.presentation.translation
 
 import android.graphics.Bitmap
 import android.graphics.Paint as AndroidPaint
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,6 +40,7 @@ import kotlin.math.roundToInt
 internal fun MultiGlyphResultsPanel(
     bitmap: Bitmap,
     results: List<MultiGlyphItem>,
+    onInspect: (MultiGlyphItem) -> Unit = {},
 ) {
     if (results.isEmpty()) return
     val context = LocalContext.current
@@ -51,7 +58,24 @@ internal fun MultiGlyphResultsPanel(
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             results.forEach { item ->
                 HorizontalDivider()
-                Text("Region ${item.number}", style = MaterialTheme.typography.labelLarge)
+                Text("Region ${item.number} · row ${item.region.row}, column ${item.region.column}",
+                    style = MaterialTheme.typography.labelLarge)
+                val preview = remember(bitmap, item.region.crop) {
+                    val (x,y,w,h) = item.region.crop.pixels(bitmap.width,bitmap.height)
+                    val cropped = Bitmap.createBitmap(bitmap,x,y,w,h)
+                    val scale = minOf(1f,128f/maxOf(w,h))
+                    val resized = if(scale<1f) Bitmap.createScaledBitmap(cropped,
+                        maxOf(1,(w*scale).roundToInt()),maxOf(1,(h*scale).roundToInt()),true) else cropped
+                    if(resized !== cropped && cropped !== bitmap)cropped.recycle()
+                    resized
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(preview.asImageBitmap(), contentDescription = "Uploaded crop for region ${item.number}",
+                        modifier = Modifier.size(112.dp).background(Color.White), contentScale = ContentScale.Fit)
+                    TextButton(onClick = { onInspect(item) }) { Text("Inspect / correct crop") }
+                }
+                Text(item.note, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                 val meaning = item.englishMatches.firstOrNull()?.reference
                 val sound = item.visualMatches.firstOrNull()?.reference?.syllable
                 when {

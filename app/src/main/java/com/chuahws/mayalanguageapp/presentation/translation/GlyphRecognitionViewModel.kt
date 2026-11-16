@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphWhitespaceDetector
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphRegionMatcher
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGrid
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGuard
@@ -289,12 +291,20 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                             val trained = runCatching {
                                 GlyphV18Detector.fromAssetsOrNull(getApplication())?.detect(selected)
                             }.getOrNull()
-                            val separated = if (!trained.isNullOrEmpty()) trained
-                                else GlyphMultiDetector.detect(selected)
+                            val whitespace = if (trained.isNullOrEmpty())
+                                GlyphWhitespaceDetector.detect(selected) else emptyList()
+                            val separated = when {
+                                !trained.isNullOrEmpty() -> trained
+                                whitespace.isNotEmpty() -> whitespace
+                                else -> GlyphMultiDetector.detect(selected)
+                            }
                             val note = when {
                                 !trained.isNullOrEmpty() ->
                                     "Trained offline YOLO11n v18 detected these block candidates. " +
                                         "Boxes and reading order are provisional, not translations."
+                                whitespace.isNotEmpty() ->
+                                    "Separated drawing regions found from clear background gutters. " +
+                                        "These are layout proposals, not verified sign boundaries or linguistic reading order."
                                 trained != null ->
                                     "v18 model found no usable boxes; used the original " +
                                         "grid/seam fallback instead."
@@ -379,14 +389,13 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                                     GlyphModelMode.RESEARCH_V4 -> {
                                         // A detected block can contain multiple signs. Use the
                                         // same guarded drawing search as the single-glyph page.
-                                        val words = if (visualCatalogue != null && meaningCatalogue != null) {
-                                            meaningCatalogue.search(cropped, visualCatalogue, 5)
-                                        } else emptyList()
+                                        val comparison = if (visualCatalogue != null && meaningCatalogue != null)
+                                            GlyphRegionMatcher.compare(cropped, meaningCatalogue, visualCatalogue)
+                                        else null
                                         MultiGlyphItem(
                                             index + 1, region, null, null,
-                                            if (words.isEmpty()) "No clear word-sign match" else
-                                                "Possible word-sign drawing",
-                                            englishMatches = words,
+                                            comparison?.note ?: "Reference catalogue unavailable; no reading proposed.",
+                                            englishMatches = comparison?.matches.orEmpty(),
                                         )
                                     }
                                     GlyphModelMode.RESEARCH_25 -> {
