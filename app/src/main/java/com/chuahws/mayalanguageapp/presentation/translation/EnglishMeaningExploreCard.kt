@@ -17,6 +17,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphScanPreviewCodec
+import com.chuahws.mayalanguageapp.domain.model.GlyphScanCapture
+import com.chuahws.mayalanguageapp.domain.model.GlyphScanCandidate
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMeaningCatalogue
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishReference
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMatch
@@ -40,6 +43,7 @@ internal fun EnglishMeaningExploreCard(
     busy: Boolean,
     browseOnly: Boolean = false,
     matchOnly: Boolean = false,
+    onSearchCompleted: (GlyphScanCapture) -> Unit = {},
 ) {
     require(!browseOnly || !matchOnly)
     val context = LocalContext.current
@@ -56,8 +60,14 @@ internal fun EnglishMeaningExploreCard(
     var working by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<List<GlyphEnglishMatch>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    var requestVersion by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(bitmap,crop) { result=null;error=null }
+    LaunchedEffect(bitmap,crop) {
+        requestVersion++
+        result = null
+        error = null
+        working = false
+    }
 
     Card(Modifier.fillMaxWidth(), shape=MaterialTheme.shapes.extraLarge) {
         Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
@@ -92,17 +102,51 @@ internal fun EnglishMeaningExploreCard(
                             val original=bitmap
                             val chosen=crop
                             error=null;result=null;working=true
+                            val request=requestVersion
                             scope.launch {
                                 try {
-                                    result=withContext(Dispatchers.Default) {
+                                    val (matches,preview)=withContext(Dispatchers.Default) {
                                         val (x,y,w,h)=chosen.pixels(original.width,original.height)
                                         val isolated=Bitmap.createBitmap(original,x,y,w,h)
-                                        try { glossary.search(isolated,phonograms,3) }
-                                        finally { if(isolated!==original)isolated.recycle() }
+                                        val matchList = try {
+                                            glossary.search(isolated,phonograms,3)
+                                        } finally {
+                                            if(isolated!==original)isolated.recycle()
+                                        }
+                                        val packed=runCatching {
+                                            GlyphScanPreviewCodec.encode(original,chosen)
+                                        }.getOrDefault("")
+                                        matchList to packed
+                                    }
+                                    if(request == requestVersion) {
+                                        result = matches
+                                        if(preview.isNotEmpty()) {
+                                            onSearchCompleted(
+                                                GlyphScanCapture(
+                                                    previewBase64=preview,
+                                                    candidates=matches.map {
+                                                        GlyphScanCandidate(
+                                                            twkmSign=it.reference.twkmSign,
+                                                            reading=it.reference.reading,
+                                                            englishGloss=it.reference.english,
+                                                            visualOverlap=it.visualOverlap.toDouble(),
+                                                            scholarlyLevel=it.reference.scholarlyLevel,
+                                                        )
+                                                    },
+                                                )
+                                            )
+                                        } else {
+                                            error="Visual comparison finished, but the photo preview " +
+                                                "could not be saved to History."
+                                        }
                                     }
                                 }catch(_:Exception){
-                                    error="Unable to search this photo. Crop one complete sign and retry."
-                                }finally{working=false}
+                                    if(request == requestVersion) {
+                                        error="Unable to search this photo. Crop one complete sign and retry."
+                                    }
+                                }finally {
+                                    if(request == requestVersion) working=false
+                                }
                             }
                         },
                         enabled=!busy && !working,
@@ -112,7 +156,9 @@ internal fun EnglishMeaningExploreCard(
                             "Find matching English word signs")
                     }
                     Text(
-                        "Best for one complete sign. For multiple signs, use the component scanner.",
+                        "Best for one complete sign. For multiple signs, use the component scanner. " +
+                            "Matching also saves a small cropped photo preview and possible readings " +
+                            "to your account History; delete the record there at any time.",
                         style=MaterialTheme.typography.bodySmall,
                     )
                     error?.let { Text(it,color=MaterialTheme.colorScheme.error) }
