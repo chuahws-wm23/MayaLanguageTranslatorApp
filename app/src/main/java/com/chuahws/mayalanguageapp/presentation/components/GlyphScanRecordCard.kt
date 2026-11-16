@@ -184,10 +184,13 @@ fun GlyphScanDetailsDialog(
             }
         },
         dismissButton = {
-            if (onDelete != null) {
-                TextButton(onClick = onDelete) { Text("Delete scan") }
-            } else if (actionLabel != null) {
-                TextButton(onClick = onDismiss) { Text("Close") }
+            Row {
+                if (onDelete != null) {
+                    TextButton(onClick = onDelete) { Text("Delete") }
+                }
+                if (actionLabel != null) {
+                    TextButton(onClick = onDismiss) { Text("Close") }
+                }
             }
         },
     )
