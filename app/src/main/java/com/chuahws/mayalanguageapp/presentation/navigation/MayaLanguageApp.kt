@@ -847,7 +847,7 @@ private fun MainShell(
                             onRecordGlyphScan = appDataViewModel::recordGlyphScan,
                             onToggleGlyphFavorite = appDataViewModel::toggleGlyphFavorite,
                             savedGlyphIds = state.savedVocabulary
-                                .filter { it.isGlyphScan }
+                                .filter { it.glyphScanRecord }
                                 .map { it.savedId }
                                 .toSet(),
                             onOpenHistory = { goTo(AppPage.HISTORY) },
@@ -893,7 +893,7 @@ private fun MainShell(
                             onDelete = appDataViewModel::deleteHistory,
                             onTranslate = ::openHistoryTranslation,
                             savedGlyphIds = state.savedVocabulary
-                                .filter { it.isGlyphScan }
+                                .filter { it.glyphScanRecord }
                                 .map { it.savedId }
                                 .toSet(),
                             onToggleGlyphFavorite = appDataViewModel::toggleGlyphFavorite,
