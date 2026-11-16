@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualCatalogue
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMeaningCatalogue
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -54,8 +55,12 @@ internal fun MultiGlyphResultsPanel(
     val catalogue = remember(context) {
         runCatching { GlyphVisualCatalogue.fromAssetsOrNull(context) }.getOrNull()
     }
+    val meanings = remember(context) {
+        runCatching { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }.getOrNull()
+    }
     val recognized = results.count { it.reading != null }
     val visuallyMatched = results.count { it.visualMatches.isNotEmpty() }
+    val meaningMatches = results.count { it.englishMatches.isNotEmpty() }
     Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
         Column(
             Modifier.padding(16.dp),
@@ -69,7 +74,8 @@ internal fun MultiGlyphResultsPanel(
             Text(
                 results.size.toString() + " candidate regions found; " +
                     recognized + " have experimental readings and " +
-                    visuallyMatched + " have visual image suggestions.",
+                    meaningMatches + " have possible English word-sign references; " +
+                    visuallyMatched + " have syllable references.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             detectorNote?.let { note ->
@@ -101,6 +107,9 @@ internal fun MultiGlyphResultsPanel(
                                 (if (item.reading != null)
                                     item.reading + " — " + item.englishGloss +
                                         " (UNVERIFIED visual guess)"
+                                else if (item.englishMatches.isNotEmpty())
+                                    "Unverified English suggestions: " +
+                                        item.englishMatches.joinToString("; ") { it.reference.english }
                                 else if (item.visualMatches.isNotEmpty())
                                     "Unverified sounds: " +
                                         item.visualMatches.joinToString(", ") { it.reference.syllable }
@@ -146,6 +155,38 @@ internal fun MultiGlyphResultsPanel(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        if (meanings != null && item.englishMatches.isNotEmpty()) {
+                            Text("Similar English word-sign examples (not translations)",
+                                style=MaterialTheme.typography.labelLarge)
+                            Row(Modifier.fillMaxWidth(),
+                                horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                                item.englishMatches.take(3).forEach { match ->
+                                    val ref=match.reference
+                                    val art=remember(meanings,ref.offset) {
+                                        meanings.imageFor(ref)
+                                    }
+                                    Column(Modifier.weight(1f),
+                                        horizontalAlignment=Alignment.CenterHorizontally,
+                                        verticalArrangement=Arrangement.spacedBy(3.dp)) {
+                                        Image(
+                                            bitmap=art.asImageBitmap(),
+                                            contentDescription="Possible TWKM word-sign #${ref.twkmSign}",
+                                            modifier=Modifier.size(56.dp).background(Color.White),
+                                        )
+                                        Text(ref.reading,style=MaterialTheme.typography.labelMedium)
+                                        Text(ref.english,style=MaterialTheme.typography.labelSmall)
+                                        Text(
+                                            "${"%.0f".format(match.visualOverlap*100)}% shape only",
+                                            style=MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+                            }
+                            Text(
+                                "These drawings may look similar while representing different " +
+                                    "words. Tap Inspect to compare and read the meaning notes.",
+                                style=MaterialTheme.typography.bodySmall,
+                            )
+                        }
                         if (catalogue != null && item.visualMatches.isNotEmpty()) {
                             Row(Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
