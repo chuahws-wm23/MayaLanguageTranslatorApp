@@ -300,7 +300,7 @@ class AppDataViewModel(
      */
     fun toggleGlyphFavorite(record: TranslationRecord) {
         val userId = _uiState.value.userId ?: return
-        if (!record.isGlyphScan || record.userId != userId) return
+        if (!record.glyphScanRecord || record.userId != userId) return
         val id = GlyphScanRecords.favoriteId(userId, record.translationId)
         if (!togglingGlyphIds.add(id)) return
         val existing = _uiState.value.savedVocabulary.firstOrNull { it.savedId == id }
