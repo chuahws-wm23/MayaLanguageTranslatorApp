@@ -68,7 +68,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.chuahws.mayalanguageapp.R
 import com.chuahws.mayalanguageapp.domain.model.InputType
-import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.domain.model.SavedVocabularyItem
 import com.chuahws.mayalanguageapp.presentation.admin.AdminScreen
 import com.chuahws.mayalanguageapp.presentation.analytics.AnalyticsScreen
@@ -292,22 +291,6 @@ private fun MainShell(
     }
     var replaySequence by remember { mutableLongStateOf(0L) }
     val screenStateHolder = rememberSaveableStateHolder()
-
-    fun openHistoryTranslation(record: TranslationRecord) {
-        replaySequence += 1
-        val request = TranslationReplay.history(record, replaySequence)
-        replayRequest = request
-        replayReturnPage = AppPage.HISTORY
-        // Historical text/voice records remain viewable in History, but their
-        // removed translation modes must not be opened again.
-        if (request.mode == InputType.IMAGE) {
-            page = AppPage.IMAGE_TRANSLATION
-        } else {
-            replayRequest = null
-            replayReturnPage = null
-            page = AppPage.HISTORY
-        }
-    }
 
     fun openSavedTranslation(item: SavedVocabularyItem) {
         replaySequence += 1
@@ -855,26 +838,7 @@ private fun MainShell(
                         )
 
                     AppPage.DICTIONARY ->
-                        GlyphDictionaryHubScreen(
-                            entries =
-                                state
-                                    .dictionaryEntries,
-                            loading =
-                                state
-                                    .dictionaryLoading,
-                            hasMore =
-                                state
-                                    .dictionaryHasMore,
-                            onSearch =
-                                appDataViewModel
-                                    ::loadDictionary,
-                            onLoadMore =
-                                appDataViewModel
-                                    ::loadMoreDictionary,
-                            onSaveEntry =
-                                appDataViewModel
-                                    ::saveEntry,
-                        )
+                        GlyphDictionaryHubScreen()
 
                     AppPage.SAVED ->
                         SavedScreen(
@@ -891,7 +855,6 @@ private fun MainShell(
                         HistoryScreen(
                             history = state.history,
                             onDelete = appDataViewModel::deleteHistory,
-                            onTranslate = ::openHistoryTranslation,
                             savedGlyphIds = state.savedVocabulary
                                 .filter { it.glyphScanRecord }
                                 .map { it.savedId }

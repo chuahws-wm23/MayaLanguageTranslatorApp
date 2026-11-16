@@ -1,6 +1,8 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
 import android.graphics.Bitmap
+import com.chuahws.mayalanguageapp.domain.service.ListPaging
+import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -19,12 +21,10 @@ import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualCatalogue
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualMatch
-import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualReference
 import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV4
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.ceil
 
 /**
  * Separate browseable reference library and optical search; not a translation
@@ -61,17 +61,7 @@ internal fun GlyphCataloguePanel(
                 fontWeight = FontWeight.Bold,
             )
             if (catalogue != null) {
-                Text(
-                    if (browseOnly) "Browse ${catalogue.syllables.size} proposed sounds such as " +
-                        "ba, ku and ma across ${catalogue.references.size} reference drawings." else
-                        "Compare one glyph with ${catalogue.references.size} reference drawings " +
-                            "for ${catalogue.syllables.size} syllable sounds.",
-                )
-                Text(
-                    "Syllables represent sounds, not English translations. " +
-                        "Matching is experimental and must be checked against the source.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                if (browseOnly) Text("Explore the sounds written with Maya syllable signs.")
                 if (!browseOnly && bitmap != null) {
                     Button(
                         modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
@@ -85,7 +75,7 @@ internal fun GlyphCataloguePanel(
                                     matches = withContext(Dispatchers.Default) {
                                         val (x,y,w,h) = selected.pixels(original.width,original.height)
                                         val isolated = Bitmap.createBitmap(original,x,y,w,h)
-                                        try { catalogue.search(isolated,number=3) }
+                                        try { catalogue.search(isolated, number = 1) }
                                         finally { if (isolated !== original) isolated.recycle() }
                                     }
                                 } catch (_: Exception) {
@@ -96,31 +86,15 @@ internal fun GlyphCataloguePanel(
                         },
                         enabled = !busy && !matching,
                     ) {
-                        Text(if (matching) "Comparing drawings…" else
-                            "Find similar glyph pictures (86 syllables)")
+                        Text(if (matching) "Comparing drawings…" else "Find a syllable match")
                     }
-                    Text(
-                        "Uses the current single-glyph crop. For a panel containing many signs, " +
-                            "run the individual-component scan and tap Inspect on one region first.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
                     matchError?.let { Text(it, color=MaterialTheme.colorScheme.error) }
                     matches?.let { results ->
                         if (results.isEmpty()) {
                             Text("No usable glyph strokes found. Try a tighter, clearer crop.")
                         } else {
-                            Text("Top 3 visually similar references",
-                                style=MaterialTheme.typography.titleMedium,
-                                fontWeight=FontWeight.SemiBold)
-                            Text(
-                                "Shape scores are NOT the probability that a proposed syllable " +
-                                    "is correct. Even the top match may be wrong; real-photo accuracy " +
-                                    "has not been established.",
-                                style=MaterialTheme.typography.bodySmall,
-                            )
-                            results.forEachIndexed { rank, found ->
-                                CatalogueMatchRow(catalogue,rank+1,found)
-                            }
+                            Text("Closest sound match", style = MaterialTheme.typography.titleMedium)
+                            CatalogueMatchRow(catalogue, results.first())
                         }
                     }
                 }
@@ -192,14 +166,13 @@ internal fun GlyphCataloguePanel(
                         singleLine=true,
                     )
                     val soundList = remember(catalogue,searchSound) {
-                        catalogue.syllables.filter { it.contains(searchSound.trim().lowercase()) }
+                        catalogue.syllables.filter { it.contains(searchSound.trim(), ignoreCase = true) }.sorted()
                     }
-                    val perPage=12
-                    val maxPage=((soundList.size-1).coerceAtLeast(0))/perPage
-                    val safePage=page.coerceIn(0,maxPage)
-                    Text("${soundList.size} syllables found · page ${safePage+1} of ${maxPage+1}",
-                        style=MaterialTheme.typography.bodySmall)
-                    soundList.drop(safePage*perPage).take(perPage).forEach { sound ->
+                    val safePage = ListPaging.safePage(page + 1, soundList.size)
+                    Text("${soundList.size} entries", style = MaterialTheme.typography.labelLarge)
+                    ListPaginationControls(soundList.size, safePage, { page = it - 1 })
+                    if (soundList.isEmpty()) Text("No matching entries")
+                    ListPaging.pageItems(soundList, safePage).forEach { sound ->
                         val variants = remember(catalogue,sound) { catalogue.forSyllable(sound) }
                         val preview = remember(catalogue,sound) {
                             variants.firstOrNull()?.let { catalogue.referenceBitmap(it) }
@@ -225,13 +198,6 @@ internal fun GlyphCataloguePanel(
                             }
                         }
                     }
-                    Row(Modifier.fillMaxWidth(),
-                        horizontalArrangement=Arrangement.SpaceBetween) {
-                        TextButton(onClick={page=(safePage-1).coerceAtLeast(0)},
-                            enabled=safePage>0) { Text("Previous") }
-                        TextButton(onClick={page=(safePage+1).coerceAtMost(maxPage)},
-                            enabled=safePage<maxPage) { Text("Next") }
-                    }
                     Text(
                         "TWKM drawings: Christian Prager / University of Bonn · CC BY 4.0. " +
                             "Source: classicmayan.org/portal/signcatalog. " +
@@ -248,33 +214,22 @@ internal fun GlyphCataloguePanel(
 @Composable
 private fun CatalogueMatchRow(
     catalogue: GlyphVisualCatalogue,
-    number: Int,
     match: GlyphVisualMatch,
 ) {
     val ref=match.reference
     val bitmap=remember(catalogue,ref.offset) { catalogue.referenceBitmap(ref) }
     Card(Modifier.fillMaxWidth()) {
-        Row(
-            Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment=Alignment.CenterVertically,
-            horizontalArrangement=Arrangement.spacedBy(12.dp),
-        ) {
+        Column(Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Image(
-                bitmap=bitmap.asImageBitmap(),
-                contentDescription="TWKM glyph drawing ${ref.twkmSign} for proposed syllable ${ref.syllable}",
-                modifier=Modifier.size(84.dp).background(Color.White, RoundedCornerShape(8.dp)),
-                contentScale=ContentScale.Fit,
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = "Reference drawing for ${ref.syllable}",
+                modifier = Modifier.fillMaxWidth().height(144.dp)
+                    .background(Color.White, RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.Fit,
             )
-            Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
-                Text("${number}. Possible sound: ${ref.syllable}",
-                    style=MaterialTheme.typography.titleMedium, fontWeight=FontWeight.SemiBold)
-                Text("TWKM #${ref.twkmSign} · drawing ${ref.graph}",
-                    style=MaterialTheme.typography.bodySmall)
-                Text(
-                    "Visual overlap ${"%.0f".format(match.visualSimilarity*100)}% — not model confidence",
-                    style=MaterialTheme.typography.bodySmall,
-                )
-            }
+            Text(ref.syllable, style = MaterialTheme.typography.headlineSmall)
+            Text("This glyph represents the syllable ${ref.syllable}. Maya scribes combined syllable signs to spell words.")
         }
     }
 }

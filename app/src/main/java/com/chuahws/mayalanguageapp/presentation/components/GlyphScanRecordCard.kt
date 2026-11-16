@@ -45,6 +45,7 @@ import java.util.Locale
 fun GlyphScanThumbnail(
     imageBase64: String,
     side: Dp = 74.dp,
+    modifier: Modifier = Modifier.size(side),
 ) {
     val image = remember(imageBase64) {
         GlyphScanPreviewCodec.decode(imageBase64)
@@ -53,12 +54,12 @@ fun GlyphScanThumbnail(
         Image(
             bitmap = image.asImageBitmap(),
             contentDescription = "Saved preview of the scanned Maya glyph",
-            modifier = Modifier.size(side).background(Color.White),
+            modifier = modifier.background(Color.White),
             contentScale = ContentScale.Fit,
         )
     } else {
         androidx.compose.material3.Surface(
-            modifier = Modifier.size(side),
+            modifier = modifier,
             shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.surfaceVariant,
         ) {

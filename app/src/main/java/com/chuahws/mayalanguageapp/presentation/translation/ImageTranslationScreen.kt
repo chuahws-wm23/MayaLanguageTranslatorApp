@@ -132,25 +132,16 @@ private fun GlyphPhotoScreen(
             modifier = Modifier.fillMaxWidth().verticalScroll(screenScroll).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Maya glyph scanner", style = MaterialTheme.typography.headlineSmall,
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+            ) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Scan a Maya glyph", style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold)
-                    Text("Take or upload a picture, compare glyph shapes, and explore possible meanings.",
+                    Text("Take a photo or choose a clear image of a glyph or inscription.",
                         style = MaterialTheme.typography.bodyMedium)
-                    Text(
-                        "For the full word list, open Dictionary from the bottom bar or sidebar.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("1 · Choose an image", style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold)
-                    Text("Upload a clear glyph or inscription. Then select one sign to compare " +
-                        "with the reference catalogue.", style = MaterialTheme.typography.bodySmall)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Button(
                             onClick = { gallery.launch("image/*") }, enabled = !state.busy,
@@ -192,10 +183,9 @@ private fun GlyphPhotoScreen(
             state.bitmap?.let { image ->
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("2 · Select one glyph", style = MaterialTheme.typography.titleMedium,
+                        Text("Frame your glyph", style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold)
-                        Text("Drag a rectangle around one complete sign. " +
-                            "For an inscription with many signs, use component scanning instead.",
+                        Text("Drag around one glyph for a closer match, or scan the whole image for multiple glyphs.",
                             style = MaterialTheme.typography.bodySmall)
                         GlyphCropPreview(image, state.crop, !state.busy, glyphModel::setCrop)
                         if (state.crop != GlyphCrop()) {
@@ -237,8 +227,7 @@ private fun GlyphPhotoScreen(
                             Text("Added to Scan History",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold)
-                            Text("A compact photo preview and possible matches are stored " +
-                                "with your account. The readings are unverified.",
+                            Text("Your photo is ready to revisit.",
                                 style = MaterialTheme.typography.bodySmall)
                             val isFavorite = GlyphScanRecords.favoriteId(
                                 savedScan.userId, savedScan.translationId,
@@ -266,20 +255,24 @@ private fun GlyphPhotoScreen(
                         }
                     }
                 }
-                if (GlyphV11SegDetector.isInstalled(context)) {
-                    OutlinedButton(
-                        onClick = glyphModel::scanComponents,
-                        enabled = !state.busy,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text("Multiple glyphs? Find individual components") }
-                }
+                OutlinedButton(
+                    onClick = {
+                        if (GlyphV11SegDetector.isInstalled(context)) {
+                            glyphModel.scanComponents()
+                        } else {
+                            glyphModel.scanAll()
+                        }
+                    },
+                    enabled = !state.busy,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                ) { Text("Scan multiple glyphs") }
                 TextButton(
                     onClick = { showSoundComparison = !showSoundComparison },
                     enabled = !state.busy,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(if (showSoundComparison) "Hide syllable comparison" else
-                        "Also compare syllable sounds (optional)")
+                        "Look for a syllable sound")
                 }
                 if (showSoundComparison) {
                     GlyphCataloguePanel(
@@ -508,13 +501,6 @@ private fun GlyphPhotoScreen(
                     MultiGlyphResultsPanel(
                         bitmap = bitmap,
                         results = state.multiple,
-                        assisted = state.assistedGrid,
-                        individualComponents = state.individualComponents,
-                        detectorNote = state.detectorNote,
-                        onInspect = { selected ->
-                            glyphModel.setCrop(selected)
-                            screenScope.launch { screenScroll.animateScrollTo(0) }
-                        },
                     )
                 }
             }
@@ -623,8 +609,6 @@ private fun GlyphPhotoScreen(
                 modelLimitations, style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text("All suggested readings require specialist review. Glyph scans are not saved as verified translations.",
-                style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(12.dp))
         }
     }
@@ -636,7 +620,7 @@ private fun GlyphResultCard(result: GlyphNetwork.Result) {
     Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             val candidate = result.suggested
-            Text(if (candidate != null) "Possible match — unverified" else "No reliable supported match",
+            Text(if (candidate != null) "Closest visual match" else "No reliable supported match",
                 style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             if (candidate != null) {
                 Text(candidate.english, style = MaterialTheme.typography.headlineSmall)
@@ -652,12 +636,12 @@ private fun GlyphResultCard(result: GlyphNetwork.Result) {
                 if (candidate.id == "KAKAW") Text("KAKAW is treated as a whole glyph-block example, not a single word-sign.",
                     style = MaterialTheme.typography.bodySmall)
                 FilledTonalButton(onClick = {
-                    clipboard.setText(AnnotatedString("Possible Maya glyph: ${candidate.reading} — ${candidate.english}. Experimental; unverified."))
+                    clipboard.setText(AnnotatedString("Possible Maya glyph: ${candidate.reading} — ${candidate.english}. "))
                 }, modifier = Modifier.fillMaxWidth()) { Text("Copy possible meaning") }
             } else {
                 Text("Try a clearer crop of one supported drawing. An unfamiliar glyph may not be covered by this model.")
             }
-            Text("Other model suggestions (not verified translations)", style = MaterialTheme.typography.labelLarge)
+            Text("Other visual suggestions", style = MaterialTheme.typography.labelLarge)
             result.alternatives.filter { it.id != candidate?.id }.forEach { alternative ->
                 Text("${alternative.english} · ${alternative.reading}", style = MaterialTheme.typography.bodyMedium)
             }
@@ -703,7 +687,7 @@ private fun GlyphV3ResultCard(result: GlyphV3Result) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 if (candidate == null) "No reliable supported match"
-                else "Research v3 — possible match (unverified)",
+                else "Research v3 — possible match",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )

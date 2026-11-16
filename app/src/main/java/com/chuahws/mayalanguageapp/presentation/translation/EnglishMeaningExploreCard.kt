@@ -1,6 +1,8 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
 import android.graphics.Bitmap
+import com.chuahws.mayalanguageapp.domain.service.ListPaging
+import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -78,24 +80,7 @@ internal fun EnglishMeaningExploreCard(
                     "Update the fyp-development branch and rebuild the app.",
                     style=MaterialTheme.typography.bodySmall)
             } else {
-                Text(
-                    if (browseOnly) "Browse ${glossary.distinctSigns.size} source-linked word signs, " +
-                        "such as lord, fire, leaf and mist." else
-                        "Compare your selected glyph against ${glossary.references.size} drawings " +
-                            "from ${glossary.distinctSigns.size} word-sign entries.",
-                )
-                if (browseOnly) Text(
-                    "A logogram represents a word or meaningful word element; the English sense " +
-                        "depends on its context.",
-                    style=MaterialTheme.typography.bodySmall,
-                )
-                Text(
-                    if (browseOnly) "These are proposed scholarly meanings, not results confirmed " +
-                        "from a photograph." else "Visual matches are unverified. In a small chart " +
-                        "study, only 10/135 first matches were correct. Inspect all suggestions.",
-                    style=MaterialTheme.typography.bodySmall,
-                    color=MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (browseOnly) Text("Search by English meaning or Maya reading.")
                 if (!browseOnly && bitmap != null) {
                     Button(
                         onClick = {
@@ -109,7 +94,7 @@ internal fun EnglishMeaningExploreCard(
                                         val (x,y,w,h)=chosen.pixels(original.width,original.height)
                                         val isolated=Bitmap.createBitmap(original,x,y,w,h)
                                         val matchList = try {
-                                            glossary.search(isolated,phonograms,3)
+                                            glossary.search(isolated,phonograms,1)
                                         } finally {
                                             if(isolated!==original)isolated.recycle()
                                         }
@@ -152,27 +137,15 @@ internal fun EnglishMeaningExploreCard(
                         enabled=!busy && !working,
                         modifier=Modifier.fillMaxWidth().heightIn(min=50.dp),
                     ) {
-                        Text(if(working) "Comparing English word-sign references…" else
-                            "Find matching English word signs")
+                        Text(if (working) "Looking for a match…" else "Find a match")
                     }
-                    Text(
-                        "Best for one complete sign. For multiple signs, use the component scanner. " +
-                            "Matching also saves a small cropped photo preview and possible readings " +
-                            "to your account History; delete the record there at any time.",
-                        style=MaterialTheme.typography.bodySmall,
-                    )
-                    error?.let { Text(it,color=MaterialTheme.colorScheme.error) }
-                    result?.let { list ->
-                        Text("Closest word-sign drawings",style=MaterialTheme.typography.titleMedium)
-                        Text(
-                            "These are possible visual matches, not confirmed English translations. " +
-                                "Overlap scores are NOT percentage confidence. " +
-                                "A source reading's evidence level is also different from photo accuracy.",
-                            style=MaterialTheme.typography.bodySmall,
-                        )
-                        if(list.isEmpty())Text("No usable glyph shape found. Crop a single clearer sign.")
-                        list.forEachIndexed { index, match ->
-                            EnglishMeaningMatchRow(glossary,match,index+1)
+                    error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    result?.let { matches ->
+                        val best = matches.firstOrNull()
+                        if (best == null) {
+                            Text("No match found. Try a clearer photo or crop around one glyph.")
+                        } else {
+                            EnglishMeaningMatchRow(glossary, best)
                         }
                     }
                 }
@@ -193,13 +166,13 @@ internal fun EnglishMeaningExploreCard(
                         glossary.distinctSigns.filter {
                             q.isBlank() || it.english.lowercase(Locale.ROOT).contains(q) ||
                                 it.reading.lowercase(Locale.ROOT).contains(q)
-                        }
+                        }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.english })
                     }
-                    val last=((filtered.size-1).coerceAtLeast(0))/10
-                    val current=page.coerceIn(0,last)
-                    Text("${filtered.size} matching word signs · Page ${current+1}/${last+1}",
-                        style=MaterialTheme.typography.bodySmall)
-                    filtered.drop(current*10).take(10).forEach { ref ->
+                    val current = ListPaging.safePage(page + 1, filtered.size)
+                    Text("${filtered.size} entries", style = MaterialTheme.typography.labelLarge)
+                    ListPaginationControls(filtered.size, current, { page = it - 1 })
+                    if (filtered.isEmpty()) Text("No matching entries")
+                    ListPaging.pageItems(filtered, current).forEach { ref ->
                         var learning by remember(ref.twkmSign) { mutableStateOf(false) }
                         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
                             horizontalArrangement=Arrangement.spacedBy(10.dp)) {
@@ -208,9 +181,9 @@ internal fun EnglishMeaningExploreCard(
                                 modifier=Modifier.size(64.dp).background(Color.White,
                                     RoundedCornerShape(8.dp)),contentScale=ContentScale.Fit)
                             Column(Modifier.weight(1f)) {
-                                Text(ref.reading,style=MaterialTheme.typography.titleSmall,
+                                Text(ref.english,style=MaterialTheme.typography.titleSmall,
                                     fontWeight=FontWeight.SemiBold)
-                                Text(ref.english,style=MaterialTheme.typography.bodyMedium)
+                                Text(ref.reading,style=MaterialTheme.typography.bodyMedium)
                                 Text("TWKM #${ref.twkmSign} · source reading level ${ref.scholarlyLevel}",
                                     style=MaterialTheme.typography.bodySmall)
                                 TextButton(onClick={learning=!learning}) {
@@ -220,12 +193,6 @@ internal fun EnglishMeaningExploreCard(
                         }
                         if(learning) EnglishMeaningLearningDetails(ref)
                         HorizontalDivider()
-                    }
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-                        TextButton(onClick={page=(current-1).coerceAtLeast(0)},
-                            enabled=current>0) {Text("Previous")}
-                        TextButton(onClick={page=(current+1).coerceAtMost(last)},
-                            enabled=current<last) {Text("Next")}
                     }
                 }
                 if (browseOnly) Text(
@@ -277,36 +244,25 @@ internal fun EnglishMeaningLearningDetails(ref: GlyphEnglishReference) {
 internal fun EnglishMeaningMatchRow(
     catalogue: GlyphEnglishMeaningCatalogue,
     match: GlyphEnglishMatch,
-    number: Int,
 ) {
     val ref=match.reference
     val example=remember(catalogue,ref.offset) { catalogue.imageFor(ref) }
-    var learning by remember(ref.twkmSign) { mutableStateOf(false) }
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(7.dp)) {
-            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
-                horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-                Image(
-                    example.asImageBitmap(),
-                    contentDescription="TWKM English word sign ${ref.twkmSign} illustration",
-                    modifier=Modifier.size(80.dp).background(Color.White,
-                        RoundedCornerShape(8.dp)),contentScale=ContentScale.Fit,
-                )
-                Column(Modifier.weight(1f)) {
-                    Text("${number}. ${ref.reading}",style=MaterialTheme.typography.titleMedium,
-                        fontWeight=FontWeight.SemiBold)
-                    Text("Possible English gloss: ${ref.english}",
-                        style=MaterialTheme.typography.bodyMedium)
-                    Text("TWKM #${ref.twkmSign} · ${"%.0f".format(Locale.US,match.visualOverlap*100)}% visual overlap",
-                        style=MaterialTheme.typography.bodySmall)
-                    Text("NOT verified translation or probability",
-                        style=MaterialTheme.typography.labelSmall)
-                }
-            }
-            TextButton(onClick={learning=!learning}) {
-                Text(if(learning)"Hide the explanation" else "Explain this meaning")
-            }
-            if(learning) EnglishMeaningLearningDetails(ref)
+    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+        Column(
+            Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text("Closest visual match", style = MaterialTheme.typography.labelLarge)
+            Image(
+                example.asImageBitmap(),
+                contentDescription = "Reference drawing for ${ref.reading}",
+                modifier = Modifier.fillMaxWidth().heightIn(min = 144.dp, max = 180.dp)
+                    .background(Color.White, RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.Fit,
+            )
+            Text(ref.english, style = MaterialTheme.typography.headlineSmall)
+            Text("Maya reading · ${ref.reading}", style = MaterialTheme.typography.titleMedium)
+            EnglishMeaningLearningDetails(ref)
         }
     }
 }

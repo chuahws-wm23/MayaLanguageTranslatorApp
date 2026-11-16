@@ -1,534 +1,113 @@
 package com.chuahws.mayalanguageapp.presentation.history
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CameraAlt
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Keyboard
-import androidx.compose.material.icons.rounded.Mic
-import androidx.compose.material.icons.rounded.Search
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.domain.model.GlyphScanRecords
-import com.chuahws.mayalanguageapp.presentation.components.AccentIcon
+import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
-import com.chuahws.mayalanguageapp.presentation.components.SoftBadge
-import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
-import com.chuahws.mayalanguageapp.presentation.components.TranslationDetailsDialog
 import com.chuahws.mayalanguageapp.presentation.components.GlyphScanThumbnail
-import com.chuahws.mayalanguageapp.presentation.components.GlyphScanDetailsDialog
-import com.chuahws.mayalanguageapp.domain.service.ListPaging
-import com.chuahws.mayalanguageapp.presentation.theme.MayaBlue
-import com.chuahws.mayalanguageapp.presentation.theme.MayaGreen
-import com.chuahws.mayalanguageapp.presentation.theme.MayaOrange
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun HistoryScreen(
     history: List<TranslationRecord>,
     onDelete: (TranslationRecord) -> Unit,
-    onTranslate: (TranslationRecord) -> Unit,
     savedGlyphIds: Set<String> = emptySet(),
     onToggleGlyphFavorite: (TranslationRecord) -> Unit = {},
 ) {
-    var query by rememberSaveable {
-        mutableStateOf("")
-    }
-    var typeFilter by rememberSaveable {
-        mutableStateOf("All")
-    }
-    var pendingDeleteId by rememberSaveable {
-        mutableStateOf<String?>(null)
-    }
-    var selectedRecordId by rememberSaveable {
-        mutableStateOf<String?>(null)
-    }
-    var currentPage by rememberSaveable {
-        mutableIntStateOf(1)
-    }
-    val listState = rememberLazyListState()
+    val scans = history.filter { it.glyphScanRecord && it.glyphImageBase64.isNotBlank() }
+    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val selectedRecord = history.firstOrNull {
-        it.translationId == selectedRecordId
-    }
-
-    if (selectedRecord != null && selectedRecord.glyphScanRecord) {
-        val isFavorite = GlyphScanRecords.favoriteId(
-            selectedRecord.userId, selectedRecord.translationId,
-        ) in savedGlyphIds
-        GlyphScanDetailsDialog(
-            title = "Glyph scan · History",
-            imageBase64 = selectedRecord.glyphImageBase64,
-            candidates = selectedRecord.glyphCandidates,
-            secondaryText = formatDate(selectedRecord.createdAtMillis) +
-                " · ${selectedRecord.glyphRegionCount} region(s)",
-            scanKind = selectedRecord.glyphScanKind,
-            onDismiss = { selectedRecordId = null },
-            actionLabel = if (isFavorite) "Remove favourite" else "Add to favourites",
-            onAction = {
-                onToggleGlyphFavorite(selectedRecord)
-                selectedRecordId = null
-            },
-            onDelete = {
-                selectedRecordId = null
-                pendingDeleteId = selectedRecord.translationId
-            },
-        )
-    } else if (selectedRecord != null) {
-        TranslationDetailsDialog(
-            title = "Translation details",
-            sourceLabel = friendlyLanguage(selectedRecord.sourceLanguage),
-            sourceText = selectedRecord.sourceText,
-            translationLabel = friendlyLanguage(selectedRecord.targetLanguage),
-            translationText = selectedRecord.translatedText,
-            metadata = selectedRecord.inputType.lowercase()
-                .replaceFirstChar { it.uppercase() } +
-                " • " + formatDate(selectedRecord.createdAtMillis),
-            onDismiss = { selectedRecordId = null },
-            onTranslate = {
-                selectedRecordId = null
-                onTranslate(selectedRecord)
-            },
-            onDelete = {
-                selectedRecordId = null
-                pendingDeleteId = selectedRecord.translationId
-            },
-        )
-    }
-
-    val pendingDelete = history.firstOrNull {
-        it.translationId == pendingDeleteId
-    }
-
-    if (pendingDelete != null) {
+    scans.firstOrNull { it.translationId == selectedId }?.let { scan ->
+        val saved = GlyphScanRecords.favoriteId(scan.userId, scan.translationId) in savedGlyphIds
         AlertDialog(
-            onDismissRequest = {
-                pendingDeleteId = null
-            },
-            title = {
-                Text(if (pendingDelete.glyphScanRecord) "Delete glyph scan?" else "Delete translation?")
-            },
+            onDismissRequest = { selectedId = null },
+            title = { Text("Scan photo") },
             text = {
-                Text(
-                    if (pendingDelete.glyphScanRecord)
-                        "This glyph preview and its candidate matches will be removed " +
-                            "from History. A separately favourited copy will stay in Saved."
-                    else "This history record will be removed from your account. " +
-                        "Your activity total will stay the same."
-                )
+                GlyphScanThumbnail(scan.glyphImageBase64, modifier = Modifier.aspectRatio(1f))
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDelete(pendingDelete)
-                        pendingDeleteId = null
-                    },
-                ) {
-                    Text("Delete")
-                }
+                TextButton(onClick = {
+                    onToggleGlyphFavorite(scan)
+                    selectedId = null
+                }) { Text(if (saved) "Remove favourite" else "Add to favourites") }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        pendingDeleteId = null
-                    },
-                ) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = {
+                    selectedId = null
+                    pendingDeleteId = scan.translationId
+                }) { Text("Delete") }
             },
         )
     }
 
-    val filtered = history.filter { item ->
-        val matchesQuery =
-            query.isBlank() ||
-                item.sourceText.contains(
-                    query,
-                    ignoreCase = true,
-                ) ||
-                item.translatedText.contains(
-                    query,
-                    ignoreCase = true,
-                ) ||
-                (item.glyphScanRecord && item.glyphCandidates.any { candidate ->
-                    candidate.reading.contains(query, ignoreCase = true) ||
-                        candidate.englishGloss.contains(query, ignoreCase = true)
-                })
-
-        val matchesType = when (typeFilter) {
-            "Glyph scans" -> item.glyphScanRecord
-            "Older records" -> !item.glyphScanRecord
-            else -> true
-        }
-
-        matchesQuery && matchesType
-    }
-
-    val displayPage = ListPaging.safePage(currentPage, filtered.size)
-    val visibleRecords = ListPaging.pageItems(filtered, displayPage)
-
-    // Keep the selected page valid when a record is deleted.
-    LaunchedEffect(filtered.size) {
-        currentPage = ListPaging.safePage(currentPage, filtered.size)
-    }
-    LaunchedEffect(displayPage, query, typeFilter) {
-        listState.scrollToItem(0)
+    scans.firstOrNull { it.translationId == pendingDeleteId }?.let { scan ->
+        AlertDialog(
+            onDismissRequest = { pendingDeleteId = null },
+            title = { Text("Delete scan from History?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDelete(scan)
+                    pendingDeleteId = null
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDeleteId = null }) { Text("Cancel") }
+            },
+        )
     }
 
     AppGradientBackground {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = {
-                    query = it
-                    currentPage = 1
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = 18.dp,
-                        top = 18.dp,
-                        end = 18.dp,
-                    ),
-                label = {
-                    Text("Search history")
-                },
-                singleLine = true,
-                leadingIcon = {
-                    Icon(
-                        Icons.Rounded.Search,
-                        contentDescription = null,
-                    )
-                },
-                trailingIcon =
-                    if (query.isNotBlank()) {
-                        {
-                            IconButton(
-                                onClick = {
-                                    query = ""
-                                    currentPage = 1
-                                },
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Close,
-                                    contentDescription =
-                                        "Clear search",
-                                )
-                            }
-                        }
-                    } else {
-                        null
-                    },
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 18.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+        if (scans.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("No scans yet", style = MaterialTheme.typography.titleLarge)
+                    Text("Photos from your glyph scans will appear here.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(140.dp),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize(),
             ) {
-                listOf("All", "Glyph scans", "Older records").forEach { filter ->
-                    FilterChip(
-                        selected =
-                            typeFilter == filter,
-                        onClick = {
-                            typeFilter = filter
-                            currentPage = 1
-                        },
-                        label = { Text(filter) },
-                    )
-                }
-            }
-
-            if (filtered.size > ListPaging.PAGE_SIZE) {
-                ListPaginationControls(
-                    totalItems = filtered.size,
-                    currentPage = displayPage,
-                    onPageSelected = { selected ->
-                        currentPage = ListPaging.safePage(
-                            selected, filtered.size,
+                items(scans, key = { it.translationId }) { scan ->
+                    Card(
+                        onClick = { selectedId = scan.translationId },
+                        shape = MaterialTheme.shapes.large,
+                    ) {
+                        GlyphScanThumbnail(
+                            scan.glyphImageBase64,
+                            modifier = Modifier.aspectRatio(1f),
                         )
-                    },
-                    modifier = Modifier.padding(
-                        horizontal = 18.dp,
-                        vertical = 4.dp,
-                    ),
-                )
-            }
-
-            if (filtered.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    horizontalAlignment =
-                        Alignment.CenterHorizontally,
-                    verticalArrangement =
-                        Arrangement.Center,
-                ) {
-                    Icon(
-                        Icons.Rounded.History,
-                        contentDescription = null,
-                        tint =
-                            MaterialTheme
-                                .colorScheme.primary,
-                    )
-                    Text(
-                        text =
-                            if (history.isEmpty()) {
-                                "No scans yet"
-                            } else {
-                                "No matching records"
-                            },
-                        style =
-                            MaterialTheme
-                                .typography.titleMedium,
-                        modifier =
-                            Modifier.padding(top = 10.dp),
-                    )
-                    Text(
-                        text =
-                            if (history.isEmpty()) {
-                                "Completed glyph searches appear here with a photo preview."
-                            } else {
-                                "Try another search or filter."
-                            },
-                        color =
-                            MaterialTheme.colorScheme
-                                .onSurfaceVariant,
-                        modifier =
-                            Modifier.padding(top = 4.dp),
-                    )
-                }
-            } else {
-                LazyColumn(
-                    state = listState,
-                    contentPadding = PaddingValues(
-                        start = 18.dp,
-                        end = 18.dp,
-                        bottom = 112.dp,
-                    ),
-                    verticalArrangement =
-                        Arrangement.spacedBy(10.dp),
-                ) {
-                    items(
-                        items = visibleRecords,
-                        key = {
-                            it.translationId
-                        },
-                    ) { item ->
-                        HistoryCard(
-                            item = item,
-                            onOpen = {
-                                selectedRecordId =
-                                    item.translationId
-                            },
-                            onDelete = {
-                                pendingDeleteId =
-                                    item.translationId
-                            },
-                        )
-                    }
-
-                    if (history.size >= 100) {
-                        item(key = "history_limit_notice") {
-                            Text(
-                                text = "Only the latest 100 history records are loaded.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
                     }
                 }
             }
         }
     }
 }
-
-@Composable
-private fun HistoryCard(
-    item: TranslationRecord,
-    onOpen: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    val date =
-        formatDate(item.createdAtMillis)
-
-    val typeColor: Color
-    val icon =
-        when (item.inputType.uppercase()) {
-            "IMAGE" -> {
-                typeColor = MayaGreen
-                Icons.Rounded.CameraAlt
-            }
-
-            "VOICE" -> {
-                typeColor = MayaOrange
-                Icons.Rounded.Mic
-            }
-
-            else -> {
-                typeColor = MayaBlue
-                Icons.Rounded.Keyboard
-            }
-        }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onOpen,
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor =
-                MaterialTheme.colorScheme.surface,
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-        ),
-    ) {
-        Row(
-            modifier = Modifier.padding(15.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement =
-                Arrangement.spacedBy(12.dp),
-        ) {
-            if (item.glyphScanRecord) {
-                GlyphScanThumbnail(item.glyphImageBase64, side = 68.dp)
-            } else {
-                AccentIcon(icon = icon, color = typeColor)
-            }
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement =
-                    Arrangement.spacedBy(5.dp),
-            ) {
-                Text(
-                    text = item.sourceText,
-                    style =
-                        MaterialTheme
-                            .typography.bodyMedium,
-                    color =
-                        MaterialTheme.colorScheme
-                            .onSurfaceVariant,
-                )
-                Text(
-                    text = item.translatedText,
-                    style =
-                        MaterialTheme
-                            .typography.titleMedium,
-                    fontWeight =
-                        FontWeight.SemiBold,
-                    color =
-                        MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    text = if (item.glyphScanRecord)
-                        "${item.glyphCandidates.size} possible picture match(es) · unverified"
-                    else friendlyLanguage(item.sourceLanguage) +
-                        " to " + friendlyLanguage(item.targetLanguage),
-                    style =
-                        MaterialTheme
-                            .typography.bodySmall,
-                    color =
-                        MaterialTheme.colorScheme
-                            .onSurfaceVariant,
-                )
-                Row(
-                    verticalAlignment =
-                        Alignment.CenterVertically,
-                    horizontalArrangement =
-                        Arrangement.spacedBy(8.dp),
-                ) {
-                    SoftBadge(
-                        text = if (item.glyphScanRecord) "Glyph scan" else
-                            item.inputType.lowercase().replaceFirstChar {
-                                it.uppercase()
-                            },
-                        color = typeColor,
-                    )
-                    Text(
-                        text = date,
-                        style =
-                            MaterialTheme
-                                .typography.bodySmall,
-                        color =
-                            MaterialTheme.colorScheme
-                                .onSurfaceVariant,
-                    )
-                }
-            }
-
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Rounded.DeleteOutline,
-                    contentDescription =
-                        "Delete history record",
-                    tint =
-                        MaterialTheme
-                            .colorScheme.error,
-                )
-            }
-        }
-    }
-}
-
-private fun friendlyLanguage(
-    value: String,
-): String = when {
-    value.contains(
-        "maya",
-        ignoreCase = true,
-    ) -> "Yucatec Maya"
-
-    value.contains(
-        "english",
-        ignoreCase = true,
-    ) -> "English"
-
-    else -> value
-}
-
-private fun formatDate(
-    time: Long,
-): String = SimpleDateFormat(
-    "dd MMM yyyy, h:mm a",
-    Locale.getDefault(),
-).format(Date(time))
