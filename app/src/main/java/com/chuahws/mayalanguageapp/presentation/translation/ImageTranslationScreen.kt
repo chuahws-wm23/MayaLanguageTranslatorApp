@@ -337,7 +337,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                 if (showAdvancedTools) {
                     Button(onClick = glyphModel::recognize, enabled = !state.busy,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-                        Text("Try experimental 10-sign recognition")
+                        Text("Recognise with selected research model")
                     }
                 }
                 if (showAdvancedTools) {
