@@ -68,11 +68,15 @@ internal object GlyphWhitespaceDetector {
                     while(end<length && profile[end]==0)end++
                     val gap=end-start
                     // Ignore narrow holes and very small disconnected ornaments.
+                    // Compare spatial extent, not ink mass: a valid thin-stroked
+                    // sign must not disappear beside a dense drawing.
                     if(start>0 && end<length && gap>=maxOf(12,(length*.08f).roundToInt())) {
                         val mid=(start+end)/2
                         val first=if(horizontal)trim(box.l,box.t,box.r,box.t+mid) else trim(box.l,box.t,box.l+mid,box.b)
                         val second=if(horizontal)trim(box.l,box.t+mid,box.r,box.b) else trim(box.l+mid,box.t,box.r,box.b)
-                        if(first!=null && second!=null && minOf(first.ink,second.ink).toFloat()/box.ink >= .18f) {
+                        if(first!=null && second!=null &&
+                            minOf(first.width*first.height,second.width*second.height).toFloat()/
+                                (first.width*first.height+second.width*second.height) >= .18f) {
                             val strength=gap.toFloat()/length
                             if(best==null || strength>best!!.strength)best=Cut(first,second,strength)
                         }

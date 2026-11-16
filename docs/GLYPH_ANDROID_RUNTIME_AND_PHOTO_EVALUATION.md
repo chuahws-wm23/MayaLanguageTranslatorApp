@@ -110,7 +110,7 @@ reading, even when the detector found a plausible boundary.
 
 Device tests cover constructed 2x2 and single-row panels of source-labelled
 reference drawings, per-region reference identity, and the correspondence
-between an Inspect action and its crop. A separate diagnostic processes one
+between an Inspect action and its crop. A separate development diagnostic (inspected during method selection) processes one
 reference for each of all 135 logogram identities in constructed panels. It
 records region proposals, matches at IoU >=0.5, and correct detected-and-top-1 /
 top-5 retrieval, counting missed regions as failures. Its JSON is included with

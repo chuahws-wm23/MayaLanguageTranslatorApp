@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -242,7 +243,7 @@ class GlyphReferenceWorkflowTest {
 
     private fun screenshot(name: String) {
         compose.waitForIdle()
-        val bitmap = requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot())
+        val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
         try {
             val folder = requireNotNull(context.getExternalFilesDir("screenshots"))
             File(folder, "$name.png").outputStream().use {

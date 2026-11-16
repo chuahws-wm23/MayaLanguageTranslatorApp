@@ -33,4 +33,14 @@ class GlyphWhitespaceDetectorTest {
         for(y in 110..114)for(x in 30..34)g[y*w+x]=0
         assertTrue(GlyphWhitespaceDetector.detect(g,w,h).isEmpty())
     }
+    @Test fun thinStrokedGlyphIsNotMergedIntoItsDenseNeighbour() {
+        val w=240;val h=140;val gray=IntArray(w*h){255}
+        for(c in 0..1)for(y in 30 until 90)for(x in 30+c*100 until 90+c*100) {
+            val thickness=if(c==0)1 else 12
+            if(x<30+c*100+thickness || x>=90+c*100-thickness || y<30+thickness || y>=90-thickness)
+                gray[y*w+x]=0
+        }
+        assertEquals(2,GlyphWhitespaceDetector.detect(gray,w,h).size)
+    }
+
 }
