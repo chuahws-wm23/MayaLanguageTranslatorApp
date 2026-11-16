@@ -3,18 +3,22 @@ package com.chuahws.mayalanguageapp.presentation.translation
 import android.graphics.Bitmap
 import android.graphics.Paint as AndroidPaint
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -24,12 +28,14 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualCatalogue
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -44,7 +50,12 @@ internal fun MultiGlyphResultsPanel(
 ) {
     if (results.isEmpty()) return
     val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
+    val catalogue = remember(context) {
+        runCatching { GlyphVisualCatalogue.fromAssetsOrNull(context) }.getOrNull()
+    }
     val recognized = results.count { it.reading != null }
+    val visuallyMatched = results.count { it.visualMatches.isNotEmpty() }
     Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
         Column(
             Modifier.padding(16.dp),
@@ -57,7 +68,8 @@ internal fun MultiGlyphResultsPanel(
             )
             Text(
                 results.size.toString() + " candidate regions found; " +
-                    recognized + " have model suggestions.",
+                    recognized + " have experimental readings and " +
+                    visuallyMatched + " have visual image suggestions.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             detectorNote?.let { note ->
@@ -89,7 +101,11 @@ internal fun MultiGlyphResultsPanel(
                                 (if (item.reading != null)
                                     item.reading + " — " + item.englishGloss +
                                         " (UNVERIFIED visual guess)"
-                                else if (individualComponents) "Unidentified graphic component" else "No reliable supported match")
+                                else if (item.visualMatches.isNotEmpty())
+                                    "Unverified sounds: " +
+                                        item.visualMatches.joinToString(", ") { it.reference.syllable }
+                                else if (individualComponents) "Unidentified graphic component"
+                                else "No reliable supported match")
                         } + "\nExperimental sign suggestions only; not an inscription translation."
                     ))
                 },
@@ -130,6 +146,28 @@ internal fun MultiGlyphResultsPanel(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        if (catalogue != null && item.visualMatches.isNotEmpty()) {
+                            Row(Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                item.visualMatches.take(3).forEach { match ->
+                                    val reference = remember(catalogue,match.reference.offset) {
+                                        catalogue.referenceBitmap(match.reference)
+                                    }
+                                    Column(Modifier.weight(1f),
+                                        horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Image(
+                                            bitmap=reference.asImageBitmap(),
+                                            contentDescription="Visually similar ${match.reference.syllable}",
+                                            modifier=Modifier.size(60.dp).background(Color.White),
+                                        )
+                                        Text(match.reference.syllable,
+                                            style=MaterialTheme.typography.labelMedium)
+                                        Text("${"%.0f".format(match.visualSimilarity*100)}% shape",
+                                            style=MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
