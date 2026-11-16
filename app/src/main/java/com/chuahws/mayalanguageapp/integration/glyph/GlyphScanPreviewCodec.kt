@@ -2,6 +2,9 @@ package com.chuahws.mayalanguageapp.integration.glyph
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.util.Base64
 import java.io.ByteArrayOutputStream
 import kotlin.math.max
@@ -29,17 +32,28 @@ object GlyphScanPreviewCodec {
             val small = if (width == w && height == h) selected
                 else Bitmap.createScaledBitmap(selected,width,height,true)
             try {
-                for (quality in listOf(78,65,52,38,24)) {
-                    val output=ByteArrayOutputStream()
-                    if (small.compress(Bitmap.CompressFormat.JPEG,quality,output)) {
-                        val bytes=output.toByteArray()
-                        if (bytes.size <= MAX_JPEG_BYTES) {
-                            val value=Base64.encodeToString(bytes,Base64.NO_WRAP)
-                            if (value.length <= MAX_BASE64_CHARS) return value
+                // JPEG has no alpha channel: composite transparent reference drawings
+                // onto white so the restored glyph thumbnail does not turn black.
+                val opaque = Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888)
+                try {
+                    Canvas(opaque).apply {
+                        drawColor(Color.WHITE)
+                        drawBitmap(small,0f,0f,Paint(Paint.FILTER_BITMAP_FLAG))
+                    }
+                    for (quality in listOf(78,65,52,38,24)) {
+                        val output=ByteArrayOutputStream()
+                        if (opaque.compress(Bitmap.CompressFormat.JPEG,quality,output)) {
+                            val bytes=output.toByteArray()
+                            if (bytes.size <= MAX_JPEG_BYTES) {
+                                val value=Base64.encodeToString(bytes,Base64.NO_WRAP)
+                                if (value.length <= MAX_BASE64_CHARS) return value
+                            }
                         }
                     }
+                    error("Could not fit glyph preview into a safe storage size")
+                } finally {
+                    opaque.recycle()
                 }
-                error("Could not fit glyph preview into a safe storage size")
             } finally {
                 if(small !== selected) small.recycle()
             }
