@@ -840,13 +840,16 @@ private fun MainShell(
 
                     AppPage.IMAGE_TRANSLATION ->
                         ImageTranslationScreen(
-                            viewModel =
-                                translationViewModel,
+                            viewModel = translationViewModel,
                             replay = replayRequest
                                 ?.takeIf { it.mode == InputType.IMAGE },
-                            onSaveEntry =
-                                appDataViewModel
-                                    ::saveEntry,
+                            onSaveEntry = appDataViewModel::saveEntry,
+                            onRecordGlyphScan = appDataViewModel::recordGlyphScan,
+                            onToggleGlyphFavorite = appDataViewModel::toggleGlyphFavorite,
+                            savedGlyphIds = state.savedVocabulary
+                                .filter { it.isGlyphScan }
+                                .map { it.savedId }
+                                .toSet(),
                         )
 
                     AppPage.DICTIONARY ->
@@ -885,10 +888,13 @@ private fun MainShell(
                     AppPage.HISTORY ->
                         HistoryScreen(
                             history = state.history,
-                            onDelete =
-                                appDataViewModel
-                                    ::deleteHistory,
+                            onDelete = appDataViewModel::deleteHistory,
                             onTranslate = ::openHistoryTranslation,
+                            savedGlyphIds = state.savedVocabulary
+                                .filter { it.isGlyphScan }
+                                .map { it.savedId }
+                                .toSet(),
+                            onToggleGlyphFavorite = appDataViewModel::toggleGlyphFavorite,
                         )
 
                     AppPage.ANALYTICS ->
