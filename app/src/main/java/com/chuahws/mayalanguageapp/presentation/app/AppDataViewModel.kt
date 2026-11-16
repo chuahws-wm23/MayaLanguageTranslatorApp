@@ -249,13 +249,14 @@ class AppDataViewModel(
      */
     fun recordGlyphScan(
         capture: GlyphScanCapture,
-        onRecorded: (TranslationRecord) -> Unit,
+        onRecorded: (TranslationRecord?) -> Unit,
     ) {
         val userId = _uiState.value.userId ?: return
         if (capture.previewBase64.isEmpty()) {
             _uiState.update {
                 it.copy(message = "This glyph preview could not be saved. Try a smaller picture.")
             }
+            onRecorded(null)
             return
         }
         val record = GlyphScanRecords.makeHistory(
@@ -284,7 +285,10 @@ class AppDataViewModel(
                     }
                 }
                 .onFailure { error ->
-                    if (_uiState.value.userId == userId) showError(error)
+                    if (_uiState.value.userId == userId) {
+                        showError(error)
+                        onRecorded(null)
+                    }
                 }
         }
     }
