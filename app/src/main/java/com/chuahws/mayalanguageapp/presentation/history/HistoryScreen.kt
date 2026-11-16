@@ -98,6 +98,7 @@ fun HistoryScreen(
             candidates = selectedRecord.glyphCandidates,
             secondaryText = formatDate(selectedRecord.createdAtMillis) +
                 " · ${selectedRecord.glyphRegionCount} region(s)",
+            scanKind = selectedRecord.glyphScanKind,
             onDismiss = { selectedRecordId = null },
             actionLabel = if (isFavorite) "Remove favourite" else "Add to favourites",
             onAction = {
