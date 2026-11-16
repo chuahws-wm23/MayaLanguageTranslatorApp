@@ -145,7 +145,7 @@ internal class GlyphVisualCatalogue private constructor(
      * A whole block/image with multiple glyphs is NOT equivalent to one sign.
      * This is a simple photograph baseline, not calibrated shadow correction.
      */
-    private fun canonicalBitplane(bitmap: Bitmap): ByteArray? {
+    internal fun canonicalBitplane(bitmap: Bitmap): ByteArray? {
         if (bitmap.width < 20 || bitmap.height < 20) return null
         val scale = min(1f, 1024f / max(bitmap.width,bitmap.height))
         val w = max(1,(bitmap.width*scale).roundToInt())
