@@ -89,3 +89,30 @@ reason. The summary tool rejects an empty report rather than inventing accuracy.
 Readiness gaps remain visible and `release_approved` stays false. A separate
 expert review, sufficiently large independent dataset, validation-only threshold
 selection and broader device coverage remain necessary for a reliability claim.
+
+## Multi-glyph reliability follow-up
+
+The shipped APK has no optional v11/v18 detector assets. Automatic scanning now
+tries a conservative whitespace/XY-cut proposal method for separated drawings
+before the older dark-seam fallback. It supports single rows, single columns
+and 2x2 layouts without requiring dark grid lines. It refuses blank images,
+very small detached marks and dark-background inputs rather than treating those
+as reliable multiple-sign detections. Connected/overlapping carvings still need
+a trained detector or manual review. The detector finds layout regions, not
+verified linguistic signs or Maya reading order.
+
+Every result displays its actual uploaded crop and an Inspect / correct crop
+action that opens that region in the existing single-sign crop editor. A region
+with further separated shapes is withheld from automatic single-sign comparison
+and asks for inspection. Other regions receive five unconfirmed alternatives,
+with capture-quality feedback. A visually similar reference is not a confirmed
+reading, even when the detector found a plausible boundary.
+
+Device tests cover constructed 2x2 and single-row panels of source-labelled
+reference drawings, per-region reference identity, and the correspondence
+between an Inspect action and its crop. A separate diagnostic processes one
+reference for each of all 135 logogram identities in constructed panels. It
+records region proposals, matches at IoU >=0.5, and correct detected-and-top-1 /
+top-5 retrieval, counting missed regions as failures. Its JSON is included with
+the runtime screenshots. This is a source-reference layout diagnostic, not
+independent photo detection accuracy or an accuracy guarantee.

@@ -197,6 +197,41 @@ class GlyphReferenceWorkflowTest {
         return if(union>0f)intersection/union else 0f
     }
 
+    @Test fun inspectActionBelongsToTheSelectedRegionAndShowsItsUploadedCrop() {
+        val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))
+        val panel=Bitmap.createBitmap(400,224,Bitmap.Config.ARGB_8888)
+        val canvas=Canvas(panel);canvas.drawColor(Color.WHITE)
+        listOf(32,44).forEachIndexed { i, sign ->
+            val image=words.imageFor(words.references.first { it.twkmSign==sign })
+            try { canvas.drawBitmap(image,null,Rect(48+i*176,48,176+i*176,176),null) }
+            finally { image.recycle() }
+        }
+        val regions=GlyphWhitespaceDetector.detect(panel)
+        assertEquals(2,regions.size)
+        val items=regions.mapIndexed { i,region ->
+            val(x,y,w,h)=region.crop.pixels(panel.width,panel.height)
+            val crop=Bitmap.createBitmap(panel,x,y,w,h)
+            val comparison=try { GlyphRegionMatcher.compare(crop,words,sounds) }
+                finally { if(crop !== panel)crop.recycle() }
+            MultiGlyphItem(i+1,region,null,null,comparison.note,englishMatches=comparison.matches)
+        }
+        var inspected: MultiGlyphItem?=null
+        compose.setContent {
+            MayaTranslateTheme {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    MultiGlyphResultsPanel(panel,items,onInspect={ inspected=it })
+                }
+            }
+        }
+        compose.onNodeWithContentDescription("Uploaded crop for region 1").assertExists()
+        compose.onNodeWithContentDescription("Uploaded crop for region 2").assertExists()
+        screenshot("multi-region-review")
+        compose.onAllNodesWithText("Inspect / correct crop")[1].performScrollTo().performClick()
+        assertEquals(2,inspected?.number)
+        assertEquals(regions[1].crop,inspected?.region?.crop)
+    }
+
     private val numericSimilarity = SemanticsMatcher("numeric appearance similarity") { node ->
         node.config.contains(SemanticsProperties.Text) &&
             node.config[SemanticsProperties.Text].any { text ->
