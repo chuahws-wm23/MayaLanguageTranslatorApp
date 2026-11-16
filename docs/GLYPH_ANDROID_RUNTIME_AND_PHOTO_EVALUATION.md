@@ -25,6 +25,7 @@ Run these checks on a connected local Android device/emulator:
 
 ```sh
 gradle connectedDebugAndroidTest \
+  -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true \
   -Pandroid.testInstrumentationRunnerArguments.class=com.chuahws.mayalanguageapp.presentation.translation.GlyphReferenceWorkflowTest
 ```
 
@@ -59,10 +60,12 @@ an existing batch. Source images are preserved. Keep staged photos, the test
 APK containing them and reports private unless owners approve distribution;
 they are not committed or sent to GitHub by this workflow.
 
-Then run the actual Android evaluator:
+Then run the actual Android evaluator. Keep the APK installed after the run so
+the report remains available for `adb` extraction:
 
 ```sh
 gradle connectedDebugAndroidTest \
+  -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true \
   -Pandroid.testInstrumentationRunnerArguments.class=com.chuahws.mayalanguageapp.presentation.translation.IndependentGlyphPhotoTest
 adb exec-out run-as com.chuahws.mayalanguageapp \
   cat files/reference-photo-report.json > /path/to/local-android-report.json

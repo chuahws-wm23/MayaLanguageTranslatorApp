@@ -64,7 +64,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            gradle connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.chuahws.mayalanguageapp.presentation.translation.GlyphReferenceWorkflowTest --stacktrace
+            gradle connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true -Pandroid.testInstrumentationRunnerArguments.class=com.chuahws.mayalanguageapp.presentation.translation.GlyphReferenceWorkflowTest --stacktrace
             adb pull /sdcard/Android/data/com.chuahws.mayalanguageapp/files/screenshots app/build/outputs/glyph-screenshots
       - name: Save runtime reports and theme screenshots
         if: always()
