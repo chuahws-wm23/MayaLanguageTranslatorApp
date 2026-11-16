@@ -61,7 +61,6 @@ internal fun MultiGlyphResultsPanel(
     val meanings = remember(context) {
         runCatching { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }.getOrNull()
     }
-    val recognized = results.count { it.reading != null }
     val visuallyMatched = results.count { it.visualMatches.isNotEmpty() }
     val meaningMatches = results.count { it.englishMatches.isNotEmpty() }
     Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
@@ -201,7 +200,7 @@ internal fun MultiGlyphResultsPanel(
                             }
                             Text(
                                 "These drawings may look similar while representing different " +
-                                    "words. Tap Inspect to compare and read the meaning notes.",
+                                    "words. Use crop to inspect a sign and read its meaning notes.",
                                 style=MaterialTheme.typography.bodySmall,
                             )
                         }
