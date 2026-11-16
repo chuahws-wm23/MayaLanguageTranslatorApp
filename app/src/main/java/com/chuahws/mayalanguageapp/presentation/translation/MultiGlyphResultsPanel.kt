@@ -38,6 +38,7 @@ internal fun MultiGlyphResultsPanel(
     bitmap: Bitmap,
     results: List<MultiGlyphItem>,
     assisted: Boolean = false,
+    individualComponents: Boolean = false,
     detectorNote: String? = null,
     onInspect: (GlyphCrop) -> Unit,
 ) {
@@ -50,7 +51,7 @@ internal fun MultiGlyphResultsPanel(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                "Multiple glyph blocks detected",
+                if (individualComponents) "Individual glyph components (research)" else "Multiple glyph blocks detected",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
@@ -64,7 +65,11 @@ internal fun MultiGlyphResultsPanel(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text(
-                if (assisted)
+                if (individualComponents)
+                    "Yellow rectangles enclose individual graphic component masks predicted by v11. " +
+                        "No sign identity, syllable, meaning, or real-photo recognition accuracy is verified. " +
+                        "Tap Inspect to review the detected region."
+                else if (assisted)
                     "Yellow boxes are an APPROXIMATE user-chosen grid, not detected glyph boundaries. " +
                         "Check each region and adjust crop/row/column counts if misaligned. " +
                         "Each block may contain multiple signs; no whole-inscription translation."
@@ -84,7 +89,7 @@ internal fun MultiGlyphResultsPanel(
                                 (if (item.reading != null)
                                     item.reading + " — " + item.englishGloss +
                                         " (UNVERIFIED visual guess)"
-                                else "No reliable supported match")
+                                else if (individualComponents) "Unidentified graphic component" else "No reliable supported match")
                         } + "\nExperimental sign suggestions only; not an inscription translation."
                     ))
                 },
@@ -117,7 +122,7 @@ internal fun MultiGlyphResultsPanel(
                         Text(
                             if (item.reading != null)
                                 "Possible: " + item.reading + " — " + item.englishGloss
-                            else "Not identified",
+                            else if (individualComponents) "Graphic component — not identified" else "Not identified",
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Text(
