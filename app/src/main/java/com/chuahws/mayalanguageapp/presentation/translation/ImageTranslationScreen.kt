@@ -61,6 +61,8 @@ fun ImageTranslationScreen(
     onRecordGlyphScan: (GlyphScanCapture, (TranslationRecord?) -> Unit) -> Unit = { _, _ -> },
     onToggleGlyphFavorite: (TranslationRecord) -> Unit = {},
     savedGlyphIds: Set<String> = emptySet(),
+    onOpenHistory: () -> Unit = {},
+    onOpenFavourites: () -> Unit = {},
 ) {
     var legacy by remember(replay?.requestId) { mutableStateOf(replay != null) }
     if (legacy && replay != null) {
@@ -71,6 +73,8 @@ fun ImageTranslationScreen(
         onRecordGlyphScan = onRecordGlyphScan,
         onToggleGlyphFavorite = onToggleGlyphFavorite,
         savedGlyphIds = savedGlyphIds,
+        onOpenHistory = onOpenHistory,
+        onOpenFavourites = onOpenFavourites,
     )
 }
 
@@ -79,6 +83,8 @@ private fun GlyphPhotoScreen(
     onRecordGlyphScan: (GlyphScanCapture, (TranslationRecord?) -> Unit) -> Unit,
     onToggleGlyphFavorite: (TranslationRecord) -> Unit,
     savedGlyphIds: Set<String>,
+    onOpenHistory: () -> Unit,
+    onOpenFavourites: () -> Unit,
     glyphModel: GlyphRecognitionViewModel = viewModel(key = "glyph-photo-v1"),
 ) {
     val context = LocalContext.current
@@ -243,6 +249,19 @@ private fun GlyphPhotoScreen(
                             ) {
                                 Text(if (isFavorite) "Remove from favourites" else
                                     "Add this glyph to favourites")
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                TextButton(
+                                    onClick = onOpenHistory,
+                                    modifier = Modifier.weight(1f),
+                                ) { Text("View History") }
+                                TextButton(
+                                    onClick = onOpenFavourites,
+                                    modifier = Modifier.weight(1f),
+                                ) { Text("View Favourites") }
                             }
                         }
                     }
