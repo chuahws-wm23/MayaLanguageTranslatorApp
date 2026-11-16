@@ -217,6 +217,13 @@ private fun GlyphPhotoScreen(
                         }
                     },
                 )
+                captureError?.let { warning ->
+                    Text(
+                        warning,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
                 lastHistoryScan?.let { savedScan ->
                     Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                         Column(Modifier.padding(14.dp),
@@ -490,6 +497,84 @@ private fun GlyphPhotoScreen(
                             screenScope.launch { screenScroll.animateScrollTo(0) }
                         },
                     )
+                }
+            }
+            if (state.resultV4 != null || state.multiple.isNotEmpty()) {
+                OutlinedButton(
+                    onClick = {
+                        if (savingResearchPreview) return@OutlinedButton
+                        val source = state.bitmap ?: return@OutlinedButton
+                        val selectedCrop = if (state.multiple.isNotEmpty()) GlyphCrop()
+                            else state.crop
+                        val capturedModel = state.resultV4
+                        val capturedRegions = state.multiple.toList()
+                        val request = scanSession
+                        captureError = null
+                        savingResearchPreview = true
+                        screenScope.launch {
+                            try {
+                                val capture = withContext(Dispatchers.Default) {
+                                    val preview = GlyphScanPreviewCodec.encode(source, selectedCrop)
+                                    if (capturedRegions.isNotEmpty()) {
+                                        val candidates = capturedRegions.flatMap { region ->
+                                            region.englishMatches.take(2).map { candidate ->
+                                                GlyphScanCandidate(
+                                                    twkmSign = candidate.reference.twkmSign,
+                                                    reading = candidate.reference.reading,
+                                                    englishGloss = candidate.reference.english,
+                                                    visualOverlap = candidate.visualOverlap.toDouble(),
+                                                    scholarlyLevel = candidate.reference.scholarlyLevel,
+                                                )
+                                            }
+                                        }.take(10)
+                                        GlyphScanCapture(
+                                            previewBase64 = preview,
+                                            candidates = candidates,
+                                            scanKind = if (state.individualComponents)
+                                                "COMPONENTS" else "BLOCKS",
+                                            regionCount = capturedRegions.size,
+                                        )
+                                    } else {
+                                        val guessed = capturedModel
+                                        GlyphScanCapture(
+                                            previewBase64 = preview,
+                                            candidates = if (guessed != null) listOf(
+                                                GlyphScanCandidate(
+                                                    twkmSign = guessed.signNumber,
+                                                    reading = guessed.reading,
+                                                    englishGloss = guessed.englishGloss,
+                                                    // Research-v4 relative logits are NOT a shape score.
+                                                    visualOverlap = 0.0,
+                                                )
+                                            ) else emptyList(),
+                                            scanKind = "RESEARCH",
+                                        )
+                                    }
+                                }
+                                if (request == scanSession) {
+                                    onRecordGlyphScan(capture) { record ->
+                                        if (request == scanSession) {
+                                            savingResearchPreview = false
+                                            lastHistoryScan = record
+                                            if (record == null) captureError =
+                                                "Could not add this scan to History. Try again."
+                                        }
+                                    }
+                                }
+                            } catch (_: Exception) {
+                                if (request == scanSession) {
+                                    savingResearchPreview = false
+                                    captureError = "Could not save this scan preview. Try again."
+                                }
+                            }
+                        }
+                    },
+                    enabled = !state.busy && !savingResearchPreview &&
+                        lastHistoryScan == null,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                ) {
+                    Text(if (savingResearchPreview) "Saving scan…" else
+                        "Save this scan to History")
                 }
             }
             val modelLimitations = when (state.model) {
