@@ -88,7 +88,7 @@ fun HistoryScreen(
         it.translationId == selectedRecordId
     }
 
-    if (selectedRecord != null && selectedRecord.isGlyphScan) {
+    if (selectedRecord != null && selectedRecord.glyphScanRecord) {
         val isFavorite = GlyphScanRecords.favoriteId(
             selectedRecord.userId, selectedRecord.translationId,
         ) in savedGlyphIds
@@ -142,11 +142,11 @@ fun HistoryScreen(
                 pendingDeleteId = null
             },
             title = {
-                Text(if (pendingDelete.isGlyphScan) "Delete glyph scan?" else "Delete translation?")
+                Text(if (pendingDelete.glyphScanRecord) "Delete glyph scan?" else "Delete translation?")
             },
             text = {
                 Text(
-                    if (pendingDelete.isGlyphScan)
+                    if (pendingDelete.glyphScanRecord)
                         "This glyph preview and its candidate matches will be removed " +
                             "from History. A separately favourited copy will stay in Saved."
                     else "This history record will be removed from your account. " +
@@ -186,14 +186,14 @@ fun HistoryScreen(
                     query,
                     ignoreCase = true,
                 ) ||
-                (item.isGlyphScan && item.glyphCandidates.any { candidate ->
+                (item.glyphScanRecord && item.glyphCandidates.any { candidate ->
                     candidate.reading.contains(query, ignoreCase = true) ||
                         candidate.englishGloss.contains(query, ignoreCase = true)
                 })
 
         val matchesType = when (typeFilter) {
-            "Glyph scans" -> item.isGlyphScan
-            "Older records" -> !item.isGlyphScan
+            "Glyph scans" -> item.glyphScanRecord
+            "Older records" -> !item.glyphScanRecord
             else -> true
         }
 
@@ -429,7 +429,7 @@ private fun HistoryCard(
             horizontalArrangement =
                 Arrangement.spacedBy(12.dp),
         ) {
-            if (item.isGlyphScan) {
+            if (item.glyphScanRecord) {
                 GlyphScanThumbnail(item.glyphImageBase64, side = 68.dp)
             } else {
                 AccentIcon(icon = icon, color = typeColor)
@@ -460,7 +460,7 @@ private fun HistoryCard(
                         MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = if (item.isGlyphScan)
+                    text = if (item.glyphScanRecord)
                         "${item.glyphCandidates.size} possible picture match(es) · unverified"
                     else friendlyLanguage(item.sourceLanguage) +
                         " to " + friendlyLanguage(item.targetLanguage),
@@ -478,7 +478,7 @@ private fun HistoryCard(
                         Arrangement.spacedBy(8.dp),
                 ) {
                     SoftBadge(
-                        text = if (item.isGlyphScan) "Glyph scan" else
+                        text = if (item.glyphScanRecord) "Glyph scan" else
                             item.inputType.lowercase().replaceFirstChar {
                                 it.uppercase()
                             },
