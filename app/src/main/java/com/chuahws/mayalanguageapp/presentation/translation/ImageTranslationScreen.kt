@@ -38,6 +38,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphV3Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV4Result
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV25Result
 import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV25
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphV11SegDetector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV4CorrectionReport
 import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV4
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
@@ -245,6 +246,20 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     enabled = !state.busy, modifier = Modifier.fillMaxWidth(),
                 ) { Text(if (showAdvancedPanelTools) "Hide panel scanning tools" else "Panel scanning tools (optional)") }
                 if (showAdvancedPanelTools) {
+                    if (GlyphV11SegDetector.isInstalled(context)) {
+                        FilledTonalButton(
+                            onClick = glyphModel::scanComponents,
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                        ) { Text("Find individual glyph components (research)") }
+                    } else {
+                        Text(
+                            "Individual-component model not installed. Export your trained v11 " +
+                                "best.pt as maya_signs_v11_seg.onnx into app/src/main/assets " +
+                                "and rebuild to enable the research-only component scan.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                     OutlinedButton(onClick = glyphModel::scanAll, enabled = !state.busy,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
                         Text("Scan all glyphs automatically")
@@ -335,6 +350,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         bitmap = bitmap,
                         results = state.multiple,
                         assisted = state.assistedGrid,
+                        individualComponents = state.individualComponents,
                         detectorNote = state.detectorNote,
                         onInspect = glyphModel::setCrop,
                     )
