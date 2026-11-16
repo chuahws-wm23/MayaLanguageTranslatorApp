@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -71,23 +72,31 @@ class GlyphReferenceWorkflowTest {
         }
         compose.onNodeWithText("Compare with the archive").performClick()
         compose.waitUntil(60_000) { saved != null }
-        compose.onAllNodesWithText("Similarity ", substring = true).assertCountEquals(5)
+        compose.onAllNodes(numericSimilarity).assertCountEquals(5)
         assertEquals(5, saved!!.candidates.size)
         compose.onNodeWithContentDescription("Reference drawing for ${reference.reading}")
             .assertExists()
         screenshot("reference-results-light")
         compose.runOnIdle { dark.value = true }
-        compose.onAllNodesWithText("Similarity ", substring = true).assertCountEquals(5)
+        compose.onAllNodes(numericSimilarity).assertCountEquals(5)
         screenshot("reference-results-dark")
         compose.runOnIdle { selected.value = blank; saved = null }
         compose.waitForIdle()
-        compose.onAllNodesWithText("Similarity ", substring = true).assertCountEquals(0)
+        compose.onAllNodes(numericSimilarity).assertCountEquals(0)
         compose.onNodeWithText("Compare with the archive").performScrollTo().performClick()
         compose.waitUntil(60_000) { saved != null }
         assertTrue(saved!!.candidates.isEmpty())
         compose.onNodeWithText("No usable sign strokes found.", substring = true).assertExists()
         // Bitmaps remain alive until the Compose test activity is disposed.
     }
+    private val numericSimilarity = SemanticsMatcher("numeric appearance similarity") { node ->
+        node.config.contains(SemanticsProperties.Text) &&
+            node.config[SemanticsProperties.Text].any { text ->
+                text.text.startsWith("Similarity ") &&
+                    text.text.removePrefix("Similarity ").toFloatOrNull() != null
+            }
+    }
+
     private fun screenshot(name: String) {
         compose.waitForIdle()
         val bitmap = requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot())
