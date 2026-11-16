@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -41,11 +43,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
+import com.chuahws.mayalanguageapp.domain.model.GlyphScanRecords
 import com.chuahws.mayalanguageapp.presentation.components.AccentIcon
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.SoftBadge
 import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
 import com.chuahws.mayalanguageapp.presentation.components.TranslationDetailsDialog
+import com.chuahws.mayalanguageapp.presentation.components.GlyphScanThumbnail
+import com.chuahws.mayalanguageapp.presentation.components.GlyphScanDetailsDialog
 import com.chuahws.mayalanguageapp.domain.service.ListPaging
 import com.chuahws.mayalanguageapp.presentation.theme.MayaBlue
 import com.chuahws.mayalanguageapp.presentation.theme.MayaGreen
@@ -59,6 +64,8 @@ fun HistoryScreen(
     history: List<TranslationRecord>,
     onDelete: (TranslationRecord) -> Unit,
     onTranslate: (TranslationRecord) -> Unit,
+    savedGlyphIds: Set<String> = emptySet(),
+    onToggleGlyphFavorite: (TranslationRecord) -> Unit = {},
 ) {
     var query by rememberSaveable {
         mutableStateOf("")
@@ -81,7 +88,28 @@ fun HistoryScreen(
         it.translationId == selectedRecordId
     }
 
-    if (selectedRecord != null) {
+    if (selectedRecord != null && selectedRecord.isGlyphScan) {
+        val isFavorite = GlyphScanRecords.favoriteId(
+            selectedRecord.userId, selectedRecord.translationId,
+        ) in savedGlyphIds
+        GlyphScanDetailsDialog(
+            title = "Glyph scan · History",
+            imageBase64 = selectedRecord.glyphImageBase64,
+            candidates = selectedRecord.glyphCandidates,
+            secondaryText = formatDate(selectedRecord.createdAtMillis) +
+                " · ${selectedRecord.glyphRegionCount} region(s)",
+            onDismiss = { selectedRecordId = null },
+            actionLabel = if (isFavorite) "Remove favourite" else "Add to favourites",
+            onAction = {
+                onToggleGlyphFavorite(selectedRecord)
+                selectedRecordId = null
+            },
+            onDelete = {
+                selectedRecordId = null
+                pendingDeleteId = selectedRecord.translationId
+            },
+        )
+    } else if (selectedRecord != null) {
         TranslationDetailsDialog(
             title = "Translation details",
             sourceLabel = friendlyLanguage(selectedRecord.sourceLanguage),
@@ -113,11 +141,14 @@ fun HistoryScreen(
                 pendingDeleteId = null
             },
             title = {
-                Text("Delete translation?")
+                Text(if (pendingDelete.isGlyphScan) "Delete glyph scan?" else "Delete translation?")
             },
             text = {
                 Text(
-                    "This history record will be removed from your account. " +
+                    if (pendingDelete.isGlyphScan)
+                        "This glyph preview and its candidate matches will be removed " +
+                            "from History. A separately favourited copy will stay in Saved."
+                    else "This history record will be removed from your account. " +
                         "Your activity total will stay the same."
                 )
             },
@@ -153,14 +184,17 @@ fun HistoryScreen(
                 item.translatedText.contains(
                     query,
                     ignoreCase = true,
-                )
+                ) ||
+                (item.isGlyphScan && item.glyphCandidates.any { candidate ->
+                    candidate.reading.contains(query, ignoreCase = true) ||
+                        candidate.englishGloss.contains(query, ignoreCase = true)
+                })
 
-        val matchesType =
-            typeFilter == "All" ||
-                item.inputType.equals(
-                    typeFilter,
-                    ignoreCase = true,
-                )
+        val matchesType = when (typeFilter) {
+            "Glyph scans" -> item.isGlyphScan
+            "Older records" -> !item.isGlyphScan
+            else -> true
+        }
 
         matchesQuery && matchesType
     }
@@ -225,19 +259,12 @@ fun HistoryScreen(
             )
 
             Row(
-                modifier = Modifier.padding(
-                    horizontal = 18.dp,
-                    vertical = 10.dp,
-                ),
-                horizontalArrangement =
-                    Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 18.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                listOf(
-                    "All",
-                    "TEXT",
-                    "IMAGE",
-                    "VOICE",
-                ).forEach { filter ->
+                listOf("All", "Glyph scans", "Older records").forEach { filter ->
                     FilterChip(
                         selected =
                             typeFilter == filter,
@@ -245,16 +272,7 @@ fun HistoryScreen(
                             typeFilter = filter
                             currentPage = 1
                         },
-                        label = {
-                            Text(
-                                when (filter) {
-                                    "TEXT" -> "Text"
-                                    "IMAGE" -> "Image"
-                                    "VOICE" -> "Voice"
-                                    else -> "All"
-                                }
-                            )
-                        },
+                        label = { Text(filter) },
                     )
                 }
             }
@@ -295,9 +313,9 @@ fun HistoryScreen(
                     Text(
                         text =
                             if (history.isEmpty()) {
-                                "No translations yet"
+                                "No scans yet"
                             } else {
-                                "No matching translations"
+                                "No matching records"
                             },
                         style =
                             MaterialTheme
@@ -308,7 +326,7 @@ fun HistoryScreen(
                     Text(
                         text =
                             if (history.isEmpty()) {
-                                "Your translations will appear here."
+                                "Completed glyph searches appear here with a photo preview."
                             } else {
                                 "Try another search or filter."
                             },
@@ -410,10 +428,11 @@ private fun HistoryCard(
             horizontalArrangement =
                 Arrangement.spacedBy(12.dp),
         ) {
-            AccentIcon(
-                icon = icon,
-                color = typeColor,
-            )
+            if (item.isGlyphScan) {
+                GlyphScanThumbnail(item.glyphImageBase64, side = 68.dp)
+            } else {
+                AccentIcon(icon = icon, color = typeColor)
+            }
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -440,10 +459,10 @@ private fun HistoryCard(
                         MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text =
-                        friendlyLanguage(item.sourceLanguage) +
-                            " to " +
-                            friendlyLanguage(item.targetLanguage),
+                    text = if (item.isGlyphScan)
+                        "${item.glyphCandidates.size} possible picture match(es) · unverified"
+                    else friendlyLanguage(item.sourceLanguage) +
+                        " to " + friendlyLanguage(item.targetLanguage),
                     style =
                         MaterialTheme
                             .typography.bodySmall,
@@ -458,9 +477,8 @@ private fun HistoryCard(
                         Arrangement.spacedBy(8.dp),
                 ) {
                     SoftBadge(
-                        text = item.inputType
-                            .lowercase()
-                            .replaceFirstChar {
+                        text = if (item.isGlyphScan) "Glyph scan" else
+                            item.inputType.lowercase().replaceFirstChar {
                                 it.uppercase()
                             },
                         color = typeColor,
