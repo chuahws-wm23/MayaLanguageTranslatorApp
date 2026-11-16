@@ -99,3 +99,6 @@ app/src/main/assets/maya_signs_v11_seg.onnx
 
 # Generated English-logogram research evaluation data (rebuild from pinned TWKM)
 ml/logogram_expansion/output/
+
+# Local expert-labelled photos staged only for on-device evaluation
+app/src/androidTest/assets/independent_photos/
