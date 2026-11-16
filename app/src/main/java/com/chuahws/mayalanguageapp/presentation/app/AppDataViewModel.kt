@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chuahws.mayalanguageapp.domain.service.FeedbackValidator
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
+import com.chuahws.mayalanguageapp.domain.model.GlyphScanCapture
+import com.chuahws.mayalanguageapp.domain.model.GlyphScanRecords
 import com.chuahws.mayalanguageapp.domain.model.FeedbackItem
 import com.chuahws.mayalanguageapp.domain.model.SavedVocabularyItem
 import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
@@ -28,6 +30,7 @@ class AppDataViewModel(
 
     private val savingEntryIds = mutableSetOf<String>()
     private val removingSavedIds = mutableSetOf<String>()
+    private val togglingGlyphIds = mutableSetOf<String>()
 
     private val _uiState = MutableStateFlow(AppUiState())
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
@@ -236,6 +239,102 @@ class AppDataViewModel(
             }.onFailure(::showError)
 
             savingEntryIds.remove(entry.entryId)
+        }
+    }
+
+    /**
+     * Called only after the user starts a glyph image search or deliberately
+     * saves a completed research scan. Store one small cropped JPEG preview
+     * and unverified candidate metadata in the EXISTING History collection.
+     */
+    fun recordGlyphScan(
+        capture: GlyphScanCapture,
+        onRecorded: (TranslationRecord) -> Unit,
+    ) {
+        val userId = _uiState.value.userId ?: return
+        if (capture.previewBase64.isEmpty()) {
+            _uiState.update {
+                it.copy(message = "This glyph preview could not be saved. Try a smaller picture.")
+            }
+            return
+        }
+        val record = GlyphScanRecords.makeHistory(
+            userId = userId,
+            id = UUID.randomUUID().toString(),
+            millis = System.currentTimeMillis(),
+            capture = capture,
+        )
+        viewModelScope.launch {
+            runCatching { userDataRepository.recordTranslation(record) }
+                .onSuccess {
+                    // Protect against a previous user's asynchronous result
+                    // appearing after sign-out/account switching.
+                    if (_uiState.value.userId == userId) {
+                        _uiState.update { state ->
+                            state.copy(
+                                history = (listOf(record) + state.history)
+                                    .distinctBy { it.translationId }
+                                    .sortedByDescending { it.createdAtMillis }
+                                    .take(100),
+                                message = "Glyph scan added to History. You can favourite it.",
+                            )
+                        }
+                        onRecorded(record)
+                        refresh()
+                    }
+                }
+                .onFailure { error ->
+                    if (_uiState.value.userId == userId) showError(error)
+                }
+        }
+    }
+
+    /**
+     * A saved scan is a special item in the EXISTING savedVocabulary store.
+     * The original vocabulary favourites remain unchanged and usable.
+     * A deterministic ID prevents duplicates for the same history scan.
+     */
+    fun toggleGlyphFavorite(record: TranslationRecord) {
+        val userId = _uiState.value.userId ?: return
+        if (!record.isGlyphScan || record.userId != userId) return
+        val id = GlyphScanRecords.favoriteId(userId, record.translationId)
+        if (!togglingGlyphIds.add(id)) return
+        val existing = _uiState.value.savedVocabulary.firstOrNull { it.savedId == id }
+        viewModelScope.launch {
+            try {
+                if (existing != null) {
+                    userDataRepository.removeSavedVocabulary(existing.savedId)
+                    if (_uiState.value.userId == userId) {
+                        _uiState.update {
+                            it.copy(
+                                savedVocabulary = it.savedVocabulary.filterNot { entry ->
+                                    entry.savedId == id
+                                },
+                                message = "Glyph removed from favourites.",
+                            )
+                        }
+                    }
+                } else {
+                    val favorite = GlyphScanRecords.makeFavorite(
+                        record, System.currentTimeMillis(),
+                    )
+                    userDataRepository.saveVocabulary(favorite)
+                    if (_uiState.value.userId == userId) {
+                        _uiState.update {
+                            it.copy(
+                                savedVocabulary = (listOf(favorite) + it.savedVocabulary)
+                                    .distinctBy { entry -> entry.savedId },
+                                message = "Glyph saved to favourites.",
+                            )
+                        }
+                    }
+                }
+                if (_uiState.value.userId == userId) refresh()
+            } catch (error: Exception) {
+                if (_uiState.value.userId == userId) showError(error)
+            } finally {
+                togglingGlyphIds.remove(id)
+            }
         }
     }
 
