@@ -58,7 +58,7 @@ fun ImageTranslationScreen(
     viewModel: TranslationViewModel,
     onSaveEntry: (DictionaryEntry) -> Unit,
     replay: TranslationReplay? = null,
-    onRecordGlyphScan: (GlyphScanCapture, (TranslationRecord) -> Unit) -> Unit = { _, _ -> },
+    onRecordGlyphScan: (GlyphScanCapture, (TranslationRecord?) -> Unit) -> Unit = { _, _ -> },
     onToggleGlyphFavorite: (TranslationRecord) -> Unit = {},
     savedGlyphIds: Set<String> = emptySet(),
 ) {
@@ -76,7 +76,7 @@ fun ImageTranslationScreen(
 
 @Composable
 private fun GlyphPhotoScreen(
-    onRecordGlyphScan: (GlyphScanCapture, (TranslationRecord) -> Unit) -> Unit,
+    onRecordGlyphScan: (GlyphScanCapture, (TranslationRecord?) -> Unit) -> Unit,
     onToggleGlyphFavorite: (TranslationRecord) -> Unit,
     savedGlyphIds: Set<String>,
     glyphModel: GlyphRecognitionViewModel = viewModel(key = "glyph-photo-v1"),
@@ -86,7 +86,9 @@ private fun GlyphPhotoScreen(
     var lastHistoryScan by remember { mutableStateOf<TranslationRecord?>(null) }
     var savingResearchPreview by remember { mutableStateOf(false) }
     var captureError by remember { mutableStateOf<String?>(null) }
+    var scanSession by remember { mutableIntStateOf(0) }
     LaunchedEffect(state.bitmap, state.crop) {
+        scanSession++
         lastHistoryScan = null
         captureError = null
     }
@@ -203,8 +205,15 @@ private fun GlyphPhotoScreen(
                     matchOnly = true,
                     onSearchCompleted = { capture ->
                         lastHistoryScan = null
+                        val request = scanSession
                         onRecordGlyphScan(capture) { persisted ->
-                            lastHistoryScan = persisted
+                            if (request == scanSession) {
+                                lastHistoryScan = persisted
+                                if (persisted == null) {
+                                    captureError = "Could not save this scan to your History. " +
+                                        "Check your connection and try again."
+                                }
+                            }
                         }
                     },
                 )
