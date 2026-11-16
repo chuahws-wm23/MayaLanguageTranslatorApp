@@ -62,7 +62,7 @@ object GlyphScanRecords {
             targetLanguage = "Possible English gloss (unverified)",
             inputType = InputType.IMAGE.name,
             createdAtMillis = millis,
-            isGlyphScan = true,
+            glyphScanRecord = true,
             glyphImageBase64 = capture.previewBase64,
             glyphCandidates = capture.candidates,
             glyphScanKind = capture.scanKind,
@@ -71,7 +71,7 @@ object GlyphScanRecords {
     }
 
     fun makeFavorite(history: TranslationRecord, millis: Long): SavedVocabularyItem {
-        require(history.isGlyphScan)
+        require(history.glyphScanRecord)
         require(history.userId.isNotBlank() && history.translationId.isNotBlank())
         return SavedVocabularyItem(
             savedId = favoriteId(history.userId, history.translationId),
@@ -83,7 +83,7 @@ object GlyphScanRecords {
             pronunciation = null,
             partOfSpeech = "Glyph scan",
             savedAtMillis = millis,
-            isGlyphScan = true,
+            glyphScanRecord = true,
             glyphSourceScanId = history.translationId,
             glyphImageBase64 = history.glyphImageBase64,
             glyphCandidates = history.glyphCandidates,
