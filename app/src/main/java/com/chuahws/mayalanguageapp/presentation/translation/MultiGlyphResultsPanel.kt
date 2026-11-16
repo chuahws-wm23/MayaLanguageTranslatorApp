@@ -145,7 +145,7 @@ internal fun MultiGlyphResultsPanel(
                                 modifier = Modifier.weight(1f),
                             )
                             TextButton(onClick = { onInspect(item.region.crop) }) {
-                                Text("Use crop")
+                                Text("Inspect")
                             }
                         }
                         val closest = item.englishMatches.firstOrNull()?.reference
@@ -155,6 +155,9 @@ internal fun MultiGlyphResultsPanel(
                             else if (closest != null)
                                 "Closest drawing: " + closest.reading + " · " + closest.english +
                                     " (not verified)"
+                            else if (item.visualMatches.isNotEmpty())
+                                "Similar sound drawing: " +
+                                    item.visualMatches.first().reference.syllable + " (not verified)"
                             else if (individualComponents) "Unidentified component"
                             else "Not identified",
                             style = MaterialTheme.typography.bodyMedium,
@@ -200,7 +203,7 @@ internal fun MultiGlyphResultsPanel(
                             }
                             Text(
                                 "These drawings may look similar while representing different " +
-                                    "words. Use crop to inspect a sign and read its meaning notes.",
+                                    "words. Tap Inspect to review one sign and read its meaning notes.",
                                 style=MaterialTheme.typography.bodySmall,
                             )
                         }
