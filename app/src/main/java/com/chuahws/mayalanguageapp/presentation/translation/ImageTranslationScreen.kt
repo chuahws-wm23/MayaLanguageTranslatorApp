@@ -616,6 +616,7 @@ private fun GlyphV4ResultCard(result: GlyphV4Result, image: Bitmap?, crop: Glyph
                     fontWeight = FontWeight.SemiBold)
                 Text(result.englishGloss, style = MaterialTheme.typography.bodyLarge)
                 Text("TWKM sign #${result.signNumber}", style = MaterialTheme.typography.labelMedium)
+                GlyphLearningDetails(signNumber = result.signNumber)
                 if (reference != null) {
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceVariant,
