@@ -118,17 +118,24 @@ class FirebaseUserDataRepository(
             .set(item)
             .await()
 
-        firestore.collection("analytics")
-            .document(item.userId)
-            .set(
-                mapOf(
-                    "userId" to item.userId,
-                    "savedWords" to FieldValue.increment(1),
-                    "lastUpdatedMillis" to item.savedAtMillis,
-                ),
-                SetOptions.merge(),
-            )
-            .await()
+        runCatching {
+            firestore.collection("analytics")
+                .document(item.userId)
+                .set(
+                    mapOf(
+                        "userId" to item.userId,
+                        "savedWords" to FieldValue.increment(1),
+                        "lastUpdatedMillis" to item.savedAtMillis,
+                    ),
+                    SetOptions.merge(),
+                )
+                .await()
+        }.onFailure { error ->
+            // The favourite has already been saved successfully. A failed
+            // analytics increment must not cause the UI to report that it
+            // was not saved and accidentally double-increment on retry.
+            Log.w("MayaTranslate", "Could not update saved-item analytics.", error)
+        }
     }
 
     override suspend fun removeSavedVocabulary(savedId: String) {
@@ -142,18 +149,22 @@ class FirebaseUserDataRepository(
         ref.delete().await()
 
         if (item != null) {
-            firestore.collection("analytics")
-                .document(item.userId)
-                .set(
-                    mapOf(
-                        "userId" to item.userId,
-                        "savedWords" to FieldValue.increment(-1),
-                        "lastUpdatedMillis" to
-                            System.currentTimeMillis(),
-                    ),
-                    SetOptions.merge(),
-                )
-                .await()
+            runCatching {
+                firestore.collection("analytics")
+                    .document(item.userId)
+                    .set(
+                        mapOf(
+                            "userId" to item.userId,
+                            "savedWords" to FieldValue.increment(-1),
+                            "lastUpdatedMillis" to
+                                System.currentTimeMillis(),
+                        ),
+                        SetOptions.merge(),
+                    )
+                    .await()
+            }.onFailure { error ->
+                Log.w("MayaTranslate", "Could not update removal analytics.", error)
+            }
         }
     }
 
