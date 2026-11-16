@@ -140,3 +140,11 @@ intervals on the held-out test. Include hard lookalike pairs. Until those data
 exist, retain alternatives-only output and do not claim calibrated confidence.
 See `RESEARCH_V4_INDEPENDENT_PHOTO_RELEASE_GATE.md` and the existing verified-photo
 manifest validator for the project's independent-source evaluation requirements.
+
+## Android runtime and photo-test follow-up
+
+The reference-only instrumentation workflow and optional audited real-photo
+evaluation runner are documented in
+[Android runtime and photo evaluation](GLYPH_ANDROID_RUNTIME_AND_PHOTO_EVALUATION.md).
+No independent photo test results are available; no expert-labelled batch was
+supplied. The included staging/summary fixtures test tooling, not accuracy.
