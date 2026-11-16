@@ -95,8 +95,8 @@ fun HomeScreen(
             item {
                 FeatureRow(
                     left = Feature(
-                        title = "Dictionary",
-                        subtitle = "Find a word",
+                        title = "Glyph dictionary",
+                        subtitle = "Meanings and syllables",
                         icon = Icons.Rounded.MenuBook,
                         color = MayaPurple,
                         onClick = onDictionary,
