@@ -21,9 +21,7 @@ import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.MenuBook
-import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.Card
@@ -56,9 +54,7 @@ import com.chuahws.mayalanguageapp.presentation.theme.MayaPurple
 @Composable
 fun HomeScreen(
     displayName: String,
-    onTextTranslation: () -> Unit,
     onImageTranslation: () -> Unit,
-    onVoiceTranslation: () -> Unit,
     onSaved: () -> Unit,
     onHistory: () -> Unit,
     onAnalytics: () -> Unit,
@@ -85,33 +81,7 @@ fun HomeScreen(
 
             item {
                 HeroCard(
-                    onClick = onTextTranslation,
-                )
-            }
-
-            item {
-                SectionLabel(
-                    title = "Translate",
-                    subtitle = "How would you like to translate?",
-                )
-            }
-
-            item {
-                FeatureRow(
-                    left = Feature(
-                        title = "Image",
-                        subtitle = "Use a photo",
-                        icon = Icons.Rounded.CameraAlt,
-                        color = MayaPink,
-                        onClick = onImageTranslation,
-                    ),
-                    right = Feature(
-                        title = "Voice",
-                        subtitle = "Speak a phrase",
-                        icon = Icons.Rounded.Mic,
-                        color = MayaBlue,
-                        onClick = onVoiceTranslation,
-                    ),
+                    onClick = onImageTranslation,
                 )
             }
 
@@ -145,7 +115,7 @@ fun HomeScreen(
                 FeatureRow(
                     left = Feature(
                         title = "History",
-                        subtitle = "Things you translated",
+                        subtitle = "Your recent activity",
                         icon = Icons.Rounded.History,
                         color = MayaCyan,
                         onClick = onHistory,
@@ -300,7 +270,7 @@ private fun HeroCard(
                             modifier = Modifier.size(18.dp),
                         )
                         Text(
-                            text = "English and Maya",
+                            text = "Maya glyph explorer",
                             color = Color.White,
                             style = MaterialTheme.typography.labelLarge,
                         )
@@ -308,14 +278,14 @@ private fun HeroCard(
                 }
 
                 Text(
-                    text = "What would you like to translate?",
+                    text = "Discover Maya glyph meanings",
                     color = Color.White,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                 )
 
                 Text(
-                    text = "Type a word or phrase to get started.",
+                    text = "Scan a Maya glyph, explore possible English meanings, and learn its history.",
                     color = Color.White.copy(alpha = 0.82f),
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -325,7 +295,7 @@ private fun HeroCard(
                     horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     Text(
-                        text = "Type something",
+                        text = "Scan a glyph",
                         color = Color.White,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
