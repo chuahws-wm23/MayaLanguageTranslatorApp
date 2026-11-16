@@ -177,6 +177,48 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         browseOnly = true)
                 }
             } else {
+            state.bitmap?.let { image ->
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("2 · Select one glyph", style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold)
+                        Text("Drag a rectangle around one complete sign. " +
+                            "For an inscription with many signs, use component scanning instead.",
+                            style = MaterialTheme.typography.bodySmall)
+                        GlyphCropPreview(image, state.crop, !state.busy, glyphModel::setCrop)
+                        if (state.crop != GlyphCrop()) {
+                            TextButton(
+                                onClick = { glyphModel.setCrop(GlyphCrop()) },
+                                enabled = !state.busy,
+                            ) { Text("Reset crop") }
+                        }
+                    }
+                }
+                EnglishMeaningExploreCard(
+                    bitmap = image, crop = state.crop, busy = state.busy,
+                    matchOnly = true,
+                )
+                if (GlyphV11SegDetector.isInstalled(context)) {
+                    OutlinedButton(
+                        onClick = glyphModel::scanComponents,
+                        enabled = !state.busy,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) { Text("Multiple glyphs? Find individual components") }
+                }
+                TextButton(
+                    onClick = { showSoundComparison = !showSoundComparison },
+                    enabled = !state.busy,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (showSoundComparison) "Hide syllable comparison" else
+                        "Also compare syllable sounds (optional)")
+                }
+                if (showSoundComparison) {
+                    GlyphCataloguePanel(
+                        bitmap = image, crop = state.crop, busy = state.busy,
+                        matchOnly = true,
+                    )
+                }
             if (state.bitmap != null) {
                 OutlinedButton(
                     onClick = { showAdvancedTools = !showAdvancedTools },
@@ -292,48 +334,6 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                 }
             }
             }
-            state.bitmap?.let { image ->
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("2 · Select one glyph", style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold)
-                        Text("Drag a rectangle around one complete sign. " +
-                            "For an inscription with many signs, use component scanning instead.",
-                            style = MaterialTheme.typography.bodySmall)
-                        GlyphCropPreview(image, state.crop, !state.busy, glyphModel::setCrop)
-                        if (state.crop != GlyphCrop()) {
-                            TextButton(
-                                onClick = { glyphModel.setCrop(GlyphCrop()) },
-                                enabled = !state.busy,
-                            ) { Text("Reset crop") }
-                        }
-                    }
-                }
-                EnglishMeaningExploreCard(
-                    bitmap = image, crop = state.crop, busy = state.busy,
-                    matchOnly = true,
-                )
-                if (GlyphV11SegDetector.isInstalled(context)) {
-                    OutlinedButton(
-                        onClick = glyphModel::scanComponents,
-                        enabled = !state.busy,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text("Multiple glyphs? Find individual components") }
-                }
-                TextButton(
-                    onClick = { showSoundComparison = !showSoundComparison },
-                    enabled = !state.busy,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(if (showSoundComparison) "Hide syllable comparison" else
-                        "Also compare syllable sounds (optional)")
-                }
-                if (showSoundComparison) {
-                    GlyphCataloguePanel(
-                        bitmap = image, crop = state.crop, busy = state.busy,
-                        matchOnly = true,
-                    )
-                }
                 if (showAdvancedTools) {
                     Button(onClick = glyphModel::recognize, enabled = !state.busy,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
