@@ -17,6 +17,7 @@ from datasets import load_dataset, Image as DatasetImage
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / 'ml' / 'syllabary_ml'))
 from ml.syllabary_ml.build_android_phonogram_gallery import canonical_bytes
 
 SRC="tadad/twkm-maya-glyphs"
