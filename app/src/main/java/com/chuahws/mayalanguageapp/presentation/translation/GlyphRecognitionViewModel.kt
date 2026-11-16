@@ -12,6 +12,8 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageLoader
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphMultiDetector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV18Detector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV11SegDetector
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualCatalogue
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualMatch
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphDetectedRegion
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
@@ -48,6 +50,7 @@ internal data class MultiGlyphItem(
     val reading: String?,
     val englishGloss: String?,
     val note: String,
+    val visualMatches: List<GlyphVisualMatch> = emptyList(),
 )
 
 internal data class GlyphUiState(
@@ -183,19 +186,39 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                     }
                 }
                 if (request != version) return@launch
-                val items = components.mapIndexed { index, region ->
-                    MultiGlyphItem(
-                        index+1, region, null, null,
-                        "v11 mask-derived component, NOT an identified Maya sign or reading. " +
-                            "Tap Inspect to review the crop manually."
-                    )
+                val items = withContext(Dispatchers.Default) {
+                    val gallery = runCatching {
+                        GlyphVisualCatalogue.fromAssetsOrNull(getApplication())
+                    }.getOrNull()
+                    components.mapIndexed { index, region ->
+                        currentCoroutineContext().ensureActive()
+                        val suggestions = gallery?.let { referenceSet ->
+                            val (x,y,w,h) = region.crop.pixels(image.width,image.height)
+                            val isolated = Bitmap.createBitmap(image,x,y,w,h)
+                            try {
+                                runCatching { referenceSet.search(isolated,number=3) }
+                                    .getOrDefault(emptyList())
+                            } finally {
+                                if (isolated !== image) isolated.recycle()
+                            }
+                        }.orEmpty()
+                        MultiGlyphItem(
+                            index+1, region, null, null,
+                            if(suggestions.isEmpty())
+                                "No usable proposed sound match. This is only a detected graphic component."
+                            else
+                                "Top three proposed syllable references by image shape. " +
+                                    "Visual overlap is NOT calibrated reading confidence.",
+                            visualMatches = suggestions,
+                        )
+                    }
                 }
                 mutable.value = mutable.value.copy(
                     busy = false, multiple = items, individualComponents = true,
                     multipleProgress = null,
-                    detectorNote = "Experimental YOLO11n-seg v11 masks: shapes in the " +
-                        "source dataset are primarily drawings. Yellow rectangles enclose " +
-                        "predicted masks; no decipherment or photograph accuracy is established.",
+                    detectorNote = "Experimental v11 masks isolate components; the 86-syllable " +
+                        "TWKM catalogue supplies possible-looking reference pictures where available. " +
+                        "These are NOT verified readings or photo recognition probabilities.",
                     message = if (items.isEmpty())
                         "No individual components passed the mask filter. Try a clear drawing, " +
                         "a smaller region, or use the original block detector."
