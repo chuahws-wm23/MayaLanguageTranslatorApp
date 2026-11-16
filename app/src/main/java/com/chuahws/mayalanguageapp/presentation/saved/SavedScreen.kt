@@ -4,6 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -42,6 +46,8 @@ import com.chuahws.mayalanguageapp.presentation.components.SoftBadge
 import com.chuahws.mayalanguageapp.presentation.components.SpeakButton
 import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
 import com.chuahws.mayalanguageapp.presentation.components.TranslationDetailsDialog
+import com.chuahws.mayalanguageapp.presentation.components.GlyphScanThumbnail
+import com.chuahws.mayalanguageapp.presentation.components.GlyphScanDetailsDialog
 import com.chuahws.mayalanguageapp.domain.service.ListPaging
 
 @Composable
@@ -71,7 +77,20 @@ fun SavedScreen(
         it.savedId == selectedSavedId
     }
 
-    if (selectedItem != null) {
+    if (selectedItem != null && selectedItem.isGlyphScan) {
+        GlyphScanDetailsDialog(
+            title = "Saved Maya glyph",
+            imageBase64 = selectedItem.glyphImageBase64,
+            candidates = selectedItem.glyphCandidates,
+            secondaryText = "Favourite glyph scan · proposed matches only",
+            onDismiss = { selectedSavedId = null },
+            actionLabel = "Remove favourite",
+            onAction = {
+                selectedSavedId = null
+                pendingRemoval = selectedItem.savedId
+            },
+        )
+    } else if (selectedItem != null) {
         TranslationDetailsDialog(
             title = "Saved word",
             sourceLabel = "Yucatec Maya",
@@ -100,13 +119,19 @@ fun SavedScreen(
         val matchesQuery =
             query.isBlank() ||
                 item.mayaText.contains(query, ignoreCase = true) ||
-                item.englishText.contains(query, ignoreCase = true)
+                item.englishText.contains(query, ignoreCase = true) ||
+                (item.isGlyphScan && item.glyphCandidates.any { match ->
+                    match.reading.contains(query, ignoreCase = true) ||
+                        match.englishGloss.contains(query, ignoreCase = true)
+                })
 
         val pos = item.partOfSpeech.orEmpty()
         val matchesCategory = when (category) {
-            "Nouns" -> pos.equals("noun", ignoreCase = true)
-            "Verbs" -> pos.equals("verb", ignoreCase = true)
-            "Adjectives" -> pos.equals("adjective", ignoreCase = true)
+            "Glyph scans" -> item.isGlyphScan
+            "Words" -> !item.isGlyphScan
+            "Nouns" -> !item.isGlyphScan && pos.equals("noun", ignoreCase = true)
+            "Verbs" -> !item.isGlyphScan && pos.equals("verb", ignoreCase = true)
+            "Adjectives" -> !item.isGlyphScan && pos.equals("adjective", ignoreCase = true)
             else -> true
         }
 
@@ -134,11 +159,13 @@ fun SavedScreen(
                 pendingRemoval = null
             },
             title = {
-                Text("Remove saved word?")
+                Text(if (itemToRemove.isGlyphScan) "Remove favourite glyph?" else "Remove saved word?")
             },
             text = {
                 Text(
-                    "“${itemToRemove.mayaText}” will be removed from your saved vocabulary."
+                    if (itemToRemove.isGlyphScan)
+                        "Remove this glyph scan from favourites? Its History record will remain."
+                    else "“${itemToRemove.mayaText}” will be removed from your saved vocabulary."
                 )
             },
             confirmButton = {
@@ -181,7 +208,7 @@ fun SavedScreen(
                         end = 18.dp,
                     ),
                 label = {
-                    Text("Search saved words")
+                    Text("Search favourite glyphs or words")
                 },
                 singleLine = true,
                 leadingIcon = {
@@ -210,17 +237,14 @@ fun SavedScreen(
             )
 
             Row(
-                modifier = Modifier.padding(
-                    horizontal = 18.dp,
-                    vertical = 10.dp,
-                ),
+                modifier = Modifier.fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 18.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 listOf(
-                    "All",
-                    "Nouns",
-                    "Verbs",
-                    "Adjectives",
+                    "All", "Glyph scans", "Words",
+                    "Nouns", "Verbs", "Adjectives",
                 ).forEach { item ->
                     FilterChip(
                         selected = category == item,
@@ -266,16 +290,16 @@ fun SavedScreen(
                     )
                     Text(
                         text = if (items.isEmpty()) {
-                            "No saved words yet"
+                            "No favourites yet"
                         } else {
-                            "No matching saved words"
+                            "No matching favourites"
                         },
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(top = 10.dp),
                     )
                     Text(
                         text = if (items.isEmpty()) {
-                            "Save useful words from translation results."
+                            "Add a glyph from Scan or save a word from Dictionary."
                         } else {
                             "Try another search or filter."
                         },
@@ -317,17 +341,25 @@ fun SavedScreen(
                                 modifier = Modifier.padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
+                                if (item.isGlyphScan) {
+                                    GlyphScanThumbnail(item.glyphImageBase64, side = 70.dp)
+                                    Spacer(Modifier.width(12.dp))
+                                }
                                 Column(
                                     modifier = Modifier.weight(1f),
                                     verticalArrangement = Arrangement.spacedBy(5.dp),
                                 ) {
                                     Text(
-                                        text = item.mayaText,
+                                        text = if (item.isGlyphScan)
+                                            "Glyph · ${item.mayaText}"
+                                        else item.mayaText,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
-                                        text = item.englishText,
+                                        text = if (item.isGlyphScan)
+                                            "Possible: ${item.englishText} (unverified)"
+                                        else item.englishText,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                     item.partOfSpeech
@@ -341,10 +373,12 @@ fun SavedScreen(
                                         }
                                 }
 
-                                SpeakButton(
-                                    text = item.mayaText,
-                                    languageTag = "yua",
-                                )
+                                if (!item.isGlyphScan) {
+                                    SpeakButton(
+                                        text = item.mayaText,
+                                        languageTag = "yua",
+                                    )
+                                }
 
                                 IconButton(
                                     onClick = {
@@ -353,7 +387,8 @@ fun SavedScreen(
                                 ) {
                                     Icon(
                                         Icons.Rounded.DeleteOutline,
-                                        contentDescription = "Remove saved word",
+                                        contentDescription = if (item.isGlyphScan) "Remove saved glyph"
+                                        else "Remove saved word",
                                     )
                                 }
                             }
