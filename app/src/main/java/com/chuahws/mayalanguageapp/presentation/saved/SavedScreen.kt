@@ -83,6 +83,7 @@ fun SavedScreen(
             imageBase64 = selectedItem.glyphImageBase64,
             candidates = selectedItem.glyphCandidates,
             secondaryText = "Favourite glyph scan · proposed matches only",
+            scanKind = selectedItem.glyphScanKind,
             onDismiss = { selectedSavedId = null },
             actionLabel = "Remove favourite",
             onAction = {
