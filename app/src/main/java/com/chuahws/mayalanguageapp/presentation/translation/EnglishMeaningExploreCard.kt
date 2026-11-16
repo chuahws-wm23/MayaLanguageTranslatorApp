@@ -38,7 +38,10 @@ internal fun EnglishMeaningExploreCard(
     bitmap: Bitmap?,
     crop: GlyphCrop,
     busy: Boolean,
+    browseOnly: Boolean = false,
+    matchOnly: Boolean = false,
 ) {
+    require(!browseOnly || !matchOnly)
     val context = LocalContext.current
     val uri = LocalUriHandler.current
     val glossary = remember(context) {
@@ -48,7 +51,7 @@ internal fun EnglishMeaningExploreCard(
         runCatching { GlyphVisualCatalogue.fromAssetsOrNull(context) }.getOrNull()
     }
     var searchText by remember { mutableStateOf("") }
-    var browse by remember { mutableStateOf(false) }
+    var browse by remember(browseOnly) { mutableStateOf(browseOnly) }
     var page by remember { mutableIntStateOf(0) }
     var working by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<List<GlyphEnglishMatch>?>(null) }
@@ -58,7 +61,7 @@ internal fun EnglishMeaningExploreCard(
 
     Card(Modifier.fillMaxWidth(), shape=MaterialTheme.shapes.extraLarge) {
         Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-            Text("English meanings & Maya history",
+            Text(if (browseOnly) "English meanings" else "Find a possible English meaning",
                 style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
             if(glossary==null || phonograms==null) {
                 Text("The expanded word-sign catalogue is not in this build yet. " +
@@ -66,25 +69,24 @@ internal fun EnglishMeaningExploreCard(
                     style=MaterialTheme.typography.bodySmall)
             } else {
                 Text(
-                    "Explore ${glossary.distinctSigns.size} documented TWKM word-sign identities " +
-                        "with ${glossary.references.size} licensed drawings. " +
-                        "Includes meanings such as lord, leaf, cloud/mist and fire.",
+                    if (browseOnly) "Browse ${glossary.distinctSigns.size} source-linked word signs, " +
+                        "such as lord, fire, leaf and mist." else
+                        "Compare your selected glyph against ${glossary.references.size} drawings " +
+                            "from ${glossary.distinctSigns.size} word-sign entries.",
                 )
-                Text(
-                    "A logogram carries a word or word element. This gallery is a source-backed " +
-                        "reference lookup, NOT a 135-class neural recognizer. " +
-                        "English glosses depend on surrounding signs.",
+                if (browseOnly) Text(
+                    "A logogram represents a word or meaningful word element; the English sense " +
+                        "depends on its context.",
                     style=MaterialTheme.typography.bodySmall,
                 )
                 Text(
-                    "Research accuracy warning: in a small same-source drawing study, " +
-                        "only 10/135 first matches and 18/135 top-three matches were correct. " +
-                        "Do not use visual lookalikes as automatic English translations. " +
-                        "This catalogue is best used for study and manual comparison.",
+                    if (browseOnly) "These are proposed scholarly meanings, not results confirmed " +
+                        "from a photograph." else "Visual matches are unverified. In a small chart " +
+                        "study, only 10/135 first matches were correct. Inspect all suggestions.",
                     style=MaterialTheme.typography.bodySmall,
                     color=MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                if(bitmap!=null) {
+                if (!browseOnly && bitmap != null) {
                     Button(
                         onClick = {
                             val original=bitmap
@@ -107,11 +109,10 @@ internal fun EnglishMeaningExploreCard(
                         modifier=Modifier.fillMaxWidth().heightIn(min=50.dp),
                     ) {
                         Text(if(working) "Comparing English word-sign references…" else
-                            "Find possible English meanings")
+                            "Find matching English word signs")
                     }
                     Text(
-                        "For several glyphs in one image, first run the individual-component scan, " +
-                            "then inspect a single component. One full block is not necessarily one word.",
+                        "Best for one complete sign. For multiple signs, use the component scanner.",
                         style=MaterialTheme.typography.bodySmall,
                     )
                     error?.let { Text(it,color=MaterialTheme.colorScheme.error) }
@@ -129,11 +130,11 @@ internal fun EnglishMeaningExploreCard(
                         }
                     }
                 }
-                OutlinedButton(
+                if (!browseOnly && !matchOnly) OutlinedButton(
                     onClick = { browse=!browse },
                     modifier=Modifier.fillMaxWidth(),
                 ) { Text(if(browse) "Hide word-sign meanings" else "Browse English word meanings") }
-                if(browse) {
+                if (browse && !matchOnly) {
                     OutlinedTextField(
                         modifier=Modifier.fillMaxWidth(),
                         value=searchText,
@@ -181,13 +182,12 @@ internal fun EnglishMeaningExploreCard(
                             enabled=current<last) {Text("Next")}
                     }
                 }
-                Text(
+                if (browseOnly) Text(
                     "TWKM / University of Bonn · Drawings by Christian Prager (CC BY 4.0). " +
-                        "Sign readings are source-proposed. 1–3 refers to the catalogue's " +
-                        "scholarly evidence level, NOT the AI's visual confidence.",
+                        "Reading evidence levels are scholarly assessments, not image accuracy.",
                     style=MaterialTheme.typography.bodySmall,
                 )
-                TextButton(onClick={uri.openUri(
+                if (browseOnly) TextButton(onClick={uri.openUri(
                     "https://classicmayan.org/portal/signcatalog")}) {
                     Text("Explore the original TWKM sign catalogue")
                 }
