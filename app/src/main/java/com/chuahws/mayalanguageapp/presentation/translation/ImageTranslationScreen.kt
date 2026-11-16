@@ -30,8 +30,15 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import com.chuahws.mayalanguageapp.domain.model.DictionaryEntry
 import com.chuahws.mayalanguageapp.domain.model.InputType
+import com.chuahws.mayalanguageapp.domain.model.GlyphScanCapture
+import com.chuahws.mayalanguageapp.domain.model.GlyphScanCandidate
+import com.chuahws.mayalanguageapp.domain.model.GlyphScanRecords
+import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphScanPreviewCodec
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
@@ -51,19 +58,38 @@ fun ImageTranslationScreen(
     viewModel: TranslationViewModel,
     onSaveEntry: (DictionaryEntry) -> Unit,
     replay: TranslationReplay? = null,
+    onRecordGlyphScan: (GlyphScanCapture, (TranslationRecord) -> Unit) -> Unit = { _, _ -> },
+    onToggleGlyphFavorite: (TranslationRecord) -> Unit = {},
+    savedGlyphIds: Set<String> = emptySet(),
 ) {
     var legacy by remember(replay?.requestId) { mutableStateOf(replay != null) }
     if (legacy && replay != null) {
         LegacyPhotoReplay(viewModel, onSaveEntry, replay, onScanGlyph = { legacy = false })
         return
     }
-    GlyphPhotoScreen()
+    GlyphPhotoScreen(
+        onRecordGlyphScan = onRecordGlyphScan,
+        onToggleGlyphFavorite = onToggleGlyphFavorite,
+        savedGlyphIds = savedGlyphIds,
+    )
 }
 
 @Composable
-private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(key = "glyph-photo-v1")) {
+private fun GlyphPhotoScreen(
+    onRecordGlyphScan: (GlyphScanCapture, (TranslationRecord) -> Unit) -> Unit,
+    onToggleGlyphFavorite: (TranslationRecord) -> Unit,
+    savedGlyphIds: Set<String>,
+    glyphModel: GlyphRecognitionViewModel = viewModel(key = "glyph-photo-v1"),
+) {
     val context = LocalContext.current
     val state by glyphModel.state.collectAsStateWithLifecycle()
+    var lastHistoryScan by remember { mutableStateOf<TranslationRecord?>(null) }
+    var savingResearchPreview by remember { mutableStateOf(false) }
+    var captureError by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(state.bitmap, state.crop) {
+        lastHistoryScan = null
+        captureError = null
+    }
     val screenScroll = rememberScrollState()
     val screenScope = rememberCoroutineScope()
     var showCamera by remember { mutableStateOf(false) }
@@ -175,7 +201,36 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                 EnglishMeaningExploreCard(
                     bitmap = image, crop = state.crop, busy = state.busy,
                     matchOnly = true,
+                    onSearchCompleted = { capture ->
+                        lastHistoryScan = null
+                        onRecordGlyphScan(capture) { persisted ->
+                            lastHistoryScan = persisted
+                        }
+                    },
                 )
+                lastHistoryScan?.let { savedScan ->
+                    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+                        Column(Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Added to Scan History",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold)
+                            Text("A compact photo preview and possible matches are stored " +
+                                "with your account. The readings are unverified.",
+                                style = MaterialTheme.typography.bodySmall)
+                            val isFavorite = GlyphScanRecords.favoriteId(
+                                savedScan.userId, savedScan.translationId,
+                            ) in savedGlyphIds
+                            FilledTonalButton(
+                                onClick = { onToggleGlyphFavorite(savedScan) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(if (isFavorite) "Remove from favourites" else
+                                    "Add this glyph to favourites")
+                            }
+                        }
+                    }
+                }
                 if (GlyphV11SegDetector.isInstalled(context)) {
                     OutlinedButton(
                         onClick = glyphModel::scanComponents,
