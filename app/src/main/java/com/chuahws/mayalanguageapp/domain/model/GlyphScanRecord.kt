@@ -13,6 +13,8 @@ data class GlyphScanCandidate(
     val englishGloss: String = "",
     val visualOverlap: Double = 0.0,
     val scholarlyLevel: Int = 0,
+    /** Detected panel region, if this was an experimental multi-glyph scan. */
+    val regionIndex: Int = 0,
 )
 
 /** A compact, user-triggered image-search event prepared for account History. */
