@@ -86,3 +86,9 @@ ml/catalogue_expansion/twkm_background_output/
 
 # Local-only Maya syllabary research results and CC BY drawing indexes
 ml/syllabary_ml/output/
+
+# User-supplied v11 COCO polygons and converted one-class segmentation data
+*Maya*Glyphs*segmentation*model*.v11i*.zip
+yolo_v11_components/
+maya_v11_yolo_signs/
+ml/research_roboflow_v11/v11_model_training_output/
