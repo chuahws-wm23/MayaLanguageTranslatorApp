@@ -121,7 +121,7 @@ fun AnalyticsScreen(
                 )
                 SummaryCard(
                     value = analytics.savedWords.toString(),
-                    label = "Saved words",
+                    label = "Saved items",
                     icon = Icons.Rounded.Bookmark,
                     color = MayaOrange,
                     modifier = Modifier.weight(1f),
