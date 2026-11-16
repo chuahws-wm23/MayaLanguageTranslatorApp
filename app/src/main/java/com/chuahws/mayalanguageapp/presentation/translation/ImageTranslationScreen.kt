@@ -169,6 +169,17 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         browseOnly = true)
                 }
             } else {
+            if (state.bitmap != null) {
+                OutlinedButton(
+                    onClick = { showAdvancedTools = !showAdvancedTools },
+                    enabled = !state.busy,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (showAdvancedTools) "Hide research settings" else
+                        "Advanced AI models & research settings")
+                }
+            }
+            if (showAdvancedTools && state.bitmap != null) {
             Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
@@ -272,11 +283,15 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     }
                 }
             }
+            }
             state.bitmap?.let { image ->
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Single glyph (optional crop)", style = MaterialTheme.typography.titleMedium)
-                        Text("Drag a rectangle over the complete glyph. Leave a small clear margin.", style = MaterialTheme.typography.bodySmall)
+                        Text("2 · Select one glyph", style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold)
+                        Text("Drag a rectangle around one complete sign. " +
+                            "For an inscription with many signs, use component scanning instead.",
+                            style = MaterialTheme.typography.bodySmall)
                         GlyphCropPreview(image, state.crop, !state.busy, glyphModel::setCrop)
                         OutlinedButton(
                             onClick = { glyphModel.setCrop(GlyphCrop()) },
@@ -285,14 +300,42 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         ) { Text("Full image") }
                     }
                 }
-                Button(onClick = glyphModel::recognize, enabled = !state.busy,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-                    Text("Recognise this single glyph")
+                EnglishMeaningExploreCard(
+                    bitmap = image, crop = state.crop, busy = state.busy,
+                    matchOnly = true,
+                )
+                if (GlyphV11SegDetector.isInstalled(context)) {
+                    OutlinedButton(
+                        onClick = glyphModel::scanComponents,
+                        enabled = !state.busy,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) { Text("Multiple glyphs? Find individual components") }
+                }
+                TextButton(
+                    onClick = { showSoundComparison = !showSoundComparison },
+                    enabled = !state.busy,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (showSoundComparison) "Hide syllable comparison" else
+                        "Also compare syllable sounds (optional)")
+                }
+                if (showSoundComparison) {
+                    GlyphCataloguePanel(
+                        bitmap = image, crop = state.crop, busy = state.busy,
+                        matchOnly = true,
+                    )
+                }
+                if (showAdvancedTools) {
+                    Button(onClick = glyphModel::recognize, enabled = !state.busy,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                        Text("Try experimental 10-sign recognition")
+                    }
                 }
                 OutlinedButton(
                     onClick = { showAdvancedPanelTools = !showAdvancedPanelTools },
                     enabled = !state.busy, modifier = Modifier.fillMaxWidth(),
-                ) { Text(if (showAdvancedPanelTools) "Hide panel scanning tools" else "Panel scanning tools (optional)") }
+                ) { Text(if (showAdvancedPanelTools) "Hide dense-panel tools" else
+                    "Advanced: block detection and manual grid") }
                 if (showAdvancedPanelTools) {
                     if (GlyphV11SegDetector.isInstalled(context)) {
                         FilledTonalButton(
@@ -310,7 +353,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     }
                     OutlinedButton(onClick = glyphModel::scanAll, enabled = !state.busy,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-                        Text("Scan all glyphs automatically")
+                        Text("Detect inscription blocks (advanced)")
                     }
                 Text(
                     "Uses a trained offline v18 block detector when installed and validated; " +
@@ -425,7 +468,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                         "previously exposed catalogue cohort; only 12/25 were correctly accepted. " +
                         "No independent photo accuracy established; do not treat signs as translated text."
             }
-            Text(
+            if (showAdvancedTools) Text(
                 modelLimitations, style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
