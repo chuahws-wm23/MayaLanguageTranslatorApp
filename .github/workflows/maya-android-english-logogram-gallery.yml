@@ -56,6 +56,9 @@ jobs:
             echo 'English catalogue already up to date'
           else
             git commit -m "data: add CC BY licensed English logogram visual glossary"
+            # Other app updates may have landed during the dataset export.
+            # Rebase the assets-only commit instead of overwriting their work.
+            git pull --rebase origin fyp-development
             git push origin HEAD:fyp-development
           fi
       - name: Save source attribution and reproducible assets
