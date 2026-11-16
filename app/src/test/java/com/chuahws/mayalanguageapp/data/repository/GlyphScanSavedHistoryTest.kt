@@ -40,7 +40,7 @@ class GlyphScanSavedHistoryTest {
         assertEquals(record,repo.getHistory("a").single())
         assertEquals(1,record.glyphCandidates.size)
         assertEquals("preview-jpeg-encoded",record.glyphImageBase64)
-        assertTrue(record.isGlyphScan)
+        assertTrue(record.glyphScanRecord)
         assertTrue(record.translatedText.contains("unverified"))
         assertTrue(repo.getHistory("b").isEmpty())
     }
@@ -56,7 +56,7 @@ class GlyphScanSavedHistoryTest {
         assertEquals("scan1",favorite.glyphSourceScanId)
         assertEquals("fire",favorite.englishText)
         assertEquals("preview-jpeg-encoded",favorite.glyphImageBase64)
-        assertTrue(favorite.isGlyphScan)
+        assertTrue(favorite.glyphScanRecord)
         assertTrue(repo.getSavedVocabulary("b").isEmpty())
     }
 
@@ -83,8 +83,8 @@ class GlyphScanSavedHistoryTest {
         repo.saveVocabulary(GlyphScanRecords.makeFavorite(scan(),2345))
         assertEquals(2,repo.getHistory("a").size)
         assertEquals(2,repo.getSavedVocabulary("a").size)
-        assertFalse(old.isGlyphScan)
-        assertFalse(word.isGlyphScan)
+        assertFalse(old.glyphScanRecord)
+        assertFalse(word.glyphScanRecord)
     }
 
     @Test fun captureCannotContainAnOversizedImageOrTooManyRegions() {
