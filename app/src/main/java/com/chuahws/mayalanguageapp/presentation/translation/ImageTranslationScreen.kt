@@ -121,6 +121,11 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     if (!hasCamera) Text("No camera found. Use Gallery instead.", style = MaterialTheme.typography.bodySmall)
                 }
             }
+            GlyphCataloguePanel(
+                bitmap = state.bitmap,
+                crop = state.crop,
+                busy = state.busy,
+            )
             Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
