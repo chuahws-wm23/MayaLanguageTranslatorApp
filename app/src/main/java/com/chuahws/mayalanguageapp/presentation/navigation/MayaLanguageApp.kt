@@ -850,6 +850,8 @@ private fun MainShell(
                                 .filter { it.isGlyphScan }
                                 .map { it.savedId }
                                 .toSet(),
+                            onOpenHistory = { goTo(AppPage.HISTORY) },
+                            onOpenFavourites = { goTo(AppPage.SAVED) },
                         )
 
                     AppPage.DICTIONARY ->
