@@ -158,3 +158,39 @@ available for the original 10 trained classes, and includes new
 
 TWKM standardized drawing artist: Christian Prager, CC BY 4.0; source
 decipherment glosses are scholarly interpretations, not static truths.
+
+
+## Measured image-matching and larger neural-classifier research
+
+The new shape-search gallery was tested on **135 held-out TWKM graph
+variants** (one variant per class; training retains other graph variants
+of the same sign). Results: **10/135 (7.4%) top-one**, **18/135 (13.3%)
+top-three**. These are source-related drawings, not independent artifact
+photographs. The photo-search UI prominently warns users that it does
+NOT reliably identify English meanings.
+
+To investigate a real **expanded recognition classifier**, a separate
+frozen-pretrained MobileNetV3-Small + logistic-regression pilot trained
+on the most supported logogram classes. Two class-count configurations
+were declared in advance, selected by reference-image count, not by
+held-out success:
+
+| Research model | Distinct training drawings | Held-out graph variants | Top-1 | Top-3 |
+|---|---:|---:|---:|---:|
+| 20 English logogram classes | 85 | 20 | 7/20 (35.0%) | 8/20 (40.0%) |
+| 30 English logogram classes | 105 | 30 | 10/30 (33.3%) | 11/30 (36.7%) |
+
+None approaches 60–70%. The samples come from the same catalogue and
+may be related allographs, so even these figures are NOT camera-photo
+accuracy. The expanded neural classifier was **deliberately not deployed**,
+and the original 10-class model is unchanged.
+
+- Full shape-search comparison:
+  https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/43842014568
+- Expanded neural classifier pilot:
+  https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/43842579349
+
+The user-facing learning catalogue and expert-linked English glossary are
+valuable despite the recognition limit. The next AI improvement requires
+a manually reviewed, artifact-independent, labelled camera-photo set per
+target logogram before replacing the 10-class model.
