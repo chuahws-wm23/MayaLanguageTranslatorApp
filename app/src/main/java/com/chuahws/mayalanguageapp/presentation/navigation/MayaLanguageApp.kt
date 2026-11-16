@@ -77,7 +77,7 @@ import com.chuahws.mayalanguageapp.presentation.auth.AuthViewModel
 import com.chuahws.mayalanguageapp.presentation.auth.LoginScreen
 import com.chuahws.mayalanguageapp.presentation.auth.RegisterScreen
 import com.chuahws.mayalanguageapp.presentation.auth.ResetPasswordScreen
-import com.chuahws.mayalanguageapp.presentation.dictionary.DictionaryScreen
+import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphDictionaryHubScreen
 import com.chuahws.mayalanguageapp.presentation.feedback.FeedbackScreen
 import com.chuahws.mayalanguageapp.presentation.history.HistoryScreen
 import com.chuahws.mayalanguageapp.presentation.home.HomeScreen
@@ -103,8 +103,8 @@ private enum class BottomItem(
     val label: String,
 ) {
     HOME("Home"),
-    SAVED("Saved"),
-    HISTORY("History"),
+    SCAN("Scan"),
+    DICTIONARY("Dictionary"),
     PROFILE("Profile"),
 }
 
@@ -121,7 +121,7 @@ private val translateDrawerItems = listOf(
 private val learnDrawerItems = listOf(
     DrawerItem(
         AppPage.DICTIONARY,
-        "Dictionary",
+        "Glyph dictionary",
         Icons.Rounded.MenuBook,
     ),
     DrawerItem(
@@ -506,7 +506,7 @@ private fun MainShell(
     val pageTitle = when (page) {
         AppPage.HOME -> "Maya Translate"
         AppPage.IMAGE_TRANSLATION -> "Maya glyph scanner"
-        AppPage.DICTIONARY -> "Dictionary"
+        AppPage.DICTIONARY -> "Glyph dictionary"
         AppPage.SAVED -> "Saved words"
         AppPage.HISTORY -> "History"
         AppPage.ANALYTICS -> "My activity"
@@ -722,11 +722,11 @@ private fun MainShell(
                                 BottomItem.HOME ->
                                     AppPage.HOME
 
-                                BottomItem.SAVED ->
-                                    AppPage.SAVED
+                                BottomItem.SCAN ->
+                                    AppPage.IMAGE_TRANSLATION
 
-                                BottomItem.HISTORY ->
-                                    AppPage.HISTORY
+                                BottomItem.DICTIONARY ->
+                                    AppPage.DICTIONARY
 
                                 BottomItem.PROFILE ->
                                     AppPage.PROFILE
@@ -747,11 +747,11 @@ private fun MainShell(
                                             BottomItem.HOME ->
                                                 Icons.Rounded.Home
 
-                                            BottomItem.SAVED ->
-                                                Icons.Rounded.Bookmark
+                                            BottomItem.SCAN ->
+                                                Icons.Rounded.CameraAlt
 
-                                            BottomItem.HISTORY ->
-                                                Icons.Rounded.History
+                                            BottomItem.DICTIONARY ->
+                                                Icons.Rounded.MenuBook
 
                                             BottomItem.PROFILE ->
                                                 Icons.Rounded.Person
@@ -850,7 +850,7 @@ private fun MainShell(
                         )
 
                     AppPage.DICTIONARY ->
-                        DictionaryScreen(
+                        GlyphDictionaryHubScreen(
                             entries =
                                 state
                                     .dictionaryEntries,
