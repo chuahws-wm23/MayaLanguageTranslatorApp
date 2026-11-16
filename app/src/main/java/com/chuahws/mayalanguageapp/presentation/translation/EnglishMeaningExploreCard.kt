@@ -1,6 +1,8 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
 import android.graphics.Bitmap
+import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphTable
+import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphTableRow
 import com.chuahws.mayalanguageapp.domain.service.ListPaging
 import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
 import androidx.compose.foundation.Image
@@ -73,7 +75,7 @@ internal fun EnglishMeaningExploreCard(
 
     Card(Modifier.fillMaxWidth(), shape=MaterialTheme.shapes.extraLarge) {
         Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-            Text(if (browseOnly) "English meanings" else "Find a possible English meaning",
+            Text(if (browseOnly) "English meanings" else "English translation",
                 style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
             if(glossary==null || phonograms==null) {
                 Text("The expanded word-sign catalogue is not in this build yet. " +
@@ -137,7 +139,7 @@ internal fun EnglishMeaningExploreCard(
                         enabled=!busy && !working,
                         modifier=Modifier.fillMaxWidth().heightIn(min=50.dp),
                     ) {
-                        Text(if (working) "Looking for a match…" else "Find a match")
+                        Text(if (working) "Translating…" else "Translate")
                     }
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     result?.let { matches ->
@@ -159,7 +161,7 @@ internal fun EnglishMeaningExploreCard(
                         value=searchText,
                         onValueChange={searchText=it;page=0},
                         singleLine=true,
-                        label={Text("Find a meaning or reading: e.g. lord, fire, AJAW")},
+                        label={Text("Search meanings or readings")},
                     )
                     val filtered=remember(glossary,searchText) {
                         val q=searchText.trim().lowercase(Locale.ROOT)
@@ -172,27 +174,28 @@ internal fun EnglishMeaningExploreCard(
                     Text("${filtered.size} entries", style = MaterialTheme.typography.labelLarge)
                     ListPaginationControls(filtered.size, current, { page = it - 1 })
                     if (filtered.isEmpty()) Text("No matching entries")
-                    ListPaging.pageItems(filtered, current).forEach { ref ->
-                        var learning by remember(ref.twkmSign) { mutableStateOf(false) }
-                        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
-                            horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                            val art=remember(glossary,ref.offset) { glossary.imageFor(ref) }
-                            Image(art.asImageBitmap(),contentDescription="TWKM ${ref.twkmSign} drawing",
-                                modifier=Modifier.size(64.dp).background(Color.White,
-                                    RoundedCornerShape(8.dp)),contentScale=ContentScale.Fit)
-                            Column(Modifier.weight(1f)) {
-                                Text(ref.english,style=MaterialTheme.typography.titleSmall,
-                                    fontWeight=FontWeight.SemiBold)
-                                Text(ref.reading,style=MaterialTheme.typography.bodyMedium)
-                                Text("TWKM #${ref.twkmSign} · source reading level ${ref.scholarlyLevel}",
-                                    style=MaterialTheme.typography.bodySmall)
-                                TextButton(onClick={learning=!learning}) {
-                                    Text(if(learning) "Hide details" else "Meaning & learning notes")
+                    if (filtered.isNotEmpty()) {
+                        var expandedSign by remember(current, searchText) { mutableStateOf<Int?>(null) }
+                        GlyphTable("English meaning", "Maya reading") {
+                            ListPaging.pageItems(filtered, current).forEachIndexed { index, ref ->
+                                val expanded = expandedSign == ref.twkmSign
+                                GlyphTableRow(
+                                    primary = ref.english,
+                                    secondary = ref.reading,
+                                    shaded = index % 2 == 1,
+                                    onClick = { expandedSign = if (expanded) null else ref.twkmSign },
+                                ) {
+                                    val art = remember(glossary, ref.offset) { glossary.imageFor(ref) }
+                                    Image(
+                                        art.asImageBitmap(),
+                                        contentDescription = "Drawing of ${ref.reading}",
+                                        modifier = Modifier.size(48.dp).background(Color.White, RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Fit,
+                                    )
                                 }
+                                if (expanded) EnglishMeaningLearningDetails(ref)
                             }
                         }
-                        if(learning) EnglishMeaningLearningDetails(ref)
-                        HorizontalDivider()
                     }
                 }
                 if (browseOnly) Text(
@@ -252,7 +255,7 @@ internal fun EnglishMeaningMatchRow(
             Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("Closest visual match", style = MaterialTheme.typography.labelLarge)
+            Text("Suggested translation", style = MaterialTheme.typography.labelLarge)
             Image(
                 example.asImageBitmap(),
                 contentDescription = "Reference drawing for ${ref.reading}",
@@ -260,6 +263,8 @@ internal fun EnglishMeaningMatchRow(
                     .background(Color.White, RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Fit,
             )
+            Text("Reference drawing only", style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(ref.english, style = MaterialTheme.typography.headlineSmall)
             Text("Maya reading · ${ref.reading}", style = MaterialTheme.typography.titleMedium)
             EnglishMeaningLearningDetails(ref)

@@ -37,8 +37,10 @@ internal fun MultiGlyphResultsPanel(
             Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Glyphs in this photo", style = MaterialTheme.typography.titleLarge)
+            Text("Suggested translations", style = MaterialTheme.typography.titleLarge)
             MultiGlyphNumberedPreview(bitmap, results)
+            Text("Numbered scan photo for reference", style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             results.forEach { item ->
                 HorizontalDivider()
                 Text("Region ${item.number}", style = MaterialTheme.typography.labelLarge)

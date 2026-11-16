@@ -1,6 +1,8 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
 import android.graphics.Bitmap
+import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphTable
+import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphTableRow
 import com.chuahws.mayalanguageapp.domain.service.ListPaging
 import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
 import android.graphics.BitmapFactory
@@ -172,29 +174,23 @@ internal fun GlyphCataloguePanel(
                     Text("${soundList.size} entries", style = MaterialTheme.typography.labelLarge)
                     ListPaginationControls(soundList.size, safePage, { page = it - 1 })
                     if (soundList.isEmpty()) Text("No matching entries")
-                    ListPaging.pageItems(soundList, safePage).forEach { sound ->
-                        val variants = remember(catalogue,sound) { catalogue.forSyllable(sound) }
-                        val preview = remember(catalogue,sound) {
-                            variants.firstOrNull()?.let { catalogue.referenceBitmap(it) }
-                        }
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment=Alignment.CenterVertically,
-                            horizontalArrangement=Arrangement.spacedBy(12.dp),
-                        ) {
-                            preview?.let {
-                                Image(
-                                    bitmap=it.asImageBitmap(),
-                                    contentDescription="Proposed Maya phonogram ${sound}",
-                                    modifier=Modifier.size(60.dp).background(Color.White, RoundedCornerShape(8.dp)),
-                                    contentScale=ContentScale.Fit,
-                                )
-                            }
-                            Column(Modifier.weight(1f)) {
-                                Text(sound, style=MaterialTheme.typography.titleMedium,
-                                    fontWeight=FontWeight.SemiBold)
-                                Text("${variants.size} drawing(s) · Example TWKM #${variants.firstOrNull()?.twkmSign}",
-                                    style=MaterialTheme.typography.bodySmall)
+                    if (soundList.isNotEmpty()) {
+                        GlyphTable("Syllable", "Drawings") {
+                            ListPaging.pageItems(soundList, safePage).forEachIndexed { index, sound ->
+                                val variants = remember(catalogue, sound) { catalogue.forSyllable(sound) }
+                                GlyphTableRow(sound, variants.size.toString(), shaded = index % 2 == 1) {
+                                    val preview = remember(catalogue, sound) {
+                                        variants.firstOrNull()?.let { catalogue.referenceBitmap(it) }
+                                    }
+                                    if (preview != null) {
+                                        Image(
+                                            preview.asImageBitmap(),
+                                            contentDescription = "Drawing for the syllable $sound",
+                                            modifier = Modifier.size(48.dp).background(Color.White, RoundedCornerShape(8.dp)),
+                                            contentScale = ContentScale.Fit,
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

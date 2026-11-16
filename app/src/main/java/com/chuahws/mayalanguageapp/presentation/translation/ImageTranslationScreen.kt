@@ -10,12 +10,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material3.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -92,8 +94,9 @@ private fun GlyphPhotoScreen(
     var lastHistoryScan by remember { mutableStateOf<TranslationRecord?>(null) }
     var savingResearchPreview by remember { mutableStateOf(false) }
     var captureError by remember { mutableStateOf<String?>(null) }
+    var multipleGlyphs by rememberSaveable { mutableStateOf(false) }
     var scanSession by remember { mutableIntStateOf(0) }
-    LaunchedEffect(state.bitmap, state.crop) {
+    LaunchedEffect(state.bitmap, state.crop, multipleGlyphs) {
         scanSession++
         lastHistoryScan = null
         captureError = null
@@ -138,10 +141,38 @@ private fun GlyphPhotoScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
             ) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Scan a Maya glyph", style = MaterialTheme.typography.headlineSmall,
+                    Text("Translate Maya glyphs", style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold)
-                    Text("Take a photo or choose a clear image of a glyph or inscription.",
-                        style = MaterialTheme.typography.bodyMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().selectableGroup(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        listOf(false, true).forEach { multiple ->
+                            FilterChip(
+                                selected = multipleGlyphs == multiple,
+                                onClick = {
+                                    if (multipleGlyphs != multiple) {
+                                        multipleGlyphs = multiple
+                                        glyphModel.setCrop(GlyphCrop())
+                                    }
+                                },
+                                enabled = !state.busy,
+                                label = {
+                                    Text(if (multiple) "Multiple glyphs" else "Single glyph")
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                ),
+                            )
+                        }
+                    }
+                    Text(
+                        if (multipleGlyphs) "Choose a photo containing several glyphs."
+                        else "Choose a clear photo of one glyph.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Button(
                             onClick = { gallery.launch("image/*") }, enabled = !state.busy,
@@ -181,38 +212,79 @@ private fun GlyphPhotoScreen(
                 }
             }
             state.bitmap?.let { image ->
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Frame your glyph", style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold)
-                        Text("Drag around one glyph for a closer match, or scan the whole image for multiple glyphs.",
-                            style = MaterialTheme.typography.bodySmall)
-                        GlyphCropPreview(image, state.crop, !state.busy, glyphModel::setCrop)
-                        if (state.crop != GlyphCrop()) {
-                            TextButton(
-                                onClick = { glyphModel.setCrop(GlyphCrop()) },
+                if (!multipleGlyphs) {
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text("Frame your glyph", style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold)
+                            Text("Drag around the glyph to focus the translation.",
+                                style = MaterialTheme.typography.bodySmall)
+                            GlyphCropPreview(image, state.crop, !state.busy, glyphModel::setCrop)
+                            if (state.crop != GlyphCrop()) {
+                                TextButton(
+                                    onClick = { glyphModel.setCrop(GlyphCrop()) },
+                                    enabled = !state.busy,
+                                ) { Text("Reset crop") }
+                            }
+                        }
+                    }
+                    EnglishMeaningExploreCard(
+                        bitmap = image, crop = state.crop, busy = state.busy,
+                        matchOnly = true,
+                        onSearchCompleted = { capture ->
+                            lastHistoryScan = null
+                            val request = scanSession
+                            onRecordGlyphScan(capture) { persisted ->
+                                if (request == scanSession) {
+                                    lastHistoryScan = persisted
+                                    if (persisted == null) {
+                                        captureError = "Could not save this scan to your History. " +
+                                            "Check your connection and try again."
+                                    }
+                                }
+                            }
+                        },
+                    )
+                    TextButton(
+                        onClick = { showSoundComparison = !showSoundComparison },
+                        enabled = !state.busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(if (showSoundComparison) "Hide syllable comparison" else
+                            "Look for a syllable sound")
+                    }
+                    if (showSoundComparison) {
+                        GlyphCataloguePanel(
+                            bitmap = image, crop = state.crop, busy = state.busy,
+                            matchOnly = true,
+                        )
+                    }
+                } else {
+                    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text("Your inscription", style = MaterialTheme.typography.titleMedium)
+                            if (state.multiple.isEmpty()) {
+                                Image(
+                                    bitmap = image.asImageBitmap(),
+                                    contentDescription = "Selected inscription",
+                                    modifier = Modifier.fillMaxWidth().heightIn(max = 240.dp),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                )
+                            }
+                            Button(
+                                onClick = {
+                                    if (GlyphV11SegDetector.isInstalled(context)) {
+                                        glyphModel.scanComponents()
+                                    } else {
+                                        glyphModel.scanAll()
+                                    }
+                                },
                                 enabled = !state.busy,
-                            ) { Text("Reset crop") }
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                            ) { Text(if (state.busy) "Translating…" else "Translate glyphs") }
                         }
                     }
                 }
-                EnglishMeaningExploreCard(
-                    bitmap = image, crop = state.crop, busy = state.busy,
-                    matchOnly = true,
-                    onSearchCompleted = { capture ->
-                        lastHistoryScan = null
-                        val request = scanSession
-                        onRecordGlyphScan(capture) { persisted ->
-                            if (request == scanSession) {
-                                lastHistoryScan = persisted
-                                if (persisted == null) {
-                                    captureError = "Could not save this scan to your History. " +
-                                        "Check your connection and try again."
-                                }
-                            }
-                        }
-                    },
-                )
                 captureError?.let { warning ->
                     Text(
                         warning,
@@ -254,31 +326,6 @@ private fun GlyphPhotoScreen(
                             }
                         }
                     }
-                }
-                OutlinedButton(
-                    onClick = {
-                        if (GlyphV11SegDetector.isInstalled(context)) {
-                            glyphModel.scanComponents()
-                        } else {
-                            glyphModel.scanAll()
-                        }
-                    },
-                    enabled = !state.busy,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) { Text("Scan multiple glyphs") }
-                TextButton(
-                    onClick = { showSoundComparison = !showSoundComparison },
-                    enabled = !state.busy,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(if (showSoundComparison) "Hide syllable comparison" else
-                        "Look for a syllable sound")
-                }
-                if (showSoundComparison) {
-                    GlyphCataloguePanel(
-                        bitmap = image, crop = state.crop, busy = state.busy,
-                        matchOnly = true,
-                    )
                 }
             if (state.bitmap != null) {
                 OutlinedButton(
