@@ -14,6 +14,8 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphV18Detector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV11SegDetector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualCatalogue
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualMatch
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMeaningCatalogue
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMatch
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphDetectedRegion
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphNetwork
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphV2Result
@@ -51,6 +53,7 @@ internal data class MultiGlyphItem(
     val englishGloss: String?,
     val note: String,
     val visualMatches: List<GlyphVisualMatch> = emptyList(),
+    val englishMatches: List<GlyphEnglishMatch> = emptyList(),
 )
 
 internal data class GlyphUiState(
@@ -190,35 +193,47 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                     val gallery = runCatching {
                         GlyphVisualCatalogue.fromAssetsOrNull(getApplication())
                     }.getOrNull()
+                    val meanings = runCatching {
+                        GlyphEnglishMeaningCatalogue.fromAssetsOrNull(getApplication())
+                    }.getOrNull()
                     components.mapIndexed { index, region ->
                         currentCoroutineContext().ensureActive()
-                        val suggestions = gallery?.let { referenceSet ->
-                            val (x,y,w,h) = region.crop.pixels(image.width,image.height)
-                            val isolated = Bitmap.createBitmap(image,x,y,w,h)
+                        val pair = if(gallery == null)
+                            emptyList<GlyphVisualMatch>() to emptyList<GlyphEnglishMatch>()
+                        else {
+                            val (x,y,w,h)=region.crop.pixels(image.width,image.height)
+                            val single=Bitmap.createBitmap(image,x,y,w,h)
                             try {
-                                runCatching { referenceSet.search(isolated,number=3) }
+                                val sounds=runCatching { gallery.search(single,number=3) }
                                     .getOrDefault(emptyList())
+                                val words=if(meanings!=null)
+                                    runCatching { meanings.search(single,gallery,3) }
+                                        .getOrDefault(emptyList())
+                                else emptyList()
+                                sounds to words
                             } finally {
-                                if (isolated !== image) isolated.recycle()
+                                if(single !== image) single.recycle()
                             }
-                        }.orEmpty()
+                        }
+                        val (sounds,words)=pair
                         MultiGlyphItem(
-                            index+1, region, null, null,
-                            if(suggestions.isEmpty())
-                                "No usable proposed sound match. This is only a detected graphic component."
+                            index+1,region,null,null,
+                            if(words.isEmpty() && sounds.isEmpty())
+                                "No reliable reading. This is only a detected graphic component."
                             else
-                                "Top three proposed syllable references by image shape. " +
-                                    "Visual overlap is NOT calibrated reading confidence.",
-                            visualMatches = suggestions,
+                                "Possible-looking English word signs and syllables. " +
+                                    "Visual overlap is NOT calibrated translation confidence.",
+                            visualMatches=sounds,
+                            englishMatches=words,
                         )
                     }
                 }
                 mutable.value = mutable.value.copy(
                     busy = false, multiple = items, individualComponents = true,
                     multipleProgress = null,
-                    detectorNote = "Experimental v11 masks isolate components; the 86-syllable " +
-                        "TWKM catalogue supplies possible-looking reference pictures where available. " +
-                        "These are NOT verified readings or photo recognition probabilities.",
+                    detectorNote = "Experimental v11 masks isolate components. " +
+                        "The English word-sign and syllable catalogues offer similar-looking drawings. " +
+                        "These are NOT verified translations or photo recognition probabilities.",
                     message = if (items.isEmpty())
                         "No individual components passed the mask filter. Try a clear drawing, " +
                         "a smaller region, or use the original block detector."
