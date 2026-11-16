@@ -95,3 +95,6 @@ ml/research_roboflow_v11/v11_model_training_output/
 
 # Optional locally exported one-class v11 instance segmentation model
 app/src/main/assets/maya_signs_v11_seg.onnx
+
+# Generated English-logogram research evaluation data (rebuild from pinned TWKM)
+ml/logogram_expansion/output/
