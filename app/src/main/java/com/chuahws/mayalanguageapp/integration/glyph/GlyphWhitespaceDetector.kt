@@ -54,6 +54,12 @@ internal object GlyphWhitespaceDetector {
             if (overflow) return
             if (leaves.size >= 48) { overflow=true; return }
             if (depth >= 12) { leaves.add(box); return }
+            // Once a region has been separated from its neighbours, do not
+            // subdivide a very low-detail fragment into several apparent signs.
+            // Preserve it as one reviewable crop; this is a quality heuristic.
+            if (depth > 0 && box.ink.toFloat()/(box.width*box.height) < .06f) {
+                leaves.add(box); return
+            }
             data class Cut(val first: Box, val second: Box, val strength: Float)
             var best: Cut?=null
             for (horizontal in listOf(true,false)) {

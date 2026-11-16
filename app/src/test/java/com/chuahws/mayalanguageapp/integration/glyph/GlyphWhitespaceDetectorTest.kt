@@ -43,4 +43,15 @@ class GlyphWhitespaceDetectorTest {
         assertEquals(2,GlyphWhitespaceDetector.detect(gray,w,h).size)
     }
 
+    @Test fun lowDetailFragmentIsPreservedForReviewInsteadOfOversegmented() {
+        val w=240;val h=140;val gray=IntArray(w*h){255}
+        for(t in 0 until 20) {
+            gray[(30+t)*w+30+t]=0
+            gray[(66+t)*w+30+t]=0
+        }
+        for(y in 30 until 90)for(x in 130 until 190)
+            if(x<138 || x>=182 || y<38 || y>=82)gray[y*w+x]=0
+        assertEquals(2,GlyphWhitespaceDetector.detect(gray,w,h).size)
+    }
+
 }

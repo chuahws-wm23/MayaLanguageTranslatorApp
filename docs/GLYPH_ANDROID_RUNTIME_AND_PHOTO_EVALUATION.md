@@ -95,7 +95,9 @@ selection and broader device coverage remain necessary for a reliability claim.
 The shipped APK has no optional v11/v18 detector assets. Automatic scanning now
 tries a conservative whitespace/XY-cut proposal method for separated drawings
 before the older dark-seam fallback. It supports single rows, single columns
-and 2x2 layouts without requiring dark grid lines. It refuses blank images,
+and 2x2 layouts without requiring dark grid lines. It preserves very low-detail separated regions as one reviewable crop and
+uses spatial size rather than ink mass to avoid losing thin-stroked signs.
+It refuses blank images,
 very small detached marks and dark-background inputs rather than treating those
 as reliable multiple-sign detections. Connected/overlapping carvings still need
 a trained detector or manual review. The detector finds layout regions, not
