@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphLearningNotes
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphMoreLearningNotes
 
 /**
  * Interpretation aids, not evidence that the predicted photo was identified.
@@ -18,7 +19,7 @@ internal fun GlyphLearningDetails(
     signNumber: Int,
     initialExpanded: Boolean = false,
 ) {
-    val note = remember(signNumber) { GlyphLearningNotes.forSign(signNumber) } ?: return
+    val note = remember(signNumber) { GlyphLearningNotes.forSign(signNumber) ?: GlyphMoreLearningNotes.forSign(signNumber) } ?: return
     var expanded by remember(signNumber) { mutableStateOf(initialExpanded) }
     val uriHandler = LocalUriHandler.current
 
