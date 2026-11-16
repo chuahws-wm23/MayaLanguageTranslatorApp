@@ -170,6 +170,13 @@ internal fun GlyphCataloguePanel(
                                     style=MaterialTheme.typography.bodySmall)
                             }
                         }
+                        var showLearning by remember(sign.signNumber) { mutableStateOf(false) }
+                        TextButton(onClick = { showLearning = !showLearning }) {
+                            Text(if (showLearning) "Hide explanation" else "Learn the meaning and history")
+                        }
+                        if (showLearning) {
+                            GlyphLearningDetails(signNumber = sign.signNumber, initialExpanded = true)
+                        }
                     }
                 }
 
