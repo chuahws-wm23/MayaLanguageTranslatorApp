@@ -9,4 +9,11 @@ data class SavedVocabularyItem(
     val pronunciation: String? = null,
     val partOfSpeech: String? = null,
     val savedAtMillis: Long = 0L,
+    /** Glyph favourites coexist with regular vocabulary in the same Saved collection. */
+    val isGlyphScan: Boolean = false,
+    val glyphSourceScanId: String = "",
+    val glyphImageBase64: String = "",
+    val glyphCandidates: List<GlyphScanCandidate> = emptyList(),
+    val glyphScanKind: String = "",
+    val glyphRegionCount: Int = 1,
 )
