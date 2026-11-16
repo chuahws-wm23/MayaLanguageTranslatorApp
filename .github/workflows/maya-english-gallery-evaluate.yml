@@ -1,0 +1,48 @@
+name: Evaluate source-related TWKM English glyph search
+on:
+  workflow_dispatch:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/logogram_expansion/evaluate_gallery.py'
+      - 'app/src/main/assets/maya_twkm_logogram_index.json'
+      - 'app/src/main/assets/maya_twkm_logogram_bitmap.bin'
+      - '.github/workflows/maya-english-gallery-evaluate.yml'
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compare 135 unseen graph variants against training-only image gallery
+        run: python ml/logogram_expansion/evaluate_gallery.py
+      - name: Summarize genuine results, not photo accuracy
+        if: always()
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path("ml/logogram_expansion/output/english_gallery_graph_variant_evaluation.json")
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a") as out:
+              out.write("## English glyph gallery — TWKM graph-variant retrieval\n")
+              if p.exists():
+                  m=json.loads(p.read_text())
+                  out.write(f"Top-1: **{m['correct_top1']}/{m['test_graph_variants']}**  \n")
+                  out.write(f"Top-3: **{m['correct_top3']}/{m['test_graph_variants']}**  \n")
+                  out.write("**Not real-photo or English translation accuracy**.\n")
+              else:
+                  out.write("Evaluation did not complete.\n")
+          PY
+      - name: Save auditable scores
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TWKM-English-Gallery-Variant-Test
+          path: ml/logogram_expansion/output/english_gallery_graph_variant_evaluation.json
+          if-no-files-found: warn
+          retention-days: 14
