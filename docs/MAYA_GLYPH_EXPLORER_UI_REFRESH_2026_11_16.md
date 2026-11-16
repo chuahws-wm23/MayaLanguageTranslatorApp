@@ -21,7 +21,7 @@ larger TWKM libraries, segmentation and previous research classifiers.
 4. **Multiple glyphs?** — when the optional
    `maya_signs_v11_seg.onnx` is installed, a direct action scans components.
    Each result is now a compact row with a thumbnail comparison available
-   on expansion. **Use crop** takes the user back to the photo crop to inspect
+   on expansion. **Inspect** takes the user back to the photo crop to inspect
    one part.
 5. **Also compare syllable sounds** — optional, collapsed by default.
    This searches the separate 86-syllable, 382-drawing phonogram catalogue;
@@ -64,7 +64,7 @@ No photo is required to use either library.
    signs**, inspect the three drawings and expand one explanatory note.
 4. Replace the source image; confirm previous visual results disappear.
 5. With the *optional* v11 ONNX installed, scan a multiple-sign picture. Verify
-   compact regions, expandable visual references and **Use crop** navigation.
+   compact regions, expandable visual references and **Inspect** navigation.
 6. Without the ONNX asset, confirm existing photo and manual crop features
    remain usable; show no false segmentation result.
 7. Expand Advanced tools, select each available model, and run the original
