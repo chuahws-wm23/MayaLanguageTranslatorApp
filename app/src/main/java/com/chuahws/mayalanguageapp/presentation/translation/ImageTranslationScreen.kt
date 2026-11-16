@@ -17,6 +17,7 @@ import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -67,6 +68,10 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
     var showAssistedGrid by remember { mutableStateOf(false) }
     var showAdvancedPanelTools by remember { mutableStateOf(false) }
     var showResearchModelOptions by remember { mutableStateOf(false) }
+    var showLibrary by rememberSaveable { mutableStateOf(false) }
+    var browseSyllables by rememberSaveable { mutableStateOf(false) }
+    var showSoundComparison by remember { mutableStateOf(false) }
+    var showAdvancedTools by remember { mutableStateOf(false) }
     var gridRows by remember { mutableIntStateOf(9) }
     var gridColumns by remember { mutableIntStateOf(9) }
     var permissionMessage by remember { mutableStateOf<String?>(null) }
@@ -93,12 +98,31 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Maya glyph explorer", style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold)
+                    Text("Discover possible English meanings and learn the history behind Maya signs.",
+                        style = MaterialTheme.typography.bodyMedium)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = !showLibrary, onClick = { showLibrary = false },
+                            label = { Text("Scan a picture") }, modifier = Modifier.weight(1f),
+                        )
+                        FilterChip(
+                            selected = showLibrary, onClick = { showLibrary = true },
+                            label = { Text("Explore signs") }, modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
+            if (!showLibrary) {
             Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Maya glyph recognition", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text("Choose a photo showing ONE Maya sign. Crop tightly around the complete sign, " +
-                        "with a small margin. Research v4 compares normal and shadow-corrected photos; " +
-                        "a suggested meaning is still unverified.")
+                    Text("1 · Choose an image", style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold)
+                    Text("Upload a clear glyph or inscription. Then select one sign to compare " +
+                        "with the reference catalogue.", style = MaterialTheme.typography.bodySmall)
                     Button(
                         onClick = { gallery.launch("image/*") }, enabled = !state.busy,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
@@ -121,16 +145,30 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     if (!hasCamera) Text("No camera found. Use Gallery instead.", style = MaterialTheme.typography.bodySmall)
                 }
             }
-            EnglishMeaningExploreCard(
-                bitmap = state.bitmap,
-                crop = state.crop,
-                busy = state.busy,
-            )
-            GlyphCataloguePanel(
-                bitmap = state.bitmap,
-                crop = state.crop,
-                busy = state.busy,
-            )
+            }
+            if (showLibrary) {
+                Text("Browse Maya glyphs", style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = !browseSyllables, onClick = { browseSyllables = false },
+                        label = { Text("English meanings · 135", maxLines = 1) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    FilterChip(
+                        selected = browseSyllables, onClick = { browseSyllables = true },
+                        label = { Text("Syllables · 86", maxLines = 1) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (browseSyllables) {
+                    GlyphCataloguePanel(bitmap = null, crop = GlyphCrop(), busy = false,
+                        browseOnly = true)
+                } else {
+                    EnglishMeaningExploreCard(bitmap = null, crop = GlyphCrop(), busy = false,
+                        browseOnly = true)
+                }
+            } else {
             Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
@@ -394,6 +432,7 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
             Text("All suggested readings require specialist review. Glyph scans are not saved as verified translations.",
                 style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(12.dp))
+            }
         }
     }
 }
