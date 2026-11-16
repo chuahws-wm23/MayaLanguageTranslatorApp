@@ -32,7 +32,7 @@ The change reuses existing Firebase Firestore collections,
 `translations` and `savedVocabulary`, using backward-compatible optional
 fields in `TranslationRecord` and `SavedVocabularyItem`:
 
-- `isGlyphScan`
+- `glyphScanRecord`
 - `glyphImageBase64`
 - `glyphCandidates`
 - `glyphScanKind`
@@ -40,7 +40,7 @@ fields in `TranslationRecord` and `SavedVocabularyItem`:
 - `glyphSourceScanId` on favourites.
 
 No existing dictionary word is removed, renamed in Firestore, or converted.
-Old History records have `isGlyphScan=false`, so they remain visible under
+Old History records have `glyphScanRecord=false`, so they remain visible under
 **Older records**. Saving a glyph does **not** pretend that it is a verified
 Yucatec-Maya vocabulary entry.
 
