@@ -18,7 +18,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -72,10 +75,9 @@ internal fun MultiGlyphResultsPanel(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                results.size.toString() + " candidate regions found; " +
-                    recognized + " have experimental readings and " +
-                    meaningMatches + " have possible English word-sign references; " +
-                    visuallyMatched + " have syllable references.",
+                results.size.toString() + " regions · " +
+                    meaningMatches + " with visual word-sign suggestions · " +
+                    visuallyMatched + " with syllable suggestions.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             detectorNote?.let { note ->
@@ -123,6 +125,9 @@ internal fun MultiGlyphResultsPanel(
                 Text("Copy unverified region list")
             }
             results.forEach { item ->
+                var detailsOpen by remember(item.number, item.region.crop) {
+                    mutableStateOf(item.number == 1)
+                }
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         Modifier.padding(12.dp),
@@ -141,15 +146,28 @@ internal fun MultiGlyphResultsPanel(
                                 modifier = Modifier.weight(1f),
                             )
                             TextButton(onClick = { onInspect(item.region.crop) }) {
-                                Text("Inspect")
+                                Text("Use crop")
                             }
                         }
+                        val closest = item.englishMatches.firstOrNull()?.reference
                         Text(
                             if (item.reading != null)
-                                "Possible: " + item.reading + " — " + item.englishGloss
-                            else if (individualComponents) "Graphic component — not identified" else "Not identified",
+                                "Experimental reading: " + item.reading + " — " + item.englishGloss
+                            else if (closest != null)
+                                "Closest drawing: " + closest.reading + " · " + closest.english +
+                                    " (not verified)"
+                            else if (individualComponents) "Unidentified component"
+                            else "Not identified",
                             style = MaterialTheme.typography.bodyMedium,
                         )
+                        if (item.englishMatches.isNotEmpty() ||
+                            item.visualMatches.isNotEmpty()) {
+                            TextButton(onClick = { detailsOpen = !detailsOpen }) {
+                                Text(if (detailsOpen) "Hide reference pictures" else
+                                    "Show similar pictures and details")
+                            }
+                        }
+                        if (detailsOpen) {
                         Text(
                             item.note,
                             style = MaterialTheme.typography.bodySmall,
@@ -209,6 +227,7 @@ internal fun MultiGlyphResultsPanel(
                                 }
                             }
                         }
+                        }
                     }
                 }
             }
@@ -219,7 +238,7 @@ internal fun MultiGlyphResultsPanel(
 @Composable
 private fun MultiGlyphNumberedPreview(bitmap: Bitmap, results: List<MultiGlyphItem>) {
     val image = bitmap.asImageBitmap()
-    Canvas(modifier = Modifier.fillMaxWidth().height(340.dp)) {
+    Canvas(modifier = Modifier.fillMaxWidth().height(260.dp)) {
         val scale = min(size.width / bitmap.width, size.height / bitmap.height)
         val imageWidth = bitmap.width * scale
         val imageHeight = bitmap.height * scale
