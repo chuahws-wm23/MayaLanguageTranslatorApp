@@ -21,6 +21,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMeaningCatalogu
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishReference
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMatch
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphLearningNotes
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphMoreLearningNotes
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualCatalogue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -197,7 +198,7 @@ internal fun EnglishMeaningExploreCard(
 
 @Composable
 internal fun EnglishMeaningLearningDetails(ref: GlyphEnglishReference) {
-    val known=remember(ref.twkmSign) { GlyphLearningNotes.forSign(ref.twkmSign) }
+    val known=remember(ref.twkmSign) { GlyphLearningNotes.forSign(ref.twkmSign) ?: GlyphMoreLearningNotes.forSign(ref.twkmSign) }
     if(known != null) {
         GlyphLearningDetails(ref.twkmSign,initialExpanded=true)
     } else {
