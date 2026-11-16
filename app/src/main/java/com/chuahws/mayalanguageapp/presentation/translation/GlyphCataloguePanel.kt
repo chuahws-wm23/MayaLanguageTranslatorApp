@@ -35,12 +35,15 @@ internal fun GlyphCataloguePanel(
     bitmap: Bitmap?,
     crop: GlyphCrop,
     busy: Boolean,
+    browseOnly: Boolean = false,
+    matchOnly: Boolean = false,
 ) {
+    require(!browseOnly || !matchOnly)
     val context = LocalContext.current
     val catalogue = remember(context) {
         runCatching { GlyphVisualCatalogue.fromAssetsOrNull(context) }.getOrNull()
     }
-    var showBrowse by remember { mutableStateOf(false) }
+    var showBrowse by remember(browseOnly) { mutableStateOf(browseOnly) }
     var searchSound by remember { mutableStateOf("") }
     var page by remember { mutableIntStateOf(0) }
     var showWordSigns by remember { mutableStateOf(false) }
@@ -53,23 +56,23 @@ internal fun GlyphCataloguePanel(
     Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                "Explore Maya glyphs",
+                if (browseOnly) "Maya syllable sounds" else "Find similar syllable drawings",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
             )
             if (catalogue != null) {
                 Text(
-                    "Explore ${catalogue.syllables.size} proposed Maya syllable readings with " +
-                        "${catalogue.references.size} TWKM reference drawings, in addition to " +
-                        "the 10 signs supported by Research v4.",
+                    if (browseOnly) "Browse ${catalogue.syllables.size} proposed sounds such as " +
+                        "ba, ku and ma across ${catalogue.references.size} reference drawings." else
+                        "Compare one glyph with ${catalogue.references.size} reference drawings " +
+                            "for ${catalogue.syllables.size} syllable sounds.",
                 )
                 Text(
-                    "Syllables such as ba, ku and ma represent SOUNDS, not English word meanings. " +
-                        "TWKM labels are proposed scholarly values; the pictures are " +
-                        "visual references, not verified photo translations.",
+                    "Syllables represent sounds, not English translations. " +
+                        "Matching is experimental and must be checked against the source.",
                     style = MaterialTheme.typography.bodySmall,
                 )
-                if (bitmap != null) {
+                if (!browseOnly && bitmap != null) {
                     Button(
                         modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
                         onClick = {
@@ -130,20 +133,20 @@ internal fun GlyphCataloguePanel(
                 )
             }
 
-            OutlinedButton(
+            if (!browseOnly && !matchOnly) OutlinedButton(
                 onClick = { showBrowse = !showBrowse },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(if (showBrowse) "Hide Maya glyph reference catalogue" else "Browse Maya glyph reference catalogue") }
 
-            if (showBrowse) {
-                OutlinedButton(
+            if (showBrowse && !matchOnly) {
+                if (!browseOnly) OutlinedButton(
                     onClick = { showWordSigns = !showWordSigns },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(if (showWordSigns) "Hide 10 word/name sign categories" else
                         "Show 10 word/name sign categories")
                 }
-                if (showWordSigns) {
+                if (showWordSigns && !browseOnly) {
                     MayaGlyphRecognizerV4.supportedSigns().forEach { sign ->
                         val sample = remember(sign.signNumber) {
                             runCatching {
