@@ -84,17 +84,13 @@ import com.chuahws.mayalanguageapp.presentation.home.HomeScreen
 import com.chuahws.mayalanguageapp.presentation.profile.ProfileScreen
 import com.chuahws.mayalanguageapp.presentation.saved.SavedScreen
 import com.chuahws.mayalanguageapp.presentation.translation.ImageTranslationScreen
-import com.chuahws.mayalanguageapp.presentation.translation.TranslationScreen
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationReplay
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationViewModel
-import com.chuahws.mayalanguageapp.presentation.translation.VoiceTranslationScreen
 import kotlinx.coroutines.launch
 
 private enum class AppPage {
     HOME,
-    TEXT_TRANSLATION,
     IMAGE_TRANSLATION,
-    VOICE_TRANSLATION,
     DICTIONARY,
     SAVED,
     HISTORY,
@@ -119,21 +115,7 @@ private data class DrawerItem(
 )
 
 private val translateDrawerItems = listOf(
-    DrawerItem(
-        AppPage.TEXT_TRANSLATION,
-        "Text",
-        Icons.Rounded.Keyboard,
-    ),
-    DrawerItem(
-        AppPage.IMAGE_TRANSLATION,
-        "Photo",
-        Icons.Rounded.CameraAlt,
-    ),
-    DrawerItem(
-        AppPage.VOICE_TRANSLATION,
-        "Voice",
-        Icons.Rounded.Mic,
-    ),
+    DrawerItem(AppPage.IMAGE_TRANSLATION, "Maya glyph scanner", Icons.Rounded.CameraAlt),
 )
 
 private val learnDrawerItems = listOf(
@@ -316,18 +298,24 @@ private fun MainShell(
         val request = TranslationReplay.history(record, replaySequence)
         replayRequest = request
         replayReturnPage = AppPage.HISTORY
-        page = when (request.mode) {
-            InputType.IMAGE -> AppPage.IMAGE_TRANSLATION
-            InputType.VOICE -> AppPage.VOICE_TRANSLATION
-            else -> AppPage.TEXT_TRANSLATION
+        // Historical text/voice records remain viewable in History, but their
+        // removed translation modes must not be opened again.
+        if (request.mode == InputType.IMAGE) {
+            page = AppPage.IMAGE_TRANSLATION
+        } else {
+            replayRequest = null
+            replayReturnPage = null
+            page = AppPage.HISTORY
         }
     }
 
     fun openSavedTranslation(item: SavedVocabularyItem) {
         replaySequence += 1
-        replayRequest = TranslationReplay.saved(item, replaySequence)
-        replayReturnPage = AppPage.SAVED
-        page = AppPage.TEXT_TRANSLATION
+        // Saved text entries remain in the Saved list. Open the current
+        // glyph-only scanner instead of reviving the retired text translator.
+        replayRequest = null
+        replayReturnPage = null
+        page = AppPage.IMAGE_TRANSLATION
     }
 
     fun openDrawer() {
@@ -517,9 +505,7 @@ private fun MainShell(
 
     val pageTitle = when (page) {
         AppPage.HOME -> "Maya Translate"
-        AppPage.TEXT_TRANSLATION -> "Text translation"
-        AppPage.IMAGE_TRANSLATION -> "Photo translation"
-        AppPage.VOICE_TRANSLATION -> "Voice translation"
+        AppPage.IMAGE_TRANSLATION -> "Maya glyph scanner"
         AppPage.DICTIONARY -> "Dictionary"
         AppPage.SAVED -> "Saved words"
         AppPage.HISTORY -> "History"
@@ -825,20 +811,10 @@ private fun MainShell(
                                 state.profile
                                     ?.displayName
                                     .orEmpty(),
-                            onTextTranslation = {
-                                replayRequest = null
-                                replayReturnPage = null
-                                page = AppPage.TEXT_TRANSLATION
-                            },
                             onImageTranslation = {
                                 replayRequest = null
                                 replayReturnPage = null
                                 page = AppPage.IMAGE_TRANSLATION
-                            },
-                            onVoiceTranslation = {
-                                replayRequest = null
-                                replayReturnPage = null
-                                page = AppPage.VOICE_TRANSLATION
                             },
                             onSaved = {
                                 page = AppPage.SAVED
@@ -862,34 +838,12 @@ private fun MainShell(
                             },
                         )
 
-                    AppPage.TEXT_TRANSLATION ->
-                        TranslationScreen(
-                            viewModel =
-                                translationViewModel,
-                            replay = replayRequest
-                                ?.takeIf { it.mode == InputType.TEXT },
-                            onSaveEntry =
-                                appDataViewModel
-                                    ::saveEntry,
-                        )
-
                     AppPage.IMAGE_TRANSLATION ->
                         ImageTranslationScreen(
                             viewModel =
                                 translationViewModel,
                             replay = replayRequest
                                 ?.takeIf { it.mode == InputType.IMAGE },
-                            onSaveEntry =
-                                appDataViewModel
-                                    ::saveEntry,
-                        )
-
-                    AppPage.VOICE_TRANSLATION ->
-                        VoiceTranslationScreen(
-                            viewModel =
-                                translationViewModel,
-                            replay = replayRequest
-                                ?.takeIf { it.mode == InputType.VOICE },
                             onSaveEntry =
                                 appDataViewModel
                                     ::saveEntry,
