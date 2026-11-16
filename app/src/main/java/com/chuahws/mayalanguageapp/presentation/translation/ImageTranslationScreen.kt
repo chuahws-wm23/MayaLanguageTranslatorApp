@@ -154,6 +154,19 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                 }
             }
             }
+            if (!showLibrary) {
+            if (state.busy) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    CircularProgressIndicator(Modifier.size(24.dp))
+                    Text(state.multipleProgress ?: "Processing on this device…")
+                }
+            }
+            (permissionMessage ?: state.message)?.let { message ->
+                Surface(color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.medium) {
+                    Text(message, Modifier.padding(14.dp), color = MaterialTheme.colorScheme.onErrorContainer)
+                }
+            }
+            }
             if (showLibrary) {
                 Text("Browse Maya glyphs", style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold)
@@ -421,17 +434,6 @@ private fun GlyphPhotoScreen(glyphModel: GlyphRecognitionViewModel = viewModel(k
                     }
                 }
                 }
-                }
-            }
-            if (state.busy) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CircularProgressIndicator(Modifier.size(24.dp))
-                    Text(state.multipleProgress ?: "Processing on this device…")
-                }
-            }
-            (permissionMessage ?: state.message)?.let { message ->
-                Surface(color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.medium) {
-                    Text(message, Modifier.padding(14.dp), color = MaterialTheme.colorScheme.onErrorContainer)
                 }
             }
             state.result?.let { GlyphResultCard(it) }
