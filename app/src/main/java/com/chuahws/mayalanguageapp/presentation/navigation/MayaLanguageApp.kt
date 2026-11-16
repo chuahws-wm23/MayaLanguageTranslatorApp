@@ -126,7 +126,7 @@ private val learnDrawerItems = listOf(
     ),
     DrawerItem(
         AppPage.SAVED,
-        "Saved words",
+        "Favourites",
         Icons.Rounded.Bookmark,
     ),
 )
@@ -507,7 +507,7 @@ private fun MainShell(
         AppPage.HOME -> "Maya Translate"
         AppPage.IMAGE_TRANSLATION -> "Maya glyph scanner"
         AppPage.DICTIONARY -> "Glyph dictionary"
-        AppPage.SAVED -> "Saved words"
+        AppPage.SAVED -> "Favourites"
         AppPage.HISTORY -> "History"
         AppPage.ANALYTICS -> "My activity"
         AppPage.FEEDBACK -> "Feedback"
