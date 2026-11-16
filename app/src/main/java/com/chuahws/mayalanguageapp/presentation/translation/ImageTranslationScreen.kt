@@ -508,6 +508,7 @@ private fun GlyphPhotoScreen(
                             else state.crop
                         val capturedModel = state.resultV4
                         val capturedRegions = state.multiple.toList()
+                        val wereIndividualComponents = state.individualComponents
                         val request = scanSession
                         captureError = null
                         savingResearchPreview = true
@@ -524,13 +525,14 @@ private fun GlyphPhotoScreen(
                                                     englishGloss = candidate.reference.english,
                                                     visualOverlap = candidate.visualOverlap.toDouble(),
                                                     scholarlyLevel = candidate.reference.scholarlyLevel,
+                                                    regionIndex = region.number,
                                                 )
                                             }
                                         }.take(10)
                                         GlyphScanCapture(
                                             previewBase64 = preview,
                                             candidates = candidates,
-                                            scanKind = if (state.individualComponents)
+                                            scanKind = if (wereIndividualComponents)
                                                 "COMPONENTS" else "BLOCKS",
                                             regionCount = capturedRegions.size,
                                         )
