@@ -113,10 +113,14 @@ internal class GlyphEnglishMeaningCatalogue private constructor(
             if(current==null || current.visualOverlap<sim)
                 bySign[ref.twkmSign]=GlyphEnglishMatch(ref,sim)
         }
-        return bySign.values.sortedWith(
+        val ranked = bySign.values.sortedWith(
             compareByDescending<GlyphEnglishMatch> { it.visualOverlap }
                 .thenBy { it.reference.twkmSign }
-        ).take(top)
+        )
+        if (ranked.isEmpty() || !GlyphVisualCatalogue.hasClearVisualMatch(
+                ranked[0].visualOverlap, ranked.getOrNull(1)?.visualOverlap ?: 0f,
+            )) return emptyList()
+        return ranked.take(top)
     }
 }
 

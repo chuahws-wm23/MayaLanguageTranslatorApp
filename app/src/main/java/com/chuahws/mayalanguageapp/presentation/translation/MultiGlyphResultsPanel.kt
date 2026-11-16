@@ -55,7 +55,8 @@ internal fun MultiGlyphResultsPanel(
                     }
                     item.reading != null -> Text("Possible reading · ${item.reading} — ${item.englishGloss}")
                     sound != null -> Text("Closest sound match · ${sound}. This sign represents a syllable.")
-                    else -> Text("No close match found for this region.")
+                    else -> Text("No clear translation for this region. A block may contain " +
+                        "several signs, so try a closer photo of one glyph.")
                 }
             }
         }

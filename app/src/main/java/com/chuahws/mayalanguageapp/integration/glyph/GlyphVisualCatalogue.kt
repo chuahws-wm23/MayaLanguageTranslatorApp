@@ -87,6 +87,85 @@ internal class GlyphVisualCatalogue private constructor(
             if (inkA < 6 || inkB < 6) return 0f
             return (both / sqrt(inkA.toDouble()*inkB)).toFloat()
         }
+
+        /** A close drawing is useful only when it is also distinct from the next reading. */
+        internal fun hasClearVisualMatch(best: Float, next: Float): Boolean =
+            best >= .60f && best - next >= .10f
+
+        /** Select ink before resizing so a dark frame never becomes the sign. */
+        internal fun foregroundMask(gray: IntArray, width: Int, height: Int): BooleanArray? {
+            require(width > 0 && height > 0 && gray.size == width * height)
+            val border = ArrayList<Int>(2 * width + 2 * height)
+            val hist = IntArray(256)
+            for (y in 0 until height) for (x in 0 until width) {
+                val value = gray[y * width + x]
+                require(value in 0..255)
+                hist[value]++
+                if (x == 0 || y == 0 || x == width - 1 || y == height - 1) {
+                    border.add(value)
+                }
+            }
+            border.sort()
+            val darkBorder = border[border.size / 2] < 110
+            val total = gray.size.toDouble()
+            val weighted = hist.indices.sumOf { it.toDouble() * hist[it] }
+            var count = 0.0
+            var sum = 0.0
+            var threshold = 128
+            var greatest = -1.0
+            for (t in 0..254) {
+                count += hist[t].toDouble()
+                sum += t * hist[t].toDouble()
+                if (count <= 0.0 || count >= total) continue
+                val a = sum / count
+                val b = (weighted - sum) / (total - count)
+                val score = count * (total - count) * (a - b) * (a - b)
+                if (score > greatest) {
+                    greatest = score
+                    threshold = t
+                }
+            }
+            val lightFraction = gray.count { it > threshold }.toFloat() / gray.size
+            val darkInkInsideLightFigure = darkBorder && lightFraction > .55f
+            val outside = BooleanArray(gray.size)
+            if (darkInkInsideLightFigure) {
+                // On a white filled figure, dark interior lines are the drawing.
+                // Flood from all four edges to discard the black surrounding field.
+                val queue = IntArray(gray.size)
+                var tail = 0
+                fun enqueue(index: Int) {
+                    if (!outside[index] && gray[index] <= threshold) {
+                        outside[index] = true
+                        queue[tail++] = index
+                    }
+                }
+                for (x in 0 until width) {
+                    enqueue(x)
+                    enqueue((height - 1) * width + x)
+                }
+                for (y in 0 until height) {
+                    enqueue(y * width)
+                    enqueue(y * width + width - 1)
+                }
+                var head = 0
+                while (head < tail) {
+                    val index = queue[head++]
+                    val x = index % width
+                    if (x > 0) enqueue(index - 1)
+                    if (x + 1 < width) enqueue(index + 1)
+                    if (index >= width) enqueue(index - width)
+                    if (index + width < gray.size) enqueue(index + width)
+                }
+            }
+            val ink = BooleanArray(gray.size) { index ->
+                when {
+                    darkInkInsideLightFigure -> gray[index] <= threshold && !outside[index]
+                    darkBorder -> gray[index] > threshold
+                    else -> gray[index] <= threshold
+                }
+            }
+            return ink.takeIf { mask -> mask.count { it }.toFloat() / mask.size in .003f.. .85f }
+        }
     }
 
     /** Distinct phonogram values represented by at least one licensed reference. */
@@ -134,10 +213,14 @@ internal class GlyphVisualCatalogue private constructor(
                 best[reference.syllable] = GlyphVisualMatch(reference,score)
             }
         }
-        return best.values.sortedWith(
+        val ranked = best.values.sortedWith(
             compareByDescending<GlyphVisualMatch> { it.visualSimilarity }
                 .thenBy { it.reference.syllable }
-        ).take(number)
+        )
+        if (ranked.isEmpty() || !hasClearVisualMatch(
+                ranked[0].visualSimilarity, ranked.getOrNull(1)?.visualSimilarity ?: 0f,
+            )) return emptyList()
+        return ranked.take(number)
     }
 
     /**
@@ -156,51 +239,27 @@ internal class GlyphVisualCatalogue private constructor(
             val argb = IntArray(w*h)
             resized.getPixels(argb,0,w,0,0,w,h)
             val gray = IntArray(w*h)
-            val border = ArrayList<Int>(2*w+2*h)
             for(y in 0 until h)for(x in 0 until w){
                 val p=argb[y*w+x]
                 val a=Color.alpha(p)
                 val lum=(Color.red(p)*77+Color.green(p)*150+Color.blue(p)*29+128) shr 8
                 val value = (lum*a+255*(255-a)+127)/255
                 gray[y*w+x]=value
-                if(x==0 || y==0 || x==w-1 || y==h-1)border.add(value)
             }
-            border.sort()
-            val invert = border[border.size/2] < 110
-            val hist = IntArray(256)
-            if(invert)for(i in gray.indices)gray[i]=255-gray[i]
-            for(v in gray)hist[v]++
-            // Otsu class-variance threshold, same principle as the asset exporter.
-            val total = gray.size.toDouble()
-            val weighted = hist.indices.sumOf { it.toDouble()*hist[it] }
-            var count=0.0
-            var sum=0.0
-            var threshold=128
-            var greatest=-1.0
-            for(t in 0..254){
-                count+=hist[t].toDouble()
-                sum+=t*hist[t].toDouble()
-                if(count<=0.0 || count>=total)continue
-                val a=sum/count
-                val b=(weighted-sum)/(total-count)
-                val score=count*(total-count)*(a-b)*(a-b)
-                if(score>greatest){greatest=score;threshold=t}
-            }
-            var minX=w;var minY=h;var maxX=-1;var maxY=-1;var ink=0
+            val foreground = foregroundMask(gray, w, h) ?: return null
+            var minX=w;var minY=h;var maxX=-1;var maxY=-1
             for(y in 0 until h)for(x in 0 until w){
-                if(gray[y*w+x] <= threshold){
+                if(foreground[y*w+x]){
                     minX=min(minX,x);maxX=max(maxX,x)
-                    minY=min(minY,y);maxY=max(maxY,y);ink++
+                    minY=min(minY,y);maxY=max(maxY,y)
                 }
             }
-            if(ink.toFloat()/gray.size !in .003f.. .85f || maxX<minX || maxY<minY)
-                return null
             val cw=maxX-minX+1
             val ch=maxY-minY+1
             val blackOnWhite = IntArray(cw*ch) { index ->
                 val x=index%cw + minX
                 val y=index/cw + minY
-                if(gray[y*w+x] <= threshold) Color.WHITE else Color.BLACK
+                if(foreground[y*w+x]) Color.WHITE else Color.BLACK
             }
             val cropped = Bitmap.createBitmap(blackOnWhite,cw,ch,Bitmap.Config.ARGB_8888)
             try {
@@ -224,7 +283,7 @@ internal class GlyphVisualCatalogue private constructor(
                             totalInk++
                         }
                     }
-                    return if(totalInk>=6)packed else null
+                    return if(totalInk>=6 && totalInk <= SIDE*SIDE*.42f)packed else null
                 }finally{if(scaled !== cropped)scaled.recycle()}
             }finally{cropped.recycle()}
         }finally{if(resized !== bitmap)resized.recycle()}

@@ -145,7 +145,10 @@ internal fun EnglishMeaningExploreCard(
                     result?.let { matches ->
                         val best = matches.firstOrNull()
                         if (best == null) {
-                            Text("No match found. Try a clearer photo or crop around one glyph.")
+                            Text(
+                                "No clear translation for this image. Try a tighter crop around " +
+                                    "one glyph, with its interior lines visible."
+                            )
                         } else {
                             EnglishMeaningMatchRow(glossary, best)
                         }

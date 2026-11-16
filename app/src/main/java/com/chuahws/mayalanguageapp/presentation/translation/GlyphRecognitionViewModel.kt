@@ -325,6 +325,12 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                     return@launch
                 }
                 val results = withContext(Dispatchers.Default) {
+                    val visualCatalogue = runCatching {
+                        GlyphVisualCatalogue.fromAssetsOrNull(getApplication())
+                    }.getOrNull()
+                    val meaningCatalogue = runCatching {
+                        GlyphEnglishMeaningCatalogue.fromAssetsOrNull(getApplication())
+                    }.getOrNull()
                     regions.mapIndexed { index, region ->
                         currentCoroutineContext().ensureActive()
                         if (request == version) {
@@ -371,14 +377,16 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                                         )
                                     }
                                     GlyphModelMode.RESEARCH_V4 -> {
-                                        val result = MayaGlyphRecognizerV4.fromAssets(getApplication())
-                                            .recognize(cropped)
+                                        // A detected block can contain multiple signs. Use the
+                                        // same guarded drawing search as the single-glyph page.
+                                        val words = if (visualCatalogue != null && meaningCatalogue != null) {
+                                            meaningCatalogue.search(cropped, visualCatalogue, 1)
+                                        } else emptyList()
                                         MultiGlyphItem(
-                                            index + 1, region,
-                                            if (result.reviewRecommended) null else result.reading,
-                                            if (result.reviewRecommended) null else result.englishGloss,
-                                            result.reviewReason
-                                                ?: "Two lighting views agree; still an UNVERIFIED ten-sign guess",
+                                            index + 1, region, null, null,
+                                            if (words.isEmpty()) "No clear word-sign match" else
+                                                "Possible word-sign drawing",
+                                            englishMatches = words,
                                         )
                                     }
                                     GlyphModelMode.RESEARCH_25 -> {
