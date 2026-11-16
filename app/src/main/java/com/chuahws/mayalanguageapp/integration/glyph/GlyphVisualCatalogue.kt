@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import org.json.JSONObject
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -18,11 +17,12 @@ import kotlin.math.sqrt
  * illustrations whose redistribution rights were not established.
  *
  * Matching compares one manually cropped / segmented SIGN with 382 pictures.
- * Raw dot/cosine scores are appearance similarities, NEVER correctness odds.
+ * Unit MobileNet embedding cosines are appearance similarities, NEVER correctness odds.
  */
 internal class GlyphVisualCatalogue private constructor(
     val references: List<GlyphVisualReference>,
     private val bitmapBits: ByteArray,
+    private val embeddings: () -> GlyphEmbeddingIndex,
 ) {
     companion object {
         const val INDEX_ASSET = "maya_twkm_phonogram_index.json"
@@ -68,7 +68,7 @@ internal class GlyphVisualCatalogue private constructor(
                     graph = ref.getString("graph"),
                 )
             }
-            return GlyphVisualCatalogue(references, images)
+            return GlyphVisualCatalogue(references, images) { GlyphEmbeddingIndex.fromAssets(context) }
         }
 
         /** Similarity of two binary bitplanes, NOT a probability. */
@@ -187,40 +187,20 @@ internal class GlyphVisualCatalogue private constructor(
     }
 
     /**
-     * Searches the SAME licensed gallery, returning at most three DIFFERENT
+     * Searches the SAME licensed gallery, returning the requested DIFFERENT
      * proposed syllable values. Matching is heuristic, uncalibrated.
      */
     fun search(image: Bitmap, number: Int = 3): List<GlyphVisualMatch> {
         require(number in 1..10)
         val query = canonicalBitplane(image) ?: return emptyList()
-        val best = HashMap<String,GlyphVisualMatch>()
-        for (reference in references) {
-            val off = reference.offset * BYTES_PER_REF
-            var nQ = 0
-            var nR = 0
-            var intersection = 0
-            for (i in query.indices) {
-                val a = query[i].toInt() and 255
-                val b = bitmapBits[off+i].toInt() and 255
-                nQ += Integer.bitCount(a)
-                nR += Integer.bitCount(b)
-                intersection += Integer.bitCount(a and b)
-            }
-            val score = if (nQ >= 6 && nR >= 6)
-                (intersection / sqrt(nQ.toDouble()*nR)).toFloat() else 0f
-            val old = best[reference.syllable]
-            if (old == null || score > old.visualSimilarity) {
-                best[reference.syllable] = GlyphVisualMatch(reference,score)
-            }
+        val scores = embeddings().similarities(query, "phonogram")
+        require(scores.size == references.size)
+        val identical = BooleanArray(references.size) { row ->
+            query.indices.all { query[it] == bitmapBits[row * BYTES_PER_REF + it] }
         }
-        val ranked = best.values.sortedWith(
-            compareByDescending<GlyphVisualMatch> { it.visualSimilarity }
-                .thenBy { it.reference.syllable }
-        )
-        if (ranked.isEmpty() || !hasClearVisualMatch(
-                ranked[0].visualSimilarity, ranked.getOrNull(1)?.visualSimilarity ?: 0f,
-            )) return emptyList()
-        return ranked.take(number)
+        // No unvalidated threshold may promote a neighbour to a confirmed reading.
+        return GlyphReferenceRanking.bestRows(scores, references.map { it.syllable }, identical, number)
+            .map { row -> GlyphVisualMatch(references[row], scores[row], identical[row]) }
     }
 
     /**
@@ -300,6 +280,7 @@ internal data class GlyphVisualReference(
 
 internal data class GlyphVisualMatch(
     val reference: GlyphVisualReference,
-    /** Cosine of centered binary foreground shapes. NOT calibrated confidence. */
+    /** Cosine of unit MobileNet embeddings. NOT calibrated confidence. */
     val visualSimilarity: Float,
+    val identicalNormalizedDrawing: Boolean = false,
 )

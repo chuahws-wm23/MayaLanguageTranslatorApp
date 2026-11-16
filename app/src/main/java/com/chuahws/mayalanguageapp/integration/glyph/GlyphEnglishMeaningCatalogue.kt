@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import org.json.JSONObject
-import kotlin.math.sqrt
 
 /**
  * SOURCE-LINKED VISUAL SEARCH of English-glossed Classic Maya logograms.
@@ -12,11 +11,12 @@ import kotlin.math.sqrt
  * Not a trained classifier. The English readings come from the pinned TWKM
  * source catalogue, limited to scholarly confidence levels 1..3 and signs
  * with at least two explicitly CC BY 4.0 standardized graph drawings.
- * Visual shape similarity has NOT been calibrated on independent photos.
+ * Pretrained feature similarity has NOT been calibrated on independent photos.
  */
 internal class GlyphEnglishMeaningCatalogue private constructor(
     val references: List<GlyphEnglishReference>,
     private val bits: ByteArray,
+    private val embeddings: () -> GlyphEmbeddingIndex,
 ) {
     companion object {
         const val INDEX_ASSET = "maya_twkm_logogram_index.json"
@@ -63,7 +63,7 @@ internal class GlyphEnglishMeaningCatalogue private constructor(
             }
             require(references.map { it.twkmSign }.toSet().size==
                 index.getInt("meaning_sign_count"))
-            return GlyphEnglishMeaningCatalogue(references,imageBits)
+            return GlyphEnglishMeaningCatalogue(references,imageBits) { GlyphEmbeddingIndex.fromAssets(context) }
         }
 
         /**
@@ -96,31 +96,14 @@ internal class GlyphEnglishMeaningCatalogue private constructor(
     ): List<GlyphEnglishMatch> {
         require(top in 1..10)
         val query=phonograms.canonicalBitplane(singleSignCrop) ?: return emptyList()
-        val bySign=HashMap<Int,GlyphEnglishMatch>()
-        for(ref in references) {
-            val at=ref.offset*REF_BYTES
-            var qInk=0;var rInk=0;var both=0
-            for(i in query.indices) {
-                val a=query[i].toInt() and 255
-                val b=bits[at+i].toInt() and 255
-                qInk+=Integer.bitCount(a)
-                rInk+=Integer.bitCount(b)
-                both+=Integer.bitCount(a and b)
-            }
-            val sim=if(qInk>=6 && rInk>=6)
-                (both/sqrt(qInk.toDouble()*rInk)).toFloat() else 0f
-            val current=bySign[ref.twkmSign]
-            if(current==null || current.visualOverlap<sim)
-                bySign[ref.twkmSign]=GlyphEnglishMatch(ref,sim)
+        val scores = embeddings().similarities(query, "logogram")
+        require(scores.size == references.size)
+        val identical = BooleanArray(references.size) { row ->
+            query.indices.all { query[it] == bits[row * REF_BYTES + it] }
         }
-        val ranked = bySign.values.sortedWith(
-            compareByDescending<GlyphEnglishMatch> { it.visualOverlap }
-                .thenBy { it.reference.twkmSign }
-        )
-        if (ranked.isEmpty() || !GlyphVisualCatalogue.hasClearVisualMatch(
-                ranked[0].visualOverlap, ranked.getOrNull(1)?.visualOverlap ?: 0f,
-            )) return emptyList()
-        return ranked.take(top)
+        // Return distinct sign identities with their actual best reference artwork.
+        return GlyphReferenceRanking.bestRows(scores, references.map { it.twkmSign.toString() }, identical, top)
+            .map { row -> GlyphEnglishMatch(references[row], scores[row], identical[row]) }
     }
 }
 
@@ -138,6 +121,7 @@ internal data class GlyphEnglishReference(
 
 internal data class GlyphEnglishMatch(
     val reference: GlyphEnglishReference,
-    /** Visual cosine resemblance; NOT historical or model confidence. */
+    /** Embedding cosine resemblance; NOT historical or model confidence. */
     val visualOverlap: Float,
+    val identicalNormalizedDrawing: Boolean = false,
 )

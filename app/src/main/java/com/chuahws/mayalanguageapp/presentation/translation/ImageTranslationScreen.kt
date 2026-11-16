@@ -141,7 +141,7 @@ private fun GlyphPhotoScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
             ) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Translate Maya glyphs", style = MaterialTheme.typography.headlineSmall,
+                    Text("The glyph studio", style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold)
                     Row(
                         modifier = Modifier.fillMaxWidth().selectableGroup(),
@@ -170,7 +170,7 @@ private fun GlyphPhotoScreen(
                     }
                     Text(
                         if (multipleGlyphs) "Choose a photo containing several glyphs."
-                        else "Choose a clear photo of one glyph.",
+                        else "Upload one complete sign. Compare its shape with the archive.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -217,7 +217,7 @@ private fun GlyphPhotoScreen(
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text("Frame your glyph", style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold)
-                            Text("Drag around the glyph to focus the translation.",
+                            Text("Frame one complete sign, keeping its interior lines visible.",
                                 style = MaterialTheme.typography.bodySmall)
                             GlyphCropPreview(image, state.crop, !state.busy, glyphModel::setCrop)
                             if (state.crop != GlyphCrop()) {
@@ -281,7 +281,7 @@ private fun GlyphPhotoScreen(
                                 },
                                 enabled = !state.busy,
                                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                            ) { Text(if (state.busy) "Translating…" else "Translate glyphs") }
+                            ) { Text(if (state.busy) "Comparing…" else "Compare glyph blocks") }
                         }
                     }
                 }

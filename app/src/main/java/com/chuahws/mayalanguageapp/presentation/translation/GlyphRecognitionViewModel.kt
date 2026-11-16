@@ -380,7 +380,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                                         // A detected block can contain multiple signs. Use the
                                         // same guarded drawing search as the single-glyph page.
                                         val words = if (visualCatalogue != null && meaningCatalogue != null) {
-                                            meaningCatalogue.search(cropped, visualCatalogue, 1)
+                                            meaningCatalogue.search(cropped, visualCatalogue, 5)
                                         } else emptyList()
                                         MultiGlyphItem(
                                             index + 1, region, null, null,

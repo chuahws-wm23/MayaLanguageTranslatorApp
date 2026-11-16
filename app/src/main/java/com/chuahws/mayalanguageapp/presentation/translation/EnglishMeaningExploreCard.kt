@@ -20,6 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGuard
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphScanPreviewCodec
 import com.chuahws.mayalanguageapp.domain.model.GlyphScanCapture
@@ -30,6 +32,8 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMatch
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphLearningNotes
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphMoreLearningNotes
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualCatalogue
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -64,18 +68,24 @@ internal fun EnglishMeaningExploreCard(
     var working by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<List<GlyphEnglishMatch>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    var qualityHints by remember { mutableStateOf<List<String>>(emptyList()) }
     var requestVersion by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
+    var searchJob by remember { mutableStateOf<Job?>(null) }
+    DisposableEffect(bitmap, crop) {
+        onDispose { searchJob?.cancel() }
+    }
     LaunchedEffect(bitmap,crop) {
         requestVersion++
         result = null
+        qualityHints = emptyList()
         error = null
         working = false
     }
 
     Card(Modifier.fillMaxWidth(), shape=MaterialTheme.shapes.extraLarge) {
         Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-            Text(if (browseOnly) "English meanings" else "English translation",
+            Text(if (browseOnly) "English meanings" else "Reference matches",
                 style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
             if(glossary==null || phonograms==null) {
                 Text("The expanded word-sign catalogue is not in this build yet. " +
@@ -90,23 +100,29 @@ internal fun EnglishMeaningExploreCard(
                             val chosen=crop
                             error=null;result=null;working=true
                             val request=requestVersion
-                            scope.launch {
+                            searchJob?.cancel()
+                            searchJob = scope.launch {
                                 try {
-                                    val (matches,preview)=withContext(Dispatchers.Default) {
+                                    val (matches,preview,hints)=withContext(Dispatchers.Default) {
                                         val (x,y,w,h)=chosen.pixels(original.width,original.height)
                                         val isolated=Bitmap.createBitmap(original,x,y,w,h)
-                                        val matchList = try {
-                                            glossary.search(isolated,phonograms,1)
+                                        val comparison = try {
+                                            require(chosen != GlyphCrop() || !GlyphPanelGuard.looksLikeDensePanel(isolated)) {
+                                                "This looks like a panel of signs. Choose Multiple glyphs, or crop one complete sign."
+                                            }
+                                            val hints = GlyphImageQuality.hints(isolated)
+                                            glossary.search(isolated,phonograms,5) to hints
                                         } finally {
                                             if(isolated!==original)isolated.recycle()
                                         }
                                         val packed=runCatching {
                                             GlyphScanPreviewCodec.encode(original,chosen)
                                         }.getOrDefault("")
-                                        matchList to packed
+                                        Triple(comparison.first, packed, comparison.second)
                                     }
                                     if(request == requestVersion) {
                                         result = matches
+                                        qualityHints = hints
                                         if(preview.isNotEmpty()) {
                                             onSearchCompleted(
                                                 GlyphScanCapture(
@@ -127,7 +143,11 @@ internal fun EnglishMeaningExploreCard(
                                                 "could not be saved to History."
                                         }
                                     }
-                                }catch(_:Exception){
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (invalid: IllegalArgumentException) {
+                                    if (request == requestVersion) error = invalid.message ?: "Crop one complete sign and retry."
+                                } catch (_: Exception) {
                                     if(request == requestVersion) {
                                         error="Unable to search this photo. Crop one complete sign and retry."
                                     }
@@ -139,18 +159,41 @@ internal fun EnglishMeaningExploreCard(
                         enabled=!busy && !working,
                         modifier=Modifier.fillMaxWidth().heightIn(min=50.dp),
                     ) {
-                        Text(if (working) "Translating…" else "Translate")
+                        Text(if (working) "Comparing with the archive…" else "Compare with the archive")
                     }
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (working) LinearProgressIndicator(Modifier.fillMaxWidth())
+                    qualityHints.forEach { hint ->
+                        Surface(color = MaterialTheme.colorScheme.tertiaryContainer,
+                            shape = MaterialTheme.shapes.medium) {
+                            Text(hint, Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        }
+                    }
                     result?.let { matches ->
-                        val best = matches.firstOrNull()
-                        if (best == null) {
-                            Text(
-                                "No clear translation for this image. Try a tighter crop around " +
-                                    "one glyph, with its interior lines visible."
-                            )
+                        if (matches.isEmpty()) {
+                            Text("No usable sign strokes found. Try even lighting, a sharper photo, " +
+                                "and a crop around one complete sign.")
                         } else {
-                            EnglishMeaningMatchRow(glossary, best)
+                            val identical = matches.first().identicalNormalizedDrawing
+                            Text(
+                                if (identical) "Same normalized reference drawing" else "Nearest reference drawings",
+                                style = MaterialTheme.typography.headlineSmall,
+                            )
+                            Text(
+                                if (identical) "The normalized shapes are identical. Check the reference and inscription context."
+                                else "No confirmed identification. These are ranked visual alternatives; an unfamiliar sign can still resemble a reference.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text("Similarity compares appearance; it is not recognition confidence.",
+                                style = MaterialTheme.typography.bodySmall)
+                            matches.forEachIndexed { rank, match ->
+                                EnglishMeaningMatchRow(glossary, match, rank + 1)
+                            }
+                            Text("Drawings: Christian Prager / University of Bonn · CC BY 4.0 · TWKM sign catalogue",
+                                style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -250,6 +293,7 @@ internal fun EnglishMeaningLearningDetails(ref: GlyphEnglishReference) {
 internal fun EnglishMeaningMatchRow(
     catalogue: GlyphEnglishMeaningCatalogue,
     match: GlyphEnglishMatch,
+    rank: Int? = null,
 ) {
     val ref=match.reference
     val example=remember(catalogue,ref.offset) { catalogue.imageFor(ref) }
@@ -258,7 +302,13 @@ internal fun EnglishMeaningMatchRow(
             Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("Suggested translation", style = MaterialTheme.typography.labelLarge)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(rank?.let { "REFERENCE  /  %02d".format(it) } ?: "REFERENCE DRAWING",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary)
+                Text("Similarity %.3f".format(Locale.ROOT, match.visualOverlap),
+                    style = MaterialTheme.typography.labelMedium)
+            }
             Image(
                 example.asImageBitmap(),
                 contentDescription = "Reference drawing for ${ref.reading}",
@@ -270,7 +320,14 @@ internal fun EnglishMeaningMatchRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(ref.english, style = MaterialTheme.typography.headlineSmall)
             Text("Maya reading · ${ref.reading}", style = MaterialTheme.typography.titleMedium)
-            EnglishMeaningLearningDetails(ref)
+            Text("TWKM #${ref.twkmSign} · ${ref.graph}", style = MaterialTheme.typography.labelMedium)
+            var expanded by remember(ref.twkmSign) { mutableStateOf(false) }
+            TextButton(onClick = { expanded = !expanded }) {
+                Text(if (expanded) "Close reference notes" else "Explore meaning & history")
+            }
+            androidx.compose.animation.AnimatedVisibility(visible = expanded) {
+                Column { EnglishMeaningLearningDetails(ref) }
+            }
         }
     }
 }

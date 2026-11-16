@@ -31,49 +31,9 @@ fun AppGradientBackground(
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer
-                            .copy(alpha = 0.42f),
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.background,
-                    ),
-                )
-            ),
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .size(220.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            MayaPurple.copy(alpha = 0.10f),
-                            Color.Transparent,
-                        ),
-                    ),
-                    CircleShape,
-                ),
-        )
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .size(180.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            MayaGreen.copy(alpha = 0.07f),
-                            Color.Transparent,
-                        ),
-                    ),
-                    CircleShape,
-                ),
-        )
-
+        // A quiet archive canvas gives the artwork and typography priority.
         content()
     }
 }

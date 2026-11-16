@@ -790,6 +790,8 @@ private fun MainShell(
                 when (page) {
                     AppPage.HOME ->
                         HomeScreen(
+                            recentScans = state.history.filter { it.glyphScanRecord }
+                                .sortedByDescending { it.createdAtMillis }.take(3),
                             displayName =
                                 state.profile
                                     ?.displayName

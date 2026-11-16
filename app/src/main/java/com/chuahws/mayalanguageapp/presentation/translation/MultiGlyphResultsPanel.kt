@@ -12,6 +12,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.TextButton
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMeaningCatalogue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -32,12 +36,16 @@ internal fun MultiGlyphResultsPanel(
     results: List<MultiGlyphItem>,
 ) {
     if (results.isEmpty()) return
+    val context = LocalContext.current
+    val catalogue = remember(context) {
+        runCatching { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }.getOrNull()
+    }
     Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
         Column(
             Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Suggested translations", style = MaterialTheme.typography.titleLarge)
+            Text("Block reference comparisons", style = MaterialTheme.typography.titleLarge)
             MultiGlyphNumberedPreview(bitmap, results)
             Text("Numbered scan photo for reference", style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -51,11 +59,20 @@ internal fun MultiGlyphResultsPanel(
                         Text("Closest visual match · ${meaning.english}",
                             style = MaterialTheme.typography.titleMedium)
                         Text("Maya reading · ${meaning.reading}")
-                        EnglishMeaningLearningDetails(meaning)
+                        Text("Visual alternative · unconfirmed", style = MaterialTheme.typography.bodySmall)
+                        var expanded by remember(item.number, item.englishMatches) { mutableStateOf(false) }
+                        TextButton(onClick = { expanded = !expanded }) {
+                            Text(if (expanded) "Close references" else "Compare ${item.englishMatches.size} reference drawings")
+                        }
+                        if (expanded && catalogue != null) {
+                            item.englishMatches.forEachIndexed { index, match ->
+                                EnglishMeaningMatchRow(catalogue, match, index + 1)
+                            }
+                        }
                     }
                     item.reading != null -> Text("Possible reading · ${item.reading} — ${item.englishGloss}")
-                    sound != null -> Text("Closest sound match · ${sound}. This sign represents a syllable.")
-                    else -> Text("No clear translation for this region. A block may contain " +
+                    sound != null -> Text("Nearest syllable reference · $sound (unconfirmed).")
+                    else -> Text("No reference comparison for this region. A block may contain " +
                         "several signs, so try a closer photo of one glyph.")
                 }
             }

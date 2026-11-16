@@ -1,5 +1,7 @@
 package com.chuahws.mayalanguageapp.presentation.home
 
+import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
+import com.chuahws.mayalanguageapp.presentation.components.GlyphScanThumbnail
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -61,6 +63,7 @@ fun HomeScreen(
     onFeedback: () -> Unit,
     onDictionary: () -> Unit,
     onProfile: () -> Unit,
+    recentScans: List<TranslationRecord> = emptyList(),
 ) {
     AppGradientBackground {
         LazyColumn(
@@ -85,9 +88,33 @@ fun HomeScreen(
                 )
             }
 
+            if (recentScans.isNotEmpty()) {
+                item { SectionLabel(title = "Recently explored") }
+                items(recentScans.size) { index ->
+                    val scan = recentScans[index]
+                    Card(
+                        modifier = Modifier.fillMaxWidth().clickable(onClick = onHistory),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    ) {
+                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            GlyphScanThumbnail(scan.glyphImageBase64, side = 60.dp)
+                            Column(Modifier.weight(1f)) {
+                                Text(scan.glyphCandidates.firstOrNull()?.reading ?: "Unidentified sign",
+                                    style = MaterialTheme.typography.titleMedium)
+                                Text("Visual reference search · unverified",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Icon(Icons.Rounded.ArrowForward, contentDescription = "Open scan history")
+                        }
+                    }
+                }
+            }
+
             item {
                 SectionLabel(
-                    title = "Keep learning",
+                    title = "Your collection",
                     subtitle = "Your words and activity",
                 )
             }
@@ -203,9 +230,9 @@ private fun HeroCard(
 ) {
     val gradient = Brush.linearGradient(
         listOf(
-            Color(0xFF5146D8),
-            Color(0xFF6B5EE8),
-            Color(0xFF278F91),
+            Color(0xFF12271F),
+            Color(0xFF1D3E31),
+            Color(0xFF345A46),
         )
     )
 
@@ -219,7 +246,7 @@ private fun HeroCard(
             containerColor = Color.Transparent,
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 6.dp,
+            defaultElevation = 0.dp,
         ),
     ) {
         Box(
@@ -270,7 +297,7 @@ private fun HeroCard(
                             modifier = Modifier.size(18.dp),
                         )
                         Text(
-                            text = "Maya glyph explorer",
+                            text = "THE MAYA ARCHIVE",
                             color = Color.White,
                             style = MaterialTheme.typography.labelLarge,
                         )
@@ -278,14 +305,14 @@ private fun HeroCard(
                 }
 
                 Text(
-                    text = "Discover Maya glyph meanings",
+                    text = "A window into\nancient writing",
                     color = Color.White,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                 )
 
                 Text(
-                    text = "Scan a Maya glyph, explore possible English meanings, and learn its history.",
+                    text = "Compare a glyph with the reference archive. Explore its form, possible reading and history.",
                     color = Color.White.copy(alpha = 0.82f),
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -354,7 +381,7 @@ private fun FeatureCard(
         ),
         shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
+            defaultElevation = 0.dp,
         ),
     ) {
         Column(
