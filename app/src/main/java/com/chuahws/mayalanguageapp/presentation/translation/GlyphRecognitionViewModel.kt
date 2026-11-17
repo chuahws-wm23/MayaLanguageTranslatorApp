@@ -94,6 +94,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
     val state = mutable.asStateFlow()
     private var work: Job? = null
     private var version = 0
+    // Inference revisions belong to this model instance, including after rotation.
+    var recordedResultRevision: Int = -1
 
     fun clear() {
         version++

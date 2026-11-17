@@ -273,7 +273,7 @@ class GlyphReferenceWorkflowTest {
         }
         compose.onNodeWithContentDescription("Next page").performClick()
         compose.onNodeWithText("2").assertExists()
-        compose.onNodeWithText("Search meaning, reading or number").performTextInput(ref.english)
+        compose.onNodeWithText("Search meaning, reading or number").performTextInput(ref.twkmSign.toString())
         compose.onNodeWithText("Search meaning, reading or number").performImeAction()
         compose.waitUntil(20_000) {
             compose.onAllNodesWithContentDescription("Reference drawing for ${ref.english}")
@@ -287,12 +287,18 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("Drawing 1 of $count").assertExists()
         compose.onNodeWithContentDescription("Next drawing").performClick()
         compose.onNodeWithText("Drawing 2 of $count").assertExists()
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithContentDescription("Reference drawing for ${ref.english}").fetchSemanticsNodes().isNotEmpty()
+        }
         screenshot("dictionary-enlarged-reference", dialog = true)
         compose.onNodeWithText("Close").performClick()
         compose.onNodeWithText("Syllables").performClick()
         compose.waitForIdle()
         val syllable=sounds.syllables.first()
         compose.onNodeWithText(syllable).performScrollTo()
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithContentDescription("Reference drawing for $syllable").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithContentDescription("Reference drawing for $syllable", useUnmergedTree = true)
             .assertHeightIsAtLeast(120.dp)
         screenshot("dictionary-large-syllables")
@@ -321,8 +327,9 @@ class GlyphReferenceWorkflowTest {
         try { file.outputStream().use { rotated.compress(Bitmap.CompressFormat.PNG,100,it) } }
         finally { if(rotated!==original)rotated.recycle();original.recycle() }
         val model=GlyphRecognitionViewModel(context.applicationContext as Application)
+        val recorded=java.util.concurrent.atomic.AtomicInteger()
         compose.setContent { MayaTranslateTheme { GlyphPhotoScreen(
-            onRecordGlyphScan={_,_->},onToggleGlyphFavorite={},savedGlyphIds=emptySet(),
+            onRecordGlyphScan={_,_->recorded.incrementAndGet()},onToggleGlyphFavorite={},savedGlyphIds=emptySet(),
             onOpenHistory={},onOpenFavourites={},glyphModel=model) } }
         compose.onAllNodesWithText("Single glyph").assertCountEquals(0)
         val uri=FileProvider.getUriForFile(context,"${context.packageName}.fileprovider",file)
@@ -342,6 +349,21 @@ class GlyphReferenceWorkflowTest {
             compose.onAllNodesWithContentDescription("Reference drawing for $reading").fetchSemanticsNodes().isNotEmpty()
         }
         screenshot("scanner-simple-nearest-results")
+        compose.waitUntil(20_000) { recorded.get()==1 }
+        val exactPhoto=words.imageFor(words.references.first { it.twkmSign==32 })
+        try { file.outputStream().use { exactPhoto.compress(Bitmap.CompressFormat.PNG,100,it) } }
+        finally { exactPhoto.recycle() }
+        compose.runOnIdle { model.load(uri) }
+        compose.waitUntil(30_000) { model.state.value.bitmap!=null && !model.state.value.busy }
+        compose.onAllNodes(numericSimilarity).assertCountEquals(0)
+        compose.onNodeWithText("Single glyph").performScrollTo().performClick()
+        compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
+        compose.onNodeWithText("Reference drawing matched").performScrollTo().assertExists()
+        compose.onAllNodesWithText("No exact match found").assertCountEquals(0)
+        compose.onAllNodesWithText("Nearest references").assertCountEquals(0)
+        compose.onAllNodes(numericSimilarity).assertCountEquals(1)
+        compose.waitUntil(20_000) { recorded.get()==2 }
+        screenshot("scanner-exact-reference")
         file.delete()
     }
 

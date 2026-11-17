@@ -14,7 +14,6 @@ import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -75,7 +74,6 @@ internal fun GlyphPhotoScreen(
     val context=LocalContext.current
     val state by glyphModel.state.collectAsStateWithLifecycle()
     val mode=state.activeMode
-    var recordedRevision by rememberSaveable { mutableIntStateOf(-1) }
     var savedScan by remember { mutableStateOf<TranslationRecord?>(null) }
     var saveError by remember { mutableStateOf<String?>(null) }
     var showCamera by remember { mutableStateOf(false) }
@@ -100,8 +98,7 @@ internal fun GlyphPhotoScreen(
     val completed=!state.busy && state.bitmap!=null &&
         ((mode=="single" && state.referenceMatches!=null) || (mode=="multiple" && state.multiple.isNotEmpty()))
     LaunchedEffect(completed,state.resultRevision) {
-        if(!completed || recordedRevision==state.resultRevision)return@LaunchedEffect
-        recordedRevision=state.resultRevision
+        if(!completed || glyphModel.recordedResultRevision==state.resultRevision)return@LaunchedEffect
         val image=state.bitmap ?: return@LaunchedEffect
         val request=state.resultRevision
         try {
@@ -117,10 +114,13 @@ internal fun GlyphPhotoScreen(
                     scanKind=if(mode=="multiple")"BLOCKS" else "WORD_SIGN",
                     regionCount=if(mode=="multiple")state.multiple.size else 1)
             }
-            if(request==glyphModel.state.value.resultRevision && !glyphModel.state.value.busy)onRecordGlyphScan(capture) { record ->
-                if(request==glyphModel.state.value.resultRevision && !glyphModel.state.value.busy) {
-                    savedScan=record
-                    if(record==null)saveError="The result is ready, but it could not be saved to history."
+            if(request==glyphModel.state.value.resultRevision && !glyphModel.state.value.busy) {
+                glyphModel.recordedResultRevision=request
+                onRecordGlyphScan(capture) { record ->
+                    if(request==glyphModel.state.value.resultRevision && !glyphModel.state.value.busy) {
+                        savedScan=record
+                        if(record==null)saveError="The result is ready, but it could not be saved to history."
+                    }
                 }
             }
         } catch(cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }

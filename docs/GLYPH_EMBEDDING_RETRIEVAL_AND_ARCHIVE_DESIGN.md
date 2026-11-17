@@ -103,7 +103,7 @@ gradle testDebugUnitTest assembleDebug
 ```
 
 Validation in this workspace: `testDebugUnitTest assembleDebug` passed;
-153 tests across 30 suites, zero failures/errors/skips. This includes embedding
+162 JVM tests, zero failures/errors/skips. This includes embedding
 normalization/polarity, artwork-row ranking, distinct identities, uncertainty
 alternatives, and capture-hint tests.
 
