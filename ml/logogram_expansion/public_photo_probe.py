@@ -11,6 +11,14 @@ import time
 import urllib.parse
 import urllib.request
 
+PINNED_PHOTO_SHA256 = {
+    "carlos-seven-ajaw": "353e476b612dee99be429521f99de6c18f9c2f25987fca9f25c200ab353013a3",
+    "inah-ceramic": "45d808207ac93552dde9017fe49e3b4769e9e2fe90ad4f74465d1e75a22ddeeb",
+    "palenque-head": "6e60ac210fad17fa80c10437918797d317f4ad26411de087a7ee648a8547b7d2",
+    "princeton-ajaw": "99a0ae2a1c43c9c431703d593f1d2cbdbaa6ebffe29b5c6d5c9bf62330ee5e09",
+    "palenque-stone": "bf861cb11810004d0372e8b51f00268a83cb692a6be8825ecd25a1f1a52c9819"
+}
+
 def samples():
     rows = [
         dict(id="princeton-ajaw", source_group="princeton-y1983-51",
@@ -64,6 +72,8 @@ def prepare(root):
                 if attempt == 3:
                     raise
                 time.sleep(2 ** attempt)
+        if hashlib.sha256(data).hexdigest() != PINNED_PHOTO_SHA256[row["id"]]:
+            raise ValueError("Source photo bytes changed; review provenance before updating the pinned hash: " + row["id"])
         path = root / row["file"]
         path.write_bytes(data)
         with Image.open(path) as image:

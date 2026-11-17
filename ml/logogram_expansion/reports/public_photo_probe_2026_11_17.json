@@ -1,0 +1,177 @@
+{
+  "format_version": 1,
+  "evaluated_code_commit": "e0f8a4ecfa835211982673d02c136bc41f2c3818",
+  "workflow_run": "https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/44050289923",
+  "full_report_and_inputs": "https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/44050289923/artifacts/14313836708",
+  "interpretation": "Pipeline integrity passed, but the source-described AJAW reading was absent from the first five results for both described objects and the additional close-up. Other photographs are unlabelled and unscored. This is not a photo-accuracy estimate.",
+  "study": "Public-photograph development probe; not expert-verified photo accuracy",
+  "inputs": 6,
+  "source_groups": 5,
+  "runtime_errors": 0,
+  "release_approved": false,
+  "cases": [
+    {
+      "id": "princeton-ajaw",
+      "source_group": "princeton-y1983-51",
+      "expected_readings": [
+        "AJAW"
+      ],
+      "label_status": "museum title; reading only, exact sign unverified",
+      "production_top5": [
+        "NAAH / NAH",
+        "K'INICH",
+        "WI'",
+        "IK'",
+        "IXIK"
+      ],
+      "research_illumination_top5": [
+        "IK'",
+        "K'INICH",
+        "AJ",
+        "K'AWIIL",
+        "ITZ'AAT"
+      ],
+      "region_proposal_count": 0,
+      "production_message": null,
+      "runtime_error": null,
+      "production_top1_contains_source_reading": false,
+      "production_top5_contains_source_reading": false,
+      "research_illumination_top1_contains_source_reading": false,
+      "research_illumination_top5_contains_source_reading": false
+    },
+    {
+      "id": "carlos-seven-ajaw",
+      "source_group": "carlos-seven-ahau-vessel",
+      "expected_readings": [
+        "AJAW"
+      ],
+      "label_status": "photographer title; reading only, exact sign unverified",
+      "production_top5": [
+        "CHAPAAT",
+        "NAL",
+        "IK'",
+        "CH'EEN",
+        "BALAM"
+      ],
+      "research_illumination_top5": [
+        "BALAM",
+        "NAL",
+        "IK'",
+        "NAAH / NAH",
+        "K'INICH"
+      ],
+      "region_proposal_count": 0,
+      "production_message": null,
+      "runtime_error": null,
+      "production_top1_contains_source_reading": false,
+      "production_top5_contains_source_reading": false,
+      "research_illumination_top1_contains_source_reading": false,
+      "research_illumination_top5_contains_source_reading": false
+    },
+    {
+      "id": "inah-ceramic",
+      "source_group": "inah-ceramic-9756961171",
+      "expected_readings": [],
+      "label_status": "no verified sign label",
+      "production_top5": [
+        "CH'EEN",
+        "NAAB",
+        "WI'",
+        "NAAB",
+        "TOK"
+      ],
+      "research_illumination_top5": [
+        "CH'EEN",
+        "IK'",
+        "K'AWIIL",
+        "K'INICH",
+        "NAL"
+      ],
+      "region_proposal_count": 0,
+      "production_message": null,
+      "runtime_error": null
+    },
+    {
+      "id": "palenque-head",
+      "source_group": "palenque-forgotten-temple-stucco",
+      "expected_readings": [],
+      "label_status": "no verified sign label",
+      "production_top5": [
+        "BALAM",
+        "IK'",
+        "YOPAAT",
+        "HA'AL",
+        "CHAN / K'IN"
+      ],
+      "research_illumination_top5": [
+        "YOPAAT",
+        "CHAN",
+        "BALAM",
+        "MIH",
+        "BULUCH / BULUK"
+      ],
+      "region_proposal_count": 0,
+      "production_message": null,
+      "runtime_error": null
+    },
+    {
+      "id": "palenque-stone",
+      "source_group": "palenque-language-glyph-15647167217",
+      "expected_readings": [],
+      "label_status": "no verified sign label",
+      "production_top5": [
+        "IK'",
+        "BALAM",
+        "CHAPAAT",
+        "YOPAAT",
+        "CHAN / K'IN"
+      ],
+      "research_illumination_top5": [
+        "YOPAAT",
+        "CHAN",
+        "K'IN",
+        "TOK",
+        "BALAM"
+      ],
+      "region_proposal_count": 0,
+      "production_message": null,
+      "runtime_error": null
+    },
+    {
+      "id": "carlos-ajaw-closeup",
+      "source_group": "carlos-seven-ahau-vessel",
+      "expected_readings": [
+        "AJAW"
+      ],
+      "label_status": "photographer title; reading only, exact sign unverified",
+      "production_top5": [
+        "WA'",
+        "WITZ",
+        "KALOOM",
+        "SIHOOM",
+        "K'AWIIL"
+      ],
+      "research_illumination_top5": [
+        "WA'",
+        "WITZ",
+        "YOPAAT",
+        "KALOOM",
+        "K'AWIIL"
+      ],
+      "region_proposal_count": 0,
+      "production_message": null,
+      "runtime_error": null,
+      "production_top1_contains_source_reading": false,
+      "production_top5_contains_source_reading": false,
+      "research_illumination_top1_contains_source_reading": false,
+      "research_illumination_top5_contains_source_reading": false
+    }
+  ],
+  "pinned_original_sha256": {
+    "carlos-seven-ajaw": "353e476b612dee99be429521f99de6c18f9c2f25987fca9f25c200ab353013a3",
+    "inah-ceramic": "45d808207ac93552dde9017fe49e3b4769e9e2fe90ad4f74465d1e75a22ddeeb",
+    "palenque-head": "6e60ac210fad17fa80c10437918797d317f4ad26411de087a7ee648a8547b7d2",
+    "princeton-ajaw": "99a0ae2a1c43c9c431703d593f1d2cbdbaa6ebffe29b5c6d5c9bf62330ee5e09",
+    "palenque-stone": "bf861cb11810004d0372e8b51f00268a83cb692a6be8825ecd25a1f1a52c9819"
+  }
+}

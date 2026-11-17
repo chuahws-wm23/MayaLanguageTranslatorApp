@@ -50,11 +50,32 @@ python ml/logogram_expansion/public_photo_probe.py --summarize public-photo-repo
 
 Use a clean staging folder; the downloader refuses to overwrite an existing
 batch. The dedicated GitHub workflow retains the exact inputs, source metadata,
-ranked candidates, normalized masks and reports for 30 days. Download-time hashes
-document the fetched versions; downloads are not yet pinned against a permanent
-museum-content snapshot.
+ranked candidates, normalized masks and reports for 30 days. Original-photo SHA-256 values are pinned to the evaluated inputs; changed
+source bytes stop staging and require provenance review. Each run also records
+the derived close-up hash.
 
 Read the actual report rather than treating a green test as accurate recognition.
 No recognition percentage, confidence threshold, independent-source accuracy or
 release approval is inferred from this small convenience sample. Artifact
 lineage relative to the original catalogue drawings has not been expert-audited.
+
+## Observed Android results — 17 November 2026
+
+The [completed probe](https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/44050289923) ran all six inputs through the production photo ViewModel with zero decoding/model-execution errors. That engineering success did **not** establish correct recognition:
+
+| Input | Source-described reading | Production first candidate | Described reading in top five |
+|---|---|---|---|
+| Princeton shell pectoral | AJAW | NAAH / NAH | No |
+| Carlos vessel, original photo | AJAW present in scene | CHAPAAT | No |
+| Carlos AJAW close-up | AJAW | WA' | No |
+| INAH ceramic glyph | Unverified | CH'EEN | Unscored |
+| Palenque stucco head | Unverified | BALAM | Unscored |
+| Palenque stone fragment | Unverified | IK' | Unscored |
+
+Both original photographs with source-described readings missed that reading, and the operator close-up also missed it. The existing illumination correction did not recover AJAW in the first five for any of these three views. This is three observations of two objects, not three independent expert-labelled tests. No overall accuracy percentage is justified. The three unlabelled photographs were not assigned invented ground truth.
+
+The automatic region chain proposed zero regions on all six inputs. Box labels are unavailable, so this is not a detection-accuracy score; automatic extraction on photographic carvings remains unestablished.
+
+**Decision:** retain the production model and ranking. Do not enable the unsuccessful illumination-control experiment, add the test photos to the reference bank, or call the photographs correctly translated. No improvement in real-photo recognition has been demonstrated. Camera recognition is not ready to be presented as reliable. The next justified model work requires expert-labelled photographic training/validation data, separate artifact groups and an untouched final photo test, as specified in the independent-photo release gate.
+
+The [full artifact](https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/44050289923/artifacts/14313836708) contains the exact photographs, crop, hashes, normalized masks, complete candidate lists and runtime reports. A compact machine-readable snapshot is stored at ml/logogram_expansion/reports/public_photo_probe_2026_11_17.json.

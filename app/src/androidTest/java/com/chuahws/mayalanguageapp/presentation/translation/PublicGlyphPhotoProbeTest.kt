@@ -14,6 +14,7 @@ import kotlinx.coroutines.withTimeout
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
@@ -27,6 +28,8 @@ class PublicGlyphPhotoProbeTest {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
         val context=instrumentation.targetContext
         val assets=instrumentation.context.assets
+        assumeTrue("No public-photo probe staged; no photograph evaluation was measured.",
+            assets.list("public_photo_probe").orEmpty().contains("manifest.json"))
         val manifestBytes=assets.open("public_photo_probe/manifest.json").use { it.readBytes() }
         val manifest=JSONObject(String(manifestBytes,Charsets.UTF_8))
         require(!manifest.getBoolean("independent_expert_verified_test"))
