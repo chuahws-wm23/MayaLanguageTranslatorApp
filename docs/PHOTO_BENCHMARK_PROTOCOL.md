@@ -42,3 +42,28 @@ For detection, supply a JSON with `format_version: 1` and an `images` list conta
 5. Promote a model only after evidence supports the change, then validate physical camera capture and live Firebase separately.
 
 No model weights or production recognition threshold are changed by this tooling pass. A specialist must provide the missing labels; the current source titles cannot support an honest identification-accuracy percentage.
+
+## Measured current baseline
+
+[Run 44123424781](https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/44123424781) evaluated commit `762f4d6bd7adab56687d73645a07bec4d6851677` with the production Android pipeline. The machine-readable result is `ml/logogram_expansion/reports/public_photo_benchmark_baseline.json`.
+
+| Slice | Inputs / artifact groups | Source reading in top 1 / 3 / 5 |
+| --- | --- | --- |
+| Source-described original photographs | 2 / 2 | 0 / 0 / 0 |
+| Operator close-up, sharing one original artifact | 1 / 1 | 0 / 0 / 0 |
+| Unlabelled original photographs | 3 / 3 | Unscored |
+
+All six inputs decoded/executed without runtime errors. The detector proposed zero regions for every input; no expert boxes are available, so no detection accuracy is reported. The illumination control also failed to recover the described reading in the top five. There is no demonstrated improvement over the earlier development probe.
+
+The emulator retrieval round-trip ranged from about 51 to 203 ms (median about 51 ms, six inputs). This includes 25 ms busy-state polling and is **not pure inference latency**, camera latency, or a physical-device performance guarantee. Do not use this tiny run to select a speed/accuracy trade-off.
+
+Decision: preserve the production model, weights, reference bank and thresholds. The concrete next data task is specialist review of the queue and collection of additional uninspected artifacts for a final test. The reviewed public objects can help development but cannot be relabelled as an untouched benchmark after inspection. Real-photo reliability remains unestablished.
+
+The committed input-manifest and runtime snapshots retain source metadata and complete production/control candidate lists, with binary mask previews omitted. Recompute the committed baseline without downloading photos:
+
+```sh
+python ml/logogram_expansion/photo_benchmark.py \
+  --manifest ml/logogram_expansion/reports/public_photo_baseline_inputs.json \
+  --report ml/logogram_expansion/reports/public_photo_baseline_runtime.json \
+  --output /tmp/public-photo-baseline.json
+```
