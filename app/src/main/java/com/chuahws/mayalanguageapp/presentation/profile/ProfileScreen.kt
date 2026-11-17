@@ -266,7 +266,10 @@ private fun ProfileOverview(
     val role = if (profile?.role == "admin") "Administrator" else "Explorer"
     AppGradientBackground {
         Column(Modifier.fillMaxSize()) {
-            ProfilePageTitle(title = "Your profile", onMenu = onOpenMenu)
+            Surface(color = MaterialTheme.colorScheme.background,
+                contentColor = MaterialTheme.colorScheme.onBackground) {
+                ProfilePageTitle(title = "Your profile", onMenu = onOpenMenu)
+            }
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -289,11 +292,11 @@ private fun ProfileOverview(
                             }
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(name, style = MaterialTheme.typography.headlineSmall, color = Color.White)
-                                Text(address.ifBlank { "Email unavailable" },
-                                    style = MaterialTheme.typography.bodyMedium, color = Color(0xFFE1E8DC))
                                 Text(role, style = MaterialTheme.typography.labelMedium, color = Color(0xFFE8D7A7))
                             }
                         }
+                        Text(address.ifBlank { "Email unavailable" },
+                            style = MaterialTheme.typography.bodyMedium, color = Color(0xFFE1E8DC))
                         TextButton(onClick = onOpenEdit, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                             colors = ButtonDefaults.textButtonColors(contentColor = Color.White)) {
                             Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(18.dp))

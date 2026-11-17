@@ -353,10 +353,10 @@ class GlyphReferenceWorkflowTest {
         val dark=mutableStateOf(false)
         var resetCount=0
         var signOutCount=0
-        compose.setContent { MayaTranslateTheme(darkTheme=dark.value) { ProfileScreen(
+        compose.setContent { MayaTranslateTheme(darkTheme=dark.value) { androidx.compose.runtime.key(dark.value) { ProfileScreen(
             profile=profile.value,email=profile.value.email,onOpenMenu={},
             onUpdateName={ profile.value=profile.value.copy(displayName=it) },
-            onResetPassword={ resetCount++ },onOpenAdmin={},onSignOut={ signOutCount++ }) } }
+            onResetPassword={ resetCount++ },onOpenAdmin={},onSignOut={ signOutCount++ }) } } }
         compose.onNodeWithText("Your profile").assertExists()
         compose.onAllNodesWithText("Admin dashboard").assertCountEquals(0)
         screenshot("profile-archive-light")
@@ -376,7 +376,12 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("About the archive").performScrollTo().performClick()
         compose.onNodeWithText("Photo recognition is experimental.",substring=true).assertExists()
         compose.onNodeWithContentDescription("Back to profile").performClick()
+        // Render the second palette with fresh nodes so screenshot capture
+        // does not omit cached child layers during an in-place theme switch.
         compose.runOnIdle { dark.value=true }
+        compose.onNodeWithText("Updated explorer").assertIsDisplayed()
+        compose.onNodeWithText("explorer@example.com").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Default profile photo").assertIsDisplayed()
         screenshot("profile-archive-dark")
         compose.onNodeWithText("Sign out").performScrollTo().performClick()
         assertEquals(1,signOutCount)
