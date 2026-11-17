@@ -7,7 +7,7 @@ This pass removes the Learn Maya hub, lessons, quizzes, number playground, progr
 - Account changes immediately clear the old profile, history, favourites and loading state. Sign-out cancels outstanding data work; a session version prevents a delayed refresh from repopulating signed-out state.
 - Saved-item and History removals reject items belonging to another account. Profile, feedback and removal callbacks ignore stale account results.
 - Deleting a History item refreshes the underlying Activity totals.
-- Registration, login and password reset trim email addresses. Validation rejects repeated `@`, whitespace inside addresses, empty domain labels and malformed domain-label boundaries. Names are trimmed before registration. Passwords are preserved verbatim.
+- Registration, login and password reset trim email addresses. Validation rejects repeated `@`, whitespace inside addresses, empty domain labels and malformed domain-label boundaries. Names are trimmed before registration. Blank passwords are rejected; valid passwords are preserved verbatim.
 
 ## Automated coverage
 
@@ -35,3 +35,7 @@ The Android workflow runs the active JVM and emulator suites and assembles the d
 - Verify administrator operations against the intended production data. Admin vocabulary editing does not edit the bundled TWKM reference artwork.
 
 These are limitations of available evidence, not claims that those workflows have been verified successfully.
+
+## Local verification
+
+`testDebugUnitTest assembleDebug assembleDebugAndroidTest`: passed, 177 JVM tests with zero failures/errors. `lintDebug`: passed, zero errors and 39 warnings (dependency updates, Compose modifier conventions, unused resources, KTX suggestions and package visibility in the retired voice screen). Emulator results are recorded by the Android checks workflow; no claim of a passing test is based on compilation alone.
