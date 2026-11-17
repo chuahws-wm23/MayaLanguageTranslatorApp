@@ -336,6 +336,7 @@ class GlyphReferenceWorkflowTest {
         compose.runOnIdle { model.load(uri) }
         compose.waitUntil(30_000) { model.state.value.bitmap!=null && !model.state.value.busy }
         compose.onNodeWithText("Multiple glyphs").assertExists()
+        screenshot("scanner-photo-mode-selection")
         compose.onNodeWithText("Single glyph").performScrollTo().performClick()
         compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
         compose.onNodeWithText("No exact match found").performScrollTo().assertExists()
@@ -348,6 +349,7 @@ class GlyphReferenceWorkflowTest {
         compose.waitUntil(20_000) {
             compose.onAllNodesWithContentDescription("Reference drawing for $reading").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onAllNodesWithContentDescription("Reference drawing for $reading")[0].performScrollTo()
         screenshot("scanner-simple-nearest-results")
         compose.waitUntil(20_000) { recorded.get()==1 }
         val exactPhoto=words.imageFor(words.references.first { it.twkmSign==32 })

@@ -143,6 +143,7 @@ internal fun GlyphPhotoScreen(
                     }
                     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                         Button(onClick={gallery.launch("image/*")},enabled=!state.busy,
+                            contentPadding=PaddingValues(horizontal=12.dp,vertical=12.dp),
                             modifier=Modifier.weight(1f).heightIn(min=52.dp)) {
                             Icon(Icons.Rounded.PhotoLibrary,contentDescription=null,modifier=Modifier.size(20.dp))
                             Spacer(Modifier.width(8.dp));Text(if(state.bitmap==null)"Gallery" else "Change")
@@ -150,7 +151,8 @@ internal fun GlyphPhotoScreen(
                         OutlinedButton(onClick={
                             if(ContextCompat.checkSelfPermission(context,Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED)
                                 showCamera=true else permission.launch(Manifest.permission.CAMERA)
-                        },enabled=hasCamera && !state.busy,modifier=Modifier.weight(1f).heightIn(min=52.dp)) {
+                        },enabled=hasCamera && !state.busy,contentPadding=PaddingValues(horizontal=12.dp,vertical=12.dp),
+                            modifier=Modifier.weight(1f).heightIn(min=52.dp)) {
                             Icon(Icons.Rounded.CameraAlt,contentDescription=null,modifier=Modifier.size(20.dp))
                             Spacer(Modifier.width(8.dp));Text("Camera")
                         }
