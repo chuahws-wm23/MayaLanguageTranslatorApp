@@ -39,8 +39,8 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints:
             else -> {
                 Surface(color=MaterialTheme.colorScheme.tertiaryContainer,shape=MaterialTheme.shapes.large) {
                     Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
-                        Text("No exact match found",style=MaterialTheme.typography.titleLarge)
-                        Text("The drawings below are the nearest visual alternatives, not confirmed identifications.",
+                        Text("Closest reference found",style=MaterialTheme.typography.titleLarge)
+                        Text("Compare your glyph with the references below. Visual similarity does not confirm its identity.",
                             style=MaterialTheme.typography.bodyMedium)
                     }
                 }

@@ -502,7 +502,7 @@ class GlyphReferenceWorkflowTest {
         screenshot("scanner-photo-mode-selection")
         compose.onNodeWithText("Single glyph").performScrollTo().performClick()
         compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
-        compose.onNodeWithText("No exact match found").performScrollTo().assertExists()
+        compose.onNodeWithText("Closest reference found").performScrollTo().assertExists()
         compose.onNodeWithText("Nearest references").assertExists()
         compose.onAllNodes(numericSimilarity).assertCountEquals(5)
         compose.onAllNodesWithText("Frame your glyph").assertCountEquals(0)
@@ -524,7 +524,7 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("Single glyph").performScrollTo().performClick()
         compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
         compose.onNodeWithText("Reference drawing matched").performScrollTo().assertExists()
-        compose.onAllNodesWithText("No exact match found").assertCountEquals(0)
+        compose.onAllNodesWithText("Closest reference found").assertCountEquals(0)
         compose.onAllNodesWithText("Nearest references").assertCountEquals(0)
         compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         compose.waitUntil(20_000) { recorded.get()==2 }

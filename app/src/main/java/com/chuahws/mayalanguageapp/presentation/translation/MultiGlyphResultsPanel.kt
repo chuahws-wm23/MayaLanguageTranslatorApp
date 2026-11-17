@@ -74,7 +74,7 @@ internal fun MultiGlyphResultsPanel(
                     modifier = Modifier.fillMaxWidth().height(176.dp).padding(12.dp), contentScale = ContentScale.Fit)
             }
             if (item.englishMatches.isEmpty()) {
-                Text("No exact match found", style = MaterialTheme.typography.titleLarge)
+                Text("No readable glyph found", style = MaterialTheme.typography.titleLarge)
                 Text(item.note.ifBlank {
                     "No readable reference comparison is available for this region. Try a clearer photo with separated glyphs."
                 }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
