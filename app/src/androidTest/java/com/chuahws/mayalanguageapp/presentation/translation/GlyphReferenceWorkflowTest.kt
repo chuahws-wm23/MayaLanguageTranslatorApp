@@ -54,20 +54,20 @@ class GlyphReferenceWorkflowTest {
                 onRemove = { removals++; saved.value = emptyList() }, onTranslate = {})
         } }
         compose.onNodeWithText("Search favourite glyphs or words").performTextInput("missing")
-        compose.onAllNodesWithText("Validation favourite").assertCountEquals(0)
+        compose.onAllNodesWithText("Possible: Validation favourite (unverified)").assertCountEquals(0)
         compose.onNodeWithContentDescription("Clear search").performClick()
-        compose.onNodeWithText("Validation favourite").performClick()
+        compose.onNodeWithText("Possible: Validation favourite (unverified)").performClick()
         compose.onNodeWithText("Saved Maya glyph").assertIsDisplayed()
         compose.onNodeWithText("Delete").performClick()
         compose.onNodeWithText("Remove favourite glyph?").assertIsDisplayed()
         compose.onNodeWithText("Cancel").performClick()
         assertEquals(0, removals)
-        compose.onNodeWithText("Validation favourite").performClick()
+        compose.onNodeWithText("Possible: Validation favourite (unverified)").performClick()
         compose.onNodeWithText("Delete").performClick()
         compose.onNodeWithText("Remove", substring = false).performClick()
         compose.waitForIdle()
         assertEquals(1, removals)
-        compose.onAllNodesWithText("Validation favourite").assertCountEquals(0)
+        compose.onAllNodesWithText("Possible: Validation favourite (unverified)").assertCountEquals(0)
     }
 
     @Test fun feedbackRequiresRatingAndResetsOnlyAfterConfirmedSuccess() {
