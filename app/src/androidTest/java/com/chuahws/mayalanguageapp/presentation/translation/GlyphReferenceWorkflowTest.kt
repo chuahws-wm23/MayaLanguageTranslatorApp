@@ -73,8 +73,9 @@ class GlyphReferenceWorkflowTest {
         learningText("Challenge").performClick()
         learningText("Check number").performClick()
         learningText("Keep trying").assertIsDisplayed()
-        learningText("+ twenty").performClick()
-        repeat(6) { learningText("− one").performClick() }
+        repeat(3) { learningText("− one").performClick() }
+        learningText("− one").assertIsNotEnabled()
+        repeat(17) { learningText("+ one").performClick() }
         learningText("Check number").performClick()
         learningText("Correct — you built 37").assertIsDisplayed()
         screenshot("learning-number-challenge")
