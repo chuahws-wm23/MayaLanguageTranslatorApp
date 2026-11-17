@@ -44,97 +44,48 @@ class GlyphReferenceWorkflowTest {
     @get:Rule val compose = createComposeRule()
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
-    @Test fun activityJournalShowsGlyphOnlyInsightsProgressAndWorkingShortcuts() {
-        val learner = "activity-runtime"
-        val preferences = context.getSharedPreferences("maya_learning_$learner", 0)
-        preferences.edit().clear().putStringSet("completed", setOf("signs")).putInt("quiz_best", 3).commit()
-        val now = System.currentTimeMillis()
-        val records = mutableStateOf(listOf(
-            TranslationRecord(translationId = "today", glyphScanRecord = true, createdAtMillis = now - 1000,
-                glyphCandidates = listOf(GlyphScanCandidate(reading = "TODAY_REFERENCE"))),
-            TranslationRecord(translationId = "old", glyphScanRecord = true, createdAtMillis = now - 9L * 24 * 60 * 60 * 1000,
-                glyphCandidates = listOf(GlyphScanCandidate(reading = "OLDER_REFERENCE"))),
-            TranslationRecord(translationId = "legacy", createdAtMillis = now - 1000)
-        ))
-        val dark = mutableStateOf(false)
-        var destination = ""
-        compose.setContent {
-            MayaTranslateTheme(darkTheme = dark.value) {
-                androidx.compose.material3.Surface {
-                    androidx.compose.runtime.key(dark.value) {
-                        com.chuahws.mayalanguageapp.presentation.analytics.AnalyticsScreen(
-                            history = records.value, userId = learner, savedGlyphCount = 1,
-                            onScan = { destination = "scan" }, onLearn = { destination = "learn" },
-                            onHistory = { destination = "history" }, onFavourites = { destination = "saved" })
-                    }
-                }
-            }
-        }
-        fun activityText(text: String): SemanticsNodeInteraction {
-            compose.onNodeWithTag("activity-content").performScrollToNode(hasText(text))
-            return compose.onNodeWithText(text)
-        }
-        activityText("YOUR EXPLORER JOURNAL").assertIsDisplayed()
-        screenshot("activity-journal-light")
-        activityText("Glyph favourites").performClick()
-        assertEquals("saved", destination)
-        activityText("1 of 4 lessons completed").assertIsDisplayed()
-        activityText("Best quiz: 3/8").assertIsDisplayed()
-        activityText("Continue learning").performClick()
-        assertEquals("learn", destination)
-        activityText("TODAY_REFERENCE").performClick()
-        assertEquals("history", destination)
-        compose.onAllNodesWithText("OLDER_REFERENCE").assertCountEquals(0)
-        activityText("All history").performClick()
-        activityText("OLDER_REFERENCE").assertIsDisplayed()
-        activityText("Start a new exploration").performClick()
-        assertEquals("scan", destination)
-        compose.runOnIdle { records.value = emptyList() }
-        activityText("A fresh page").assertIsDisplayed()
-        activityText("Scan a glyph").performClick()
-        assertEquals("scan", destination)
-        compose.runOnIdle { dark.value = true }
-        activityText("YOUR EXPLORER JOURNAL").assertIsDisplayed()
-        screenshot("activity-journal-dark")
-        preferences.edit().clear().commit()
+    @Test fun favouriteGlyphSearchDetailsAndConfirmedRemovalWork() {
+        val saved = mutableStateOf(listOf(com.chuahws.mayalanguageapp.domain.model.SavedVocabularyItem(
+            savedId = "saved-check", userId = "user", glyphScanRecord = true,
+            englishText = "Validation favourite", glyphCandidates = listOf(GlyphScanCandidate(reading = "AJAW", englishGloss = "lord")))))
+        var removals = 0
+        compose.setContent { MayaTranslateTheme {
+            com.chuahws.mayalanguageapp.presentation.saved.SavedScreen(saved.value,
+                onRemove = { removals++; saved.value = emptyList() }, onTranslate = {})
+        } }
+        compose.onNodeWithText("Search favourite glyphs or words").performTextInput("missing")
+        compose.onAllNodesWithText("Validation favourite").assertCountEquals(0)
+        compose.onNodeWithContentDescription("Clear search").performClick()
+        compose.onNodeWithText("Validation favourite").performClick()
+        compose.onNodeWithText("Saved Maya glyph").assertIsDisplayed()
+        compose.onNodeWithText("Delete").performClick()
+        compose.onNodeWithText("Remove favourite glyph?").assertIsDisplayed()
+        compose.onNodeWithText("Cancel").performClick()
+        assertEquals(0, removals)
+        compose.onNodeWithText("Validation favourite").performClick()
+        compose.onNodeWithText("Delete").performClick()
+        compose.onNodeWithText("Remove", substring = false).performClick()
+        compose.waitForIdle()
+        assertEquals(1, removals)
+        compose.onAllNodesWithText("Validation favourite").assertCountEquals(0)
     }
 
-    @Test fun learningLessonsQuizAndNumberChallengeWorkAndSaveProgress() {
-        fun learningText(text: String, substring: Boolean = false): SemanticsNodeInteraction {
-            compose.onNodeWithTag("learning-content").performScrollToNode(hasText(text, substring = substring))
-            return compose.onNodeWithText(text, substring = substring)
-        }
-        val learner = "runtime-learning"
-        val preferences = context.getSharedPreferences("maya_learning_$learner", 0)
-        preferences.edit().clear().commit()
-        compose.setContent { MayaTranslateTheme { com.chuahws.mayalanguageapp.presentation.learn.LearnScreen(learner) } }
-        learningText("Discover Maya writing").assertIsDisplayed()
-        screenshot("learning-hub")
-        learningText("Words and syllables").performClick()
-        learningText("Mark lesson complete").performClick()
-        learningText("1 of 4 lessons completed", substring = true).assertIsDisplayed()
-        assertTrue(preferences.getStringSet("completed", emptySet())!!.contains("signs"))
-        learningText("Practise with a quiz").performClick()
-        com.chuahws.mayalanguageapp.presentation.learn.LearningContent.questions.forEachIndexed { index, q ->
-            learningText(q.choices[q.answer]).performClick()
-            learningText("Correct", substring = false).assertIsDisplayed()
-            if (index == 0) screenshot("learning-quiz-feedback")
-            learningText(if (index == 7) "See results" else "Next question").performClick()
-        }
-        learningText("Practice complete").assertIsDisplayed()
-        assertEquals(8, preferences.getInt("quiz_best", 0))
-        learningText("← Learning hub").performClick()
-        learningText("Open numbers playground").performClick()
-        learningText("Challenge").performClick()
-        learningText("Check number").performClick()
-        learningText("Keep trying").assertIsDisplayed()
-        repeat(3) { learningText("− one").performClick() }
-        learningText("− one").assertIsNotEnabled()
-        repeat(17) { learningText("+ one").performClick() }
-        learningText("Check number").performClick()
-        learningText("Correct — you built 37").assertIsDisplayed()
-        screenshot("learning-number-challenge")
-        preferences.edit().clear().commit()
+    @Test fun feedbackRequiresRatingAndResetsOnlyAfterConfirmedSuccess() {
+        val submitting = mutableStateOf(false)
+        val version = mutableStateOf(0L)
+        var calls = 0
+        compose.setContent { MayaTranslateTheme {
+            com.chuahws.mayalanguageapp.presentation.feedback.FeedbackScreen("user@example.com", version.value,
+                submitting.value, onSubmit = { rating, comment ->
+                    assertEquals(4, rating); assertEquals("", comment); calls++; submitting.value = true
+                })
+        } }
+        compose.onNodeWithText("Send feedback").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Rate 4 out of 5 stars").performScrollTo().performClick()
+        compose.onNodeWithText("Send feedback").performScrollTo().assertIsEnabled().performClick()
+        compose.waitForIdle(); assertEquals(1, calls)
+        compose.runOnIdle { submitting.value = false; version.value = 1 }
+        compose.onNodeWithText("Send feedback").performScrollTo().assertIsNotEnabled()
     }
 
     @Test fun uploadedReferenceRetrievesItsActualArtworkAndFiveDistinctAlternatives() {

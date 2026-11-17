@@ -67,7 +67,6 @@ fun HomeScreen(
     onDictionary: () -> Unit,
     onProfile: () -> Unit,
     recentScans: List<TranslationRecord> = emptyList(),
-    onLearn: () -> Unit = {},
 ) {
     AppGradientBackground {
         LazyColumn(
@@ -90,18 +89,6 @@ fun HomeScreen(
                 HeroCard(
                     onClick = onImageTranslation,
                 )
-            }
-
-            item {
-                Card(onClick = onLearn, modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                    Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("LEARN · EXPLORE · PRACTISE", style = MaterialTheme.typography.labelLarge)
-                        Text("Discover Maya writing", style = MaterialTheme.typography.headlineSmall)
-                        Text("Short lessons, quizzes and an interactive numbers playground.")
-                        Text("Start learning →", fontWeight = FontWeight.Bold)
-                    }
-                }
             }
 
             if (recentScans.isNotEmpty()) {
@@ -165,7 +152,7 @@ fun HomeScreen(
                     ),
                     right = Feature(
                         title = "My activity",
-                        subtitle = "Scans and learning",
+                        subtitle = "See your progress",
                         icon = Icons.Rounded.Analytics,
                         color = MayaGreen,
                         onClick = onAnalytics,

@@ -90,8 +90,8 @@ class AuthViewModel(
         viewModelScope.launch {
             runCatching {
                 val user = authRepository.register(
-                    displayName = state.displayName,
-                    email = state.email,
+                    displayName = state.displayName.trim(),
+                    email = state.email.trim(),
                     password = state.password,
                 )
 
@@ -162,7 +162,7 @@ class AuthViewModel(
         viewModelScope.launch {
             runCatching {
                 val user = authRepository.login(
-                    state.email,
+                    state.email.trim(),
                     state.password,
                 )
 
@@ -217,7 +217,7 @@ class AuthViewModel(
     fun sendPasswordReset() {
         if (_uiState.value.loading) return
 
-        val email = _uiState.value.email
+        val email = _uiState.value.email.trim()
 
         if (!isValidEmail(email)) {
             _uiState.update {
@@ -317,10 +317,14 @@ class AuthViewModel(
 
     private fun isValidEmail(value: String): Boolean {
         val trimmed = value.trim()
-        val atIndex = trimmed.indexOf('@')
-        return atIndex > 0 &&
-            atIndex < trimmed.lastIndex &&
-            trimmed.substring(atIndex + 1)
-                .contains('.')
+        if (trimmed.any(Char::isWhitespace)) return false
+        val parts = trimmed.split('@')
+        if (parts.size != 2 || parts[0].isBlank()) return false
+        if (parts[0].startsWith('.') || parts[0].endsWith('.') || ".." in parts[0]) return false
+        val labels = parts[1].split('.')
+        return labels.size >= 2 && labels.all { label ->
+            label.isNotEmpty() && label.first().isLetterOrDigit() && label.last().isLetterOrDigit() &&
+                label.all { it.isLetterOrDigit() || it == '-' }
+        }
     }
 }

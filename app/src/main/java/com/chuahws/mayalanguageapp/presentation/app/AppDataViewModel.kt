@@ -14,6 +14,7 @@ import com.chuahws.mayalanguageapp.domain.repository.UserDataRepository
 import com.chuahws.mayalanguageapp.domain.repository.UserProfileRepository
 import com.chuahws.mayalanguageapp.domain.service.TextNormalizer
 import java.util.UUID
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,7 @@ class AppDataViewModel(
     private val dictionaryRepository: DictionaryRepository,
 ) : ViewModel() {
 
+    private var sessionVersion = 0L
     private val savingEntryIds = mutableSetOf<String>()
     private val removingSavedIds = mutableSetOf<String>()
     private val togglingGlyphIds = mutableSetOf<String>()
@@ -43,18 +45,23 @@ class AppDataViewModel(
             return
         }
 
-        _uiState.update {
-            it.copy(userId = userId)
-        }
+        if (_uiState.value.userId != userId) clearUser()
+        _uiState.update { it.copy(userId = userId) }
         refresh()
     }
 
     fun clearUser() {
+        sessionVersion++
+        viewModelScope.coroutineContext.cancelChildren()
+        savingEntryIds.clear()
+        removingSavedIds.clear()
+        togglingGlyphIds.clear()
         _uiState.value = AppUiState()
     }
 
     fun refresh() {
         val userId = _uiState.value.userId ?: return
+        val session = sessionVersion
         if (_uiState.value.loading) return
 
         _uiState.update {
@@ -89,6 +96,7 @@ class AppDataViewModel(
                     )
                 }
             }.onSuccess { loaded ->
+                if (session != sessionVersion) return@launch
                 _uiState.update {
                     it.copy(
                         profile = loaded.profile,
@@ -100,6 +108,7 @@ class AppDataViewModel(
                     )
                 }
             }.onFailure {
+                if (session != sessionVersion) return@launch
                 _uiState.update {
                     it.copy(
                         loading = false,
@@ -343,6 +352,9 @@ class AppDataViewModel(
     }
 
     fun removeSaved(item: SavedVocabularyItem) {
+        val userId = _uiState.value.userId ?: return
+        val session = sessionVersion
+        if (item.userId != userId) return
         if (!removingSavedIds.add(item.savedId)) {
             return
         }
@@ -353,6 +365,7 @@ class AppDataViewModel(
                     item.savedId
                 )
             }.onSuccess {
+                if (_uiState.value.userId != userId || session != sessionVersion) return@launch
                 _uiState.update {
                     it.copy(
                         message =
@@ -360,7 +373,9 @@ class AppDataViewModel(
                     )
                 }
                 refresh()
-            }.onFailure(::showError)
+            }.onFailure { error ->
+                if (_uiState.value.userId == userId && session == sessionVersion) showError(error)
+            }
 
             removingSavedIds.remove(item.savedId)
         }
@@ -368,6 +383,8 @@ class AppDataViewModel(
 
     fun deleteHistory(record: TranslationRecord) {
         val userId = _uiState.value.userId ?: return
+        val session = sessionVersion
+        if (record.userId != userId) return
 
         viewModelScope.launch {
             runCatching {
@@ -376,6 +393,7 @@ class AppDataViewModel(
                     userId = userId,
                 )
             }.onSuccess {
+                if (_uiState.value.userId != userId || session != sessionVersion) return@launch
                 _uiState.update {
                     it.copy(
                         history = it.history.filterNot { item ->
@@ -386,12 +404,18 @@ class AppDataViewModel(
                             "Translation removed from history.",
                     )
                 }
-            }.onFailure(::showError)
+                refresh()
+            }.onFailure { error ->
+                if (_uiState.value.userId == userId && session == sessionVersion) showError(error)
+            }
         }
     }
 
     fun updateDisplayName(displayName: String) {
         val profile = _uiState.value.profile ?: return
+        val userId = _uiState.value.userId ?: return
+        val session = sessionVersion
+        if (profile.userId != userId) return
         val cleanName = displayName.trim()
 
         if (cleanName.length < 2) {
@@ -414,13 +438,16 @@ class AppDataViewModel(
             runCatching {
                 userProfileRepository.updateProfile(updated)
             }.onSuccess {
+                if (_uiState.value.userId != userId || session != sessionVersion) return@launch
                 _uiState.update {
                     it.copy(
                         profile = updated,
                         message = "Profile updated.",
                     )
                 }
-            }.onFailure(::showError)
+            }.onFailure { error ->
+                if (_uiState.value.userId == userId && session == sessionVersion) showError(error)
+            }
         }
     }
 
@@ -434,6 +461,7 @@ class AppDataViewModel(
         }
 
         val userId = _uiState.value.userId ?: return
+        val session = sessionVersion
         val cleanComment = comment.trim()
 
         // Always require a star rating, but allow rating-only feedback.
@@ -470,6 +498,7 @@ class AppDataViewModel(
             runCatching {
                 userDataRepository.submitFeedback(item)
             }.onSuccess {
+                if (_uiState.value.userId != userId || session != sessionVersion) return@launch
                 _uiState.update {
                     it.copy(
                         message =
@@ -481,6 +510,7 @@ class AppDataViewModel(
                 }
                 refresh()
             }.onFailure {
+                if (_uiState.value.userId != userId || session != sessionVersion) return@launch
                 _uiState.update { state ->
                     state.copy(
                         feedbackSubmitting = false,
