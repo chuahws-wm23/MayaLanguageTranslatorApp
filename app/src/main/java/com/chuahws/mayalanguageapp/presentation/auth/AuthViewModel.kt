@@ -306,8 +306,8 @@ class AuthViewModel(
         !isValidEmail(state.email) ->
             "Enter a valid email address."
 
-        state.password.length < 6 ->
-            "Password must contain at least six characters."
+        state.password.isBlank() || state.password.length < 6 ->
+            "Password must contain at least six characters and cannot be blank."
 
         state.password != state.confirmPassword ->
             "The passwords do not match."
