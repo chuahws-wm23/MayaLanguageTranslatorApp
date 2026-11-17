@@ -45,34 +45,38 @@ class GlyphReferenceWorkflowTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun learningLessonsQuizAndNumberChallengeWorkAndSaveProgress() {
+        fun learningText(text: String, substring: Boolean = false): SemanticsNodeInteraction {
+            compose.onNodeWithTag("learning-content").performScrollToNode(hasText(text, substring = substring))
+            return compose.onNodeWithText(text, substring = substring)
+        }
         val learner = "runtime-learning"
         val preferences = context.getSharedPreferences("maya_learning_$learner", 0)
         preferences.edit().clear().commit()
         compose.setContent { MayaTranslateTheme { com.chuahws.mayalanguageapp.presentation.learn.LearnScreen(learner) } }
-        compose.onNodeWithText("Discover Maya writing").assertIsDisplayed()
+        learningText("Discover Maya writing").assertIsDisplayed()
         screenshot("learning-hub")
-        compose.onNodeWithText("Words and syllables").performScrollTo().performClick()
-        compose.onNodeWithText("Mark lesson complete").performScrollTo().performClick()
-        compose.onNodeWithText("1 of 4 lessons completed", substring = true).performScrollTo().assertIsDisplayed()
+        learningText("Words and syllables").performClick()
+        learningText("Mark lesson complete").performClick()
+        learningText("1 of 4 lessons completed", substring = true).assertIsDisplayed()
         assertTrue(preferences.getStringSet("completed", emptySet())!!.contains("signs"))
-        compose.onNodeWithText("Practise with a quiz").performScrollTo().performClick()
+        learningText("Practise with a quiz").performClick()
         com.chuahws.mayalanguageapp.presentation.learn.LearningContent.questions.forEachIndexed { index, q ->
-            compose.onNodeWithText(q.choices[q.answer]).performScrollTo().performClick()
-            compose.onNodeWithText("Correct", substring = false).performScrollTo().assertIsDisplayed()
+            learningText(q.choices[q.answer]).performClick()
+            learningText("Correct", substring = false).assertIsDisplayed()
             if (index == 0) screenshot("learning-quiz-feedback")
-            compose.onNodeWithText(if (index == 7) "See results" else "Next question").performScrollTo().performClick()
+            learningText(if (index == 7) "See results" else "Next question").performClick()
         }
-        compose.onNodeWithText("Practice complete").performScrollTo().assertIsDisplayed()
+        learningText("Practice complete").assertIsDisplayed()
         assertEquals(8, preferences.getInt("quiz_best", 0))
-        compose.onNodeWithText("← Learning hub").performScrollTo().performClick()
-        compose.onNodeWithText("Open numbers playground").performScrollTo().performClick()
-        compose.onNodeWithText("Challenge").performScrollTo().performClick()
-        compose.onNodeWithText("Check number").performScrollTo().performClick()
-        compose.onNodeWithText("Keep trying").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("+ twenty").performScrollTo().performClick()
-        repeat(6) { compose.onNodeWithText("− one").performScrollTo().performClick() }
-        compose.onNodeWithText("Check number").performScrollTo().performClick()
-        compose.onNodeWithText("Correct — you built 37").performScrollTo().assertIsDisplayed()
+        learningText("← Learning hub").performClick()
+        learningText("Open numbers playground").performClick()
+        learningText("Challenge").performClick()
+        learningText("Check number").performClick()
+        learningText("Keep trying").assertIsDisplayed()
+        learningText("+ twenty").performClick()
+        repeat(6) { learningText("− one").performClick() }
+        learningText("Check number").performClick()
+        learningText("Correct — you built 37").assertIsDisplayed()
         screenshot("learning-number-challenge")
         preferences.edit().clear().commit()
     }
