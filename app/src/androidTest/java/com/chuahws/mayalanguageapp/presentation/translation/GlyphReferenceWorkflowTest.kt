@@ -44,6 +44,39 @@ class GlyphReferenceWorkflowTest {
     @get:Rule val compose = createComposeRule()
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
+    @Test fun learningLessonsQuizAndNumberChallengeWorkAndSaveProgress() {
+        val learner = "runtime-learning"
+        val preferences = context.getSharedPreferences("maya_learning_$learner", 0)
+        preferences.edit().clear().commit()
+        compose.setContent { MayaTranslateTheme { com.chuahws.mayalanguageapp.presentation.learn.LearnScreen(learner) } }
+        compose.onNodeWithText("Discover Maya writing").assertIsDisplayed()
+        screenshot("learning-hub")
+        compose.onNodeWithText("Words and syllables").performScrollTo().performClick()
+        compose.onNodeWithText("Mark lesson complete").performScrollTo().performClick()
+        compose.onNodeWithText("1 of 4 lessons completed", substring = true).performScrollTo().assertIsDisplayed()
+        assertTrue(preferences.getStringSet("completed", emptySet())!!.contains("signs"))
+        compose.onNodeWithText("Practise with a quiz").performScrollTo().performClick()
+        com.chuahws.mayalanguageapp.presentation.learn.LearningContent.questions.forEachIndexed { index, q ->
+            compose.onNodeWithText(q.choices[q.answer]).performScrollTo().performClick()
+            compose.onNodeWithText("Correct", substring = false).performScrollTo().assertIsDisplayed()
+            if (index == 0) screenshot("learning-quiz-feedback")
+            compose.onNodeWithText(if (index == 7) "See results" else "Next question").performScrollTo().performClick()
+        }
+        compose.onNodeWithText("Practice complete").performScrollTo().assertIsDisplayed()
+        assertEquals(8, preferences.getInt("quiz_best", 0))
+        compose.onNodeWithText("← Learning hub").performScrollTo().performClick()
+        compose.onNodeWithText("Open numbers playground").performScrollTo().performClick()
+        compose.onNodeWithText("Challenge").performScrollTo().performClick()
+        compose.onNodeWithText("Check number").performScrollTo().performClick()
+        compose.onNodeWithText("Keep trying").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("+ twenty").performScrollTo().performClick()
+        repeat(6) { compose.onNodeWithText("− one").performScrollTo().performClick() }
+        compose.onNodeWithText("Check number").performScrollTo().performClick()
+        compose.onNodeWithText("Correct — you built 37").performScrollTo().assertIsDisplayed()
+        screenshot("learning-number-challenge")
+        preferences.edit().clear().commit()
+    }
+
     @Test fun uploadedReferenceRetrievesItsActualArtworkAndFiveDistinctAlternatives() {
         val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))

@@ -87,7 +87,10 @@ import com.chuahws.mayalanguageapp.presentation.translation.TranslationReplay
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationViewModel
 import kotlinx.coroutines.launch
 
+import com.chuahws.mayalanguageapp.presentation.learn.LearnScreen
+
 private enum class AppPage {
+    LEARN,
     HOME,
     IMAGE_TRANSLATION,
     DICTIONARY,
@@ -119,6 +122,7 @@ private val translateDrawerItems = listOf(
 )
 
 private val learnDrawerItems = listOf(
+    DrawerItem(AppPage.LEARN, "Learn Maya writing", Icons.Rounded.MenuBook),
     DrawerItem(
         AppPage.DICTIONARY,
         "Glyph dictionary",
@@ -488,6 +492,7 @@ private fun MainShell(
     }
 
     val pageTitle = when (page) {
+        AppPage.LEARN -> "Learn Maya writing"
         AppPage.HOME -> "Maya Translate"
         AppPage.IMAGE_TRANSLATION -> "Maya glyph scanner"
         AppPage.DICTIONARY -> "Glyph dictionary"
@@ -828,6 +833,7 @@ private fun MainShell(
                             onProfile = {
                                 page = AppPage.PROFILE
                             },
+                            onLearn = { page = AppPage.LEARN },
                         )
 
                     AppPage.IMAGE_TRANSLATION ->
@@ -845,6 +851,8 @@ private fun MainShell(
                             onOpenHistory = { goTo(AppPage.HISTORY) },
                             onOpenFavourites = { goTo(AppPage.SAVED) },
                         )
+
+                    AppPage.LEARN -> LearnScreen(userId = state.userId.orEmpty())
 
                     AppPage.DICTIONARY ->
                         GlyphDictionaryHubScreen()
