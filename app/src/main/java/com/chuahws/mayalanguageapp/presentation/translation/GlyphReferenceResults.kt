@@ -11,7 +11,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMatch
 
 /** Exact drawing equality is not a verified historical identification. */
 @Composable
-internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>) {
+internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints: List<String> = emptyList()) {
     val context=LocalContext.current
     val catalogue=remember(context) { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }
     val exact=matches.filter { it.identicalNormalizedDrawing }.singleOrNull()
@@ -20,6 +20,15 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>) {
             matches.isEmpty() -> {
                 Text("No readable glyph found",style=MaterialTheme.typography.headlineSmall)
                 Text("No nearest references are available for this image. Try another photo with clear, complete glyph lines.")
+                Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.large) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Photo tips", style = MaterialTheme.typography.titleMedium)
+                        photoHints.ifEmpty { listOf(
+                            "Use soft, even light and keep the camera steady.",
+                            "Include the whole glyph, with a little space around it.",
+                        ) }.distinct().take(3).forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                    }
+                }
             }
             exact!=null -> {
                 Text("Reference drawing matched",style=MaterialTheme.typography.headlineSmall)

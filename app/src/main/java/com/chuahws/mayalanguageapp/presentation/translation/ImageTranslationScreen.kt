@@ -74,6 +74,7 @@ internal fun GlyphPhotoScreen(
     val context=LocalContext.current
     val state by glyphModel.state.collectAsStateWithLifecycle()
     val mode=state.activeMode
+    var selectedRegion by remember(state.bitmap,state.resultRevision) { mutableIntStateOf(0) }
     var savedScan by remember { mutableStateOf<TranslationRecord?>(null) }
     var saveError by remember { mutableStateOf<String?>(null) }
     var showCamera by remember { mutableStateOf(false) }
@@ -137,7 +138,10 @@ internal fun GlyphPhotoScreen(
                 colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
                 Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
                     state.bitmap?.let { image ->
-                        if(mode=="multiple")GlyphRegionOverlay(image,state.multiple)
+                        if(mode=="multiple") {
+                            GlyphRegionOverlay(image,state.multiple,selectedRegion) { selectedRegion=it }
+                            if(!state.busy)GlyphRegionPicker(state.multiple,selectedRegion) { selectedRegion=it }
+                        }
                         else Image(image.asImageBitmap(),contentDescription="Selected glyph photo",
                             modifier=Modifier.fillMaxWidth().height(240.dp),contentScale=ContentScale.Fit)
                     }
@@ -184,9 +188,10 @@ internal fun GlyphPhotoScreen(
                     Text(it,Modifier.padding(16.dp),color=MaterialTheme.colorScheme.onErrorContainer)
                 }
             }
-            if(!state.busy && mode=="single")state.referenceMatches?.let { GlyphReferenceResults(it) }
+            if(!state.busy && mode=="single")state.referenceMatches?.let { GlyphReferenceResults(it,photoHints=state.referenceHints) }
             if(!state.busy && mode=="multiple" && state.multiple.isNotEmpty())state.bitmap?.let {
-                MultiGlyphResultsPanel(bitmap=it,results=state.multiple,showOverview=false)
+                MultiGlyphResultsPanel(bitmap=it,results=state.multiple,showOverview=false,
+                    selectedIndex=selectedRegion,onRegionSelected={ selectedRegion=it })
             }
             saveError?.let { Text(it,color=MaterialTheme.colorScheme.error) }
             savedScan?.let { record ->

@@ -19,14 +19,15 @@ internal object GlyphImageQuality {
                 val lum = (Color.red(p) * 77 + Color.green(p) * 150 + Color.blue(p) * 29 + 128) shr 8
                 (lum * Color.alpha(p) + 255 * (255 - Color.alpha(p)) + 127) / 255
             }
-            assess(gray, scaled.width, scaled.height)
+            assess(gray, scaled.width, scaled.height, sourceShortestSide = minOf(image.width, image.height))
         } finally { if (scaled !== image) scaled.recycle() }
     }
 
-    fun assess(gray: IntArray, width: Int, height: Int): List<String> {
+    fun assess(gray: IntArray, width: Int, height: Int, sourceShortestSide: Int = minOf(width, height)): List<String> {
         require(width > 0 && height > 0 && gray.size == width * height && gray.all { it in 0..255 })
+        require(sourceShortestSide > 0)
         val hints = mutableListOf<String>()
-        if (minOf(width, height) < 64) hints += "This crop is small. A higher-resolution image may preserve more detail."
+        if (sourceShortestSide < 64) hints += "This image is small. A higher-resolution image may preserve more detail."
         val sorted = gray.sorted()
         val low = sorted[sorted.size / 20]
         val high = sorted[(sorted.size - 1) * 19 / 20]

@@ -103,7 +103,7 @@ gradle testDebugUnitTest assembleDebug
 ```
 
 Validation in this workspace: `testDebugUnitTest assembleDebug` passed;
-162 JVM tests, zero failures/errors/skips. This includes embedding
+168 JVM tests, zero failures/errors/skips. This includes embedding
 normalization/polarity, artwork-row ranking, distinct identities, uncertainty
 alternatives, and capture-hint tests.
 
@@ -144,6 +144,29 @@ python ml/logogram_expansion/build_reference_art.py --parquet /path/to/graphs/tr
 The builder verifies each original against the existing catalogue source SHA
 and license; runtime checks each displayed file's SHA and dimensions. No pixels
 were synthesized to claim a higher source resolution.
+
+## Interactive region review
+
+In Multiple glyphs mode, tap a detected box or its numbered chip to select a
+region. The highlighted box, selected chip, preview and previous/next result
+controls share the same selection. Chips provide keyboard and screen-reader
+access; the photo exposes the selected region as its accessibility state.
+Only the selected region's comparisons are rendered. There is no manual crop UI.
+
+A shared aspect-fit transform drives both drawing and hit testing. Taps in
+letterboxing or gaps do not select unrelated boxes; nested boxes choose the
+smallest containing region. Unit tests cover landscape/portrait transforms,
+empty gutters, overlaps and invalid coordinates. Android instrumentation loads
+an actual constructed reference panel, runs detection and checks box taps,
+chip selection, previous/next navigation and blank-photo recovery.
+
+Detected-region display previews retain up to 512 pixels on their longest side
+instead of 128, without upscaling small source images or changing inference.
+Unreadable single-glyph photos receive actionable lighting/focus tips and no
+invented neighbours. Resolution hints use the loaded source dimensions rather
+than the downsampled analysis preview, so wide high-resolution photos are not
+incorrectly called small. These hints remain heuristics, not measured blur,
+unknown-sign or recognition-confidence classifiers.
 
 ## What is needed for reliable recognition
 

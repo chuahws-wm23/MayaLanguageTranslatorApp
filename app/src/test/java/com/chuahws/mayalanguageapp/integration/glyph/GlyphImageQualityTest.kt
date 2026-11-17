@@ -17,4 +17,11 @@ class GlyphImageQualityTest {
         val gray = IntArray(10000) { i -> if ((i / 100 / 10 + i % 100 / 10) % 2 == 0) 0 else 255 }
         assertTrue(GlyphImageQuality.assess(gray, 100, 100).isEmpty())
     }
+    @Test fun sourceResolutionIsNotConfusedWithDownsampledPreviewSize() {
+        val gray = IntArray(256 * 32) { i -> if ((i / 256 / 4 + i % 256 / 4) % 2 == 0) 0 else 255 }
+        assertFalse(GlyphImageQuality.assess(gray, 256, 32, sourceShortestSide = 300)
+            .any { it.contains("small") })
+        assertTrue(GlyphImageQuality.assess(gray, 256, 32, sourceShortestSide = 32)
+            .any { it.contains("small") })
+    }
 }

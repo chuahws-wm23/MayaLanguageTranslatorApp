@@ -1,5 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
+import androidx.compose.ui.geometry.Offset
 import android.graphics.Matrix
 import android.app.Application
 import android.graphics.Canvas
@@ -243,6 +244,52 @@ class GlyphReferenceWorkflowTest {
 
     }
 
+    @Test fun scannerBoxTapsAndRegionControlsStayInSync() {
+        val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val panel=Bitmap.createBitmap(400,224,Bitmap.Config.ARGB_8888)
+        val canvas=Canvas(panel);canvas.drawColor(Color.WHITE)
+        listOf(32,44).forEachIndexed { i, sign ->
+            val image=words.imageFor(words.references.first { it.twkmSign==sign })
+            try { canvas.drawBitmap(image,null,Rect(48+i*176,48,176+i*176,176),null) }
+            finally { image.recycle() }
+        }
+        val folder=File(context.cacheDir,"images").apply { mkdirs() }
+        val file=File(folder,"interactive-regions.png")
+        try { file.outputStream().use { panel.compress(Bitmap.CompressFormat.PNG,100,it) } }
+        finally { panel.recycle() }
+        val model=GlyphRecognitionViewModel(context.applicationContext as Application)
+        compose.setContent { MayaTranslateTheme { GlyphPhotoScreen(
+            onRecordGlyphScan={_,_->},onToggleGlyphFavorite={},savedGlyphIds=emptySet(),
+            onOpenHistory={},onOpenFavourites={},glyphModel=model) } }
+        try {
+            val uri=FileProvider.getUriForFile(context,"${context.packageName}.fileprovider",file)
+            compose.runOnIdle { model.load(uri) }
+            compose.waitUntil(30_000) { model.state.value.bitmap!=null && !model.state.value.busy }
+            compose.onNodeWithText("Multiple glyphs").performScrollTo().performClick()
+            compose.waitUntil(60_000) { model.state.value.multiple.size==2 && !model.state.value.busy }
+            val overlay=compose.onNodeWithContentDescription("Scan image with 2 numbered glyph boxes")
+            overlay.performScrollTo()
+            val image=requireNotNull(model.state.value.bitmap)
+            val target=model.state.value.multiple[1].region.crop
+            overlay.performTouchInput {
+                val viewport=GlyphImageViewport.fit(image.width,image.height,width.toFloat(),height.toFloat())
+                click(Offset(viewport.left+(target.left+target.right)/2*viewport.width,
+                    viewport.top+(target.top+target.bottom)/2*viewport.height))
+            }
+            overlay.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,"Region 2 selected"))
+            compose.onNodeWithContentDescription("Show region 2").assertIsSelected()
+            compose.onNodeWithContentDescription("Detected glyph region 2").assertExists()
+            screenshot("scanner-tappable-regions")
+            compose.onNodeWithContentDescription("Previous region").performScrollTo().performClick()
+            compose.onNodeWithContentDescription("Detected glyph region 1").assertExists()
+            overlay.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,"Region 1 selected"))
+            compose.onNodeWithContentDescription("Show region 2").performScrollTo().performClick()
+            compose.onNodeWithContentDescription("Detected glyph region 2").assertExists()
+            overlay.performScrollTo().performTouchInput { click(Offset(5f,5f)) }
+            overlay.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,"Region 2 selected"))
+        } finally { file.delete() }
+    }
+
     @Test fun historyShowsPictureMeaningAndSearchableScanDetails() {
         val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val reference=words.references.first { it.twkmSign==32 }
@@ -366,6 +413,18 @@ class GlyphReferenceWorkflowTest {
         compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         compose.waitUntil(20_000) { recorded.get()==2 }
         screenshot("scanner-exact-reference")
+        val blank=Bitmap.createBitmap(128,128,Bitmap.Config.ARGB_8888).apply { eraseColor(Color.WHITE) }
+        try { file.outputStream().use { blank.compress(Bitmap.CompressFormat.PNG,100,it) } }
+        finally { blank.recycle() }
+        compose.runOnIdle { model.load(uri) }
+        compose.waitUntil(30_000) { model.state.value.bitmap!=null && !model.state.value.busy }
+        compose.onNodeWithText("Single glyph").performScrollTo().performClick()
+        compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
+        compose.onNodeWithText("No readable glyph found").assertExists()
+        compose.onNodeWithText("Photo tips").performScrollTo().assertExists()
+        compose.onNodeWithText("Contrast is low.",substring=true).assertExists()
+        compose.onAllNodes(numericSimilarity).assertCountEquals(0)
+        screenshot("scanner-unreadable-photo-tips")
         file.delete()
     }
 
