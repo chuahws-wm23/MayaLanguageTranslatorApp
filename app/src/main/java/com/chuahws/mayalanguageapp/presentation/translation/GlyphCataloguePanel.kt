@@ -24,6 +24,8 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualCatalogue
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualMatch
 import com.chuahws.mayalanguageapp.integration.glyph.MayaGlyphRecognizerV4
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,6 +55,8 @@ internal fun GlyphCataloguePanel(
     var matching by remember { mutableStateOf(false) }
     var matchError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    var searchJob by remember { mutableStateOf<Job?>(null) }
+    DisposableEffect(bitmap, crop) { onDispose { searchJob?.cancel() } }
     LaunchedEffect(bitmap, crop) { matches = null; matchError = null }
 
     Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
@@ -72,14 +76,17 @@ internal fun GlyphCataloguePanel(
                             matchError = null
                             val original = bitmap
                             val selected = crop
-                            scope.launch {
+                            searchJob?.cancel()
+                            searchJob = scope.launch {
                                 try {
                                     matches = withContext(Dispatchers.Default) {
                                         val (x,y,w,h) = selected.pixels(original.width,original.height)
                                         val isolated = Bitmap.createBitmap(original,x,y,w,h)
-                                        try { catalogue.search(isolated, number = 1) }
+                                        try { catalogue.search(isolated, number = 5) }
                                         finally { if (isolated !== original) isolated.recycle() }
                                     }
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
                                 } catch (_: Exception) {
                                     matches = null
                                     matchError = "Could not compare this glyph. Select one clear sign and try again."
@@ -95,8 +102,9 @@ internal fun GlyphCataloguePanel(
                         if (results.isEmpty()) {
                             Text("No usable glyph strokes found. Try a tighter, clearer crop.")
                         } else {
-                            Text("Closest sound match", style = MaterialTheme.typography.titleMedium)
-                            CatalogueMatchRow(catalogue, results.first())
+                            Text("Nearest syllable drawings · unconfirmed", style = MaterialTheme.typography.titleMedium)
+                            Text("Appearance similarity is not recognition confidence.", style = MaterialTheme.typography.bodySmall)
+                            results.forEach { CatalogueMatchRow(catalogue, it) }
                         }
                     }
                 }
@@ -224,8 +232,10 @@ private fun CatalogueMatchRow(
                     .background(Color.White, RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Fit,
             )
+            Text("TWKM #${ref.twkmSign} · similarity %.3f".format(java.util.Locale.ROOT, match.visualSimilarity),
+                style = MaterialTheme.typography.labelMedium)
             Text(ref.syllable, style = MaterialTheme.typography.headlineSmall)
-            Text("This glyph represents the syllable ${ref.syllable}. Maya scribes combined syllable signs to spell words.")
+            Text("This reference is catalogued with the proposed syllable ${ref.syllable}. Compare it with your image before identifying the sign.")
         }
     }
 }

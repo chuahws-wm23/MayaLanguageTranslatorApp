@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.Surface
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -300,7 +301,7 @@ fun SavedScreen(
                     )
                     Text(
                         text = if (items.isEmpty()) {
-                            "Add a glyph from Scan or save a word from Dictionary."
+                            "Save a scan or vocabulary item to build your collection."
                         } else {
                             "Try another search or filter."
                         },
@@ -335,7 +336,7 @@ fun SavedScreen(
                                 containerColor = MaterialTheme.colorScheme.surface,
                             ),
                             elevation = CardDefaults.cardElevation(
-                                defaultElevation = 2.dp,
+                                defaultElevation = 0.dp,
                             ),
                         ) {
                             Row(
@@ -343,7 +344,9 @@ fun SavedScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 if (item.glyphScanRecord) {
-                                    GlyphScanThumbnail(item.glyphImageBase64, side = 70.dp)
+                                    Surface(shape = MaterialTheme.shapes.medium) {
+                                        GlyphScanThumbnail(item.glyphImageBase64, side = 96.dp)
+                                    }
                                     Spacer(Modifier.width(12.dp))
                                 }
                                 Column(
@@ -381,16 +384,10 @@ fun SavedScreen(
                                     )
                                 }
 
-                                IconButton(
-                                    onClick = {
-                                        pendingRemoval = item.savedId
-                                    },
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.DeleteOutline,
-                                        contentDescription = if (item.glyphScanRecord) "Remove saved glyph"
-                                        else "Remove saved word",
-                                    )
+                                if (!item.glyphScanRecord) {
+                                    IconButton(onClick = { pendingRemoval = item.savedId }) {
+                                        Icon(Icons.Rounded.DeleteOutline, contentDescription = "Remove saved word")
+                                    }
                                 }
                             }
                         }

@@ -1,32 +1,26 @@
 package com.chuahws.mayalanguageapp.presentation.history
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.domain.model.GlyphScanRecords
 import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
 import com.chuahws.mayalanguageapp.presentation.components.GlyphScanThumbnail
+import com.chuahws.mayalanguageapp.presentation.components.GlyphScanDetailsDialog
+import java.text.DateFormat
+import java.util.Date
 
 @Composable
 fun HistoryScreen(
@@ -35,79 +29,105 @@ fun HistoryScreen(
     savedGlyphIds: Set<String> = emptySet(),
     onToggleGlyphFavorite: (TranslationRecord) -> Unit = {},
 ) {
-    val scans = history.filter { it.glyphScanRecord && it.glyphImageBase64.isNotBlank() }
+    var query by rememberSaveable { mutableStateOf("") }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
-
+    val scans = remember(history) { history.filter { it.glyphScanRecord }.sortedByDescending { it.createdAtMillis } }
+    val filtered = remember(scans, query) {
+        val q = query.trim()
+        scans.filter { scan ->
+            q.isEmpty() || scan.glyphCandidates.any {
+                it.englishGloss.contains(q,true) || it.reading.contains(q,true) || it.twkmSign.toString().contains(q)
+            } || scan.translatedText.contains(q,true)
+        }
+    }
     scans.firstOrNull { it.translationId == selectedId }?.let { scan ->
-        val saved = GlyphScanRecords.favoriteId(scan.userId, scan.translationId) in savedGlyphIds
-        AlertDialog(
-            onDismissRequest = { selectedId = null },
-            title = { Text("Scan photo") },
-            text = {
-                GlyphScanThumbnail(scan.glyphImageBase64, modifier = Modifier.aspectRatio(1f))
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    onToggleGlyphFavorite(scan)
-                    selectedId = null
-                }) { Text(if (saved) "Remove favourite" else "Add to favourites") }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    selectedId = null
-                    pendingDeleteId = scan.translationId
-                }) { Text("Delete") }
-            },
+        val saved = GlyphScanRecords.favoriteId(scan.userId,scan.translationId) in savedGlyphIds
+        GlyphScanDetailsDialog(
+            title = "Scan details", imageBase64 = scan.glyphImageBase64,
+            candidates = scan.glyphCandidates, secondaryText = dateLabel(scan.createdAtMillis),
+            scanKind = scan.glyphScanKind, onDismiss = { selectedId = null },
+            actionLabel = if (saved) "Remove favourite" else "Save to favourites",
+            onAction = { onToggleGlyphFavorite(scan) },
+            onDelete = { selectedId = null; pendingDeleteId = scan.translationId },
         )
     }
-
     scans.firstOrNull { it.translationId == pendingDeleteId }?.let { scan ->
         AlertDialog(
             onDismissRequest = { pendingDeleteId = null },
-            title = { Text("Delete scan from History?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onDelete(scan)
-                    pendingDeleteId = null
-                }) { Text("Delete") }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingDeleteId = null }) { Text("Cancel") }
-            },
+            title = { Text("Delete this scan?") },
+            text = { Text("This removes the scan from your history.") },
+            confirmButton = { TextButton(onClick = { onDelete(scan); pendingDeleteId = null }) { Text("Delete") } },
+            dismissButton = { TextButton(onClick = { pendingDeleteId = null }) { Text("Keep scan") } },
         )
     }
-
     AppGradientBackground {
-        if (scans.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("No scans yet", style = MaterialTheme.typography.titleLarge)
-                    Text("Photos from your glyph scans will appear here.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            item {
+                Text("YOUR GLYPH JOURNAL", style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(6.dp))
+                Text("Scan history", style = MaterialTheme.typography.headlineLarge)
+                Text("Revisit the images and possible meanings you explored.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            item {
+                OutlinedTextField(value = query, onValueChange = { query = it },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                    label = { Text("Search meaning, reading or sign number") },
+                    shape = MaterialTheme.shapes.large)
+            }
+            if (filtered.isEmpty()) item {
+                Column(Modifier.fillMaxWidth().padding(vertical = 42.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(36.dp),
+                        tint = MaterialTheme.colorScheme.primary)
+                    Text(if (scans.isEmpty()) "Your first discovery starts here" else "No matching scans",
+                        style = MaterialTheme.typography.titleLarge)
+                    Text(if (scans.isEmpty()) "Save a scan to keep its picture and possible meaning together."
+                        else "Try another meaning or Maya reading.",
+                        style = MaterialTheme.typography.bodyMedium)
                 }
             }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(140.dp),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                items(scans, key = { it.translationId }) { scan ->
-                    Card(
-                        onClick = { selectedId = scan.translationId },
-                        shape = MaterialTheme.shapes.large,
-                    ) {
-                        GlyphScanThumbnail(
-                            scan.glyphImageBase64,
-                            modifier = Modifier.aspectRatio(1f),
-                        )
+            items(filtered, key = { it.translationId }) { scan ->
+                val best = scan.glyphCandidates.firstOrNull()
+                val saved = GlyphScanRecords.favoriteId(scan.userId,scan.translationId) in savedGlyphIds
+                Card(onClick = { selectedId = scan.translationId },
+                    modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = RoundedCornerShape(14.dp)) {
+                            GlyphScanThumbnail(scan.glyphImageBase64, side = 100.dp)
+                        }
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text(if (scan.glyphRegionCount > 1) "${scan.glyphRegionCount} scanned regions" else "SCANNED GLYPH",
+                                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            Text(best?.englishGloss ?: "No reliable meaning identified",
+                                style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                            best?.let { Text("${it.reading} · TWKM #${it.twkmSign}",
+                                style = MaterialTheme.typography.bodyMedium) }
+                            Text(if (best != null && scan.glyphRegionCount > 1) "First candidate · tap for all saved results"
+                                else if (best != null) "Possible meaning · unconfirmed" else "Try a clearer crop",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(dateLabel(scan.createdAtMillis), style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (saved) Icon(Icons.Rounded.Bookmark, contentDescription = "Saved to favourites",
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        }
                     }
                 }
             }
         }
     }
 }
+
+private fun dateLabel(millis: Long): String =
+    if (millis > 0) DateFormat.getDateTimeInstance(DateFormat.MEDIUM,DateFormat.SHORT).format(Date(millis))
+    else "Date unavailable"

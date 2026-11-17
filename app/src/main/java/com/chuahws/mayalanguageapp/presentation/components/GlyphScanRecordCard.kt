@@ -153,8 +153,8 @@ fun GlyphScanDetailsDialog(
                                     if (scanKind == "RESEARCH" || candidate.visualOverlap <= 0.0)
                                         "TWKM #${candidate.twkmSign} · experimental research model; " +
                                             "not verified from this photograph"
-                                    else "TWKM #${candidate.twkmSign} · ${String.format(Locale.US,"%.0f",
-                                        candidate.visualOverlap*100)}% shape resemblance " +
+                                    else "TWKM #${candidate.twkmSign} · similarity ${String.format(Locale.US,"%.3f",
+                                        candidate.visualOverlap)} " +
                                         "(NOT translation confidence)",
                                     style = MaterialTheme.typography.bodySmall,
                                 )

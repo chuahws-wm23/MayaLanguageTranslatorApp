@@ -2,6 +2,8 @@ package com.chuahws.mayalanguageapp.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,49 +33,9 @@ fun AppGradientBackground(
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer
-                            .copy(alpha = 0.42f),
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.background,
-                    ),
-                )
-            ),
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .size(220.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            MayaPurple.copy(alpha = 0.10f),
-                            Color.Transparent,
-                        ),
-                    ),
-                    CircleShape,
-                ),
-        )
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .size(180.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            MayaGreen.copy(alpha = 0.07f),
-                            Color.Transparent,
-                        ),
-                    ),
-                    CircleShape,
-                ),
-        )
-
+        // A quiet archive canvas gives the artwork and typography priority.
         content()
     }
 }
@@ -132,22 +94,11 @@ fun SectionLabel(
     subtitle: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(Modifier.weight(1f))
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         subtitle?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text(it, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

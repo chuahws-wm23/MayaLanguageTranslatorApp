@@ -1,5 +1,11 @@
 # MayaLanguageTranslatorApp
 
+> Glyph retrieval update: see [implementation, measured development results and
+> testing instructions](docs/GLYPH_EMBEDDING_RETRIEVAL_AND_ARCHIVE_DESIGN.md).
+> The scanner now offers five unconfirmed reference alternatives using pretrained
+> visual embeddings. Independent camera-photo reliability remains unvalidated.
+
+
 Android Final Year Project application focused on recognising supported Maya glyph drawings and showing proposed English meanings. Existing modern Yucatec Maya text tools are retained separately.
 
 ## Application
