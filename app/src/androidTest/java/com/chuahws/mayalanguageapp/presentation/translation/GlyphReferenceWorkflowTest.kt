@@ -277,7 +277,7 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("Drawing 1 of $count").assertExists()
         compose.onNodeWithContentDescription("Next drawing").performClick()
         compose.onNodeWithText("Drawing 2 of $count").assertExists()
-        screenshot("dictionary-enlarged-reference")
+        screenshot("dictionary-enlarged-reference", dialog = true)
         compose.onNodeWithText("Close").performClick()
         compose.onNodeWithText("Syllables").performClick()
         compose.waitForIdle()
@@ -309,9 +309,10 @@ class GlyphReferenceWorkflowTest {
             }
     }
 
-    private fun screenshot(name: String) {
+    private fun screenshot(name: String, dialog: Boolean = false) {
         compose.waitForIdle()
-        val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
+        val node = if (dialog) compose.onNode(isDialog()) else compose.onRoot()
+        val bitmap = node.captureToImage().asAndroidBitmap()
         try {
             val folder = requireNotNull(context.getExternalFilesDir("screenshots"))
             File(folder, "$name.png").outputStream().use {
