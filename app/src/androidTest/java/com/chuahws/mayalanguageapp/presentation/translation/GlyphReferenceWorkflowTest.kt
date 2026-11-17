@@ -44,6 +44,61 @@ class GlyphReferenceWorkflowTest {
     @get:Rule val compose = createComposeRule()
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
+    @Test fun activityJournalShowsGlyphOnlyInsightsProgressAndWorkingShortcuts() {
+        val learner = "activity-runtime"
+        val preferences = context.getSharedPreferences("maya_learning_$learner", 0)
+        preferences.edit().clear().putStringSet("completed", setOf("signs")).putInt("quiz_best", 3).commit()
+        val now = System.currentTimeMillis()
+        val records = mutableStateOf(listOf(
+            TranslationRecord(translationId = "today", glyphScanRecord = true, createdAtMillis = now - 1000,
+                glyphCandidates = listOf(GlyphScanCandidate(reading = "TODAY_REFERENCE"))),
+            TranslationRecord(translationId = "old", glyphScanRecord = true, createdAtMillis = now - 9L * 24 * 60 * 60 * 1000,
+                glyphCandidates = listOf(GlyphScanCandidate(reading = "OLDER_REFERENCE"))),
+            TranslationRecord(translationId = "legacy", createdAtMillis = now - 1000)
+        ))
+        val dark = mutableStateOf(false)
+        var destination = ""
+        compose.setContent {
+            MayaTranslateTheme(darkTheme = dark.value) {
+                androidx.compose.material3.Surface {
+                    androidx.compose.runtime.key(dark.value) {
+                        com.chuahws.mayalanguageapp.presentation.analytics.AnalyticsScreen(
+                            history = records.value, userId = learner, savedGlyphCount = 1,
+                            onScan = { destination = "scan" }, onLearn = { destination = "learn" },
+                            onHistory = { destination = "history" }, onFavourites = { destination = "saved" })
+                    }
+                }
+            }
+        }
+        fun activityText(text: String): SemanticsNodeInteraction {
+            compose.onNodeWithTag("activity-content").performScrollToNode(hasText(text))
+            return compose.onNodeWithText(text)
+        }
+        activityText("YOUR EXPLORER JOURNAL").assertIsDisplayed()
+        screenshot("activity-journal-light")
+        activityText("Glyph favourites").performClick()
+        assertEquals("saved", destination)
+        activityText("1 of 4 lessons completed").assertIsDisplayed()
+        activityText("Best quiz: 3/8").assertIsDisplayed()
+        activityText("Continue learning").performClick()
+        assertEquals("learn", destination)
+        activityText("TODAY_REFERENCE").performClick()
+        assertEquals("history", destination)
+        compose.onAllNodesWithText("OLDER_REFERENCE").assertCountEquals(0)
+        activityText("All history").performClick()
+        activityText("OLDER_REFERENCE").assertIsDisplayed()
+        activityText("Start a new exploration").performClick()
+        assertEquals("scan", destination)
+        compose.runOnIdle { records.value = emptyList() }
+        activityText("A fresh page").assertIsDisplayed()
+        activityText("Scan a glyph").performClick()
+        assertEquals("scan", destination)
+        compose.runOnIdle { dark.value = true }
+        activityText("YOUR EXPLORER JOURNAL").assertIsDisplayed()
+        screenshot("activity-journal-dark")
+        preferences.edit().clear().commit()
+    }
+
     @Test fun learningLessonsQuizAndNumberChallengeWorkAndSaveProgress() {
         fun learningText(text: String, substring: Boolean = false): SemanticsNodeInteraction {
             compose.onNodeWithTag("learning-content").performScrollToNode(hasText(text, substring = substring))

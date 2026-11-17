@@ -881,9 +881,13 @@ private fun MainShell(
 
                     AppPage.ANALYTICS ->
                         AnalyticsScreen(
-                            analytics =
-                                state.analytics,
                             history = state.history,
+                            userId = state.userId.orEmpty(),
+                            savedGlyphCount = state.savedVocabulary.count { it.glyphScanRecord },
+                            onScan = { goTo(AppPage.IMAGE_TRANSLATION) },
+                            onLearn = { goTo(AppPage.LEARN) },
+                            onHistory = { goTo(AppPage.HISTORY) },
+                            onFavourites = { goTo(AppPage.SAVED) },
                         )
 
                     AppPage.FEEDBACK ->

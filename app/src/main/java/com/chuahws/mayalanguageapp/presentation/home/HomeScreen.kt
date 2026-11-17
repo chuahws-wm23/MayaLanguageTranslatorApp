@@ -165,7 +165,7 @@ fun HomeScreen(
                     ),
                     right = Feature(
                         title = "My activity",
-                        subtitle = "See your progress",
+                        subtitle = "Scans and learning",
                         icon = Icons.Rounded.Analytics,
                         color = MayaGreen,
                         onClick = onAnalytics,
