@@ -263,14 +263,12 @@ private fun GlyphPhotoScreen(
                     Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text("Your inscription", style = MaterialTheme.typography.titleMedium)
-                            if (state.multiple.isEmpty()) {
-                                Image(
-                                    bitmap = image.asImageBitmap(),
-                                    contentDescription = "Selected inscription",
-                                    modifier = Modifier.fillMaxWidth().heightIn(max = 240.dp),
-                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                                )
-                            }
+                            GlyphRegionOverlay(image, state.multiple)
+                            Text(
+                                if (state.multiple.isEmpty()) "Scan to outline the detected glyph regions."
+                                else "${state.multiple.size} regions outlined · compare the numbered results below",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
                             Button(
                                 onClick = {
                                     if (GlyphV11SegDetector.isInstalled(context)) {
@@ -552,6 +550,7 @@ private fun GlyphPhotoScreen(
                     MultiGlyphResultsPanel(
                         bitmap = bitmap,
                         results = state.multiple,
+                        showOverview = false,
                         onInspect = { item ->
                             multipleGlyphs = false
                             glyphModel.setCrop(item.region.crop)

@@ -16,6 +16,9 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.chuahws.mayalanguageapp.presentation.history.HistoryScreen
+import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
+import com.chuahws.mayalanguageapp.domain.model.GlyphScanCandidate
 import com.chuahws.mayalanguageapp.domain.model.GlyphScanCapture
 import com.chuahws.mayalanguageapp.integration.glyph.*
 import com.chuahws.mayalanguageapp.presentation.theme.MayaTranslateTheme
@@ -225,12 +228,32 @@ class GlyphReferenceWorkflowTest {
                 }
             }
         }
+        compose.onNodeWithContentDescription("Scan image with 2 numbered glyph boxes").assertExists()
         compose.onNodeWithContentDescription("Uploaded crop for region 1").assertExists()
         compose.onNodeWithContentDescription("Uploaded crop for region 2").assertExists()
         screenshot("multi-region-review")
         compose.onAllNodesWithText("Inspect / correct crop")[1].performScrollTo().performClick()
         assertEquals(2,inspected?.number)
         assertEquals(regions[1].crop,inspected?.region?.crop)
+    }
+
+    @Test fun historyShowsPictureMeaningAndSearchableScanDetails() {
+        val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val reference=words.references.first { it.twkmSign==32 }
+        val picture=words.imageFor(reference)
+        val packed=try { GlyphScanPreviewCodec.encode(picture,GlyphCrop()) } finally { picture.recycle() }
+        val record=TranslationRecord(translationId="history-ui-fixture",userId="fixture",glyphScanRecord=true,
+            glyphImageBase64=packed,glyphCandidates=listOf(GlyphScanCandidate(
+                twkmSign=reference.twkmSign,reading=reference.reading,englishGloss=reference.english)))
+        compose.setContent { MayaTranslateTheme { HistoryScreen(listOf(record),onDelete={}) } }
+        compose.onNodeWithText(reference.english).assertExists()
+        compose.onNodeWithContentDescription("Saved preview of the scanned Maya glyph").assertExists()
+        screenshot("history-picture-and-meaning")
+        compose.onNodeWithText("Search meaning, reading or sign number").performTextInput("no-matching-fixture")
+        compose.onAllNodesWithText(reference.english).assertCountEquals(0)
+        compose.onNodeWithText("Search meaning, reading or sign number").performTextClearance()
+        compose.onNodeWithText(reference.english).performClick()
+        compose.onNodeWithText("Scan details").assertExists()
     }
 
     private val numericSimilarity = SemanticsMatcher("numeric appearance similarity") { node ->

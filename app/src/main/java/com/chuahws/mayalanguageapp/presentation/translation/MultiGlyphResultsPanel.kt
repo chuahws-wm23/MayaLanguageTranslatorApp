@@ -23,6 +23,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.TextButton
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMeaningCatalogue
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -41,6 +43,7 @@ internal fun MultiGlyphResultsPanel(
     bitmap: Bitmap,
     results: List<MultiGlyphItem>,
     onInspect: (MultiGlyphItem) -> Unit = {},
+    showOverview: Boolean = true,
 ) {
     if (results.isEmpty()) return
     val context = LocalContext.current
@@ -53,9 +56,12 @@ internal fun MultiGlyphResultsPanel(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("Block reference comparisons", style = MaterialTheme.typography.titleLarge)
-            MultiGlyphNumberedPreview(bitmap, results)
-            Text("Numbered scan photo for reference", style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (showOverview) {
+                GlyphRegionOverlay(bitmap, results)
+                Text("${results.size} regions outlined · inspect each crop below",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             results.forEach { item ->
                 HorizontalDivider()
                 Text("Region ${item.number} · row ${item.region.row}, column ${item.region.column}",
@@ -105,9 +111,10 @@ internal fun MultiGlyphResultsPanel(
 }
 
 @Composable
-private fun MultiGlyphNumberedPreview(bitmap: Bitmap, results: List<MultiGlyphItem>) {
+internal fun GlyphRegionOverlay(bitmap: Bitmap, results: List<MultiGlyphItem>) {
     val image = bitmap.asImageBitmap()
-    Canvas(modifier = Modifier.fillMaxWidth().height(260.dp)) {
+    Canvas(modifier = Modifier.fillMaxWidth().height(300.dp).background(Color(0xFF14231C))
+        .semantics { contentDescription = "Scan image with ${results.size} numbered glyph boxes" }) {
         val scale = min(size.width / bitmap.width, size.height / bitmap.height)
         val imageWidth = bitmap.width * scale
         val imageHeight = bitmap.height * scale
@@ -133,7 +140,8 @@ private fun MultiGlyphNumberedPreview(bitmap: Bitmap, results: List<MultiGlyphIt
             val w = (region.right - region.left) * imageWidth
             val h = (region.bottom - region.top) * imageHeight
             if (w <= 0 || h <= 0) return@forEach
-            drawRect(yellow, Offset(l, t), Size(w, h), style = Stroke(2.dp.toPx()))
+            drawRect(Color.Black.copy(alpha = .8f), Offset(l, t), Size(w, h), style = Stroke(5.dp.toPx()))
+            drawRect(yellow, Offset(l, t), Size(w, h), style = Stroke(3.dp.toPx()))
             drawRect(Color.Black.copy(alpha = .72f), Offset(l, t),
                 Size(23.dp.toPx(), 17.dp.toPx()))
             drawContext.canvas.nativeCanvas.drawText(

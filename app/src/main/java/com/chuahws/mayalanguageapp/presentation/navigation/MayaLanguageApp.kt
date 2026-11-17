@@ -104,6 +104,7 @@ private enum class BottomItem(
     HOME("Home"),
     SCAN("Scan"),
     DICTIONARY("Dictionary"),
+    HISTORY("History"),
     PROFILE("Profile"),
 }
 
@@ -711,6 +712,9 @@ private fun MainShell(
                                 BottomItem.DICTIONARY ->
                                     AppPage.DICTIONARY
 
+                                BottomItem.HISTORY ->
+                                    AppPage.HISTORY
+
                                 BottomItem.PROFILE ->
                                     AppPage.PROFILE
                             }
@@ -735,6 +739,9 @@ private fun MainShell(
 
                                             BottomItem.DICTIONARY ->
                                                 Icons.Rounded.MenuBook
+
+                                            BottomItem.HISTORY ->
+                                                Icons.Rounded.History
 
                                             BottomItem.PROFILE ->
                                                 Icons.Rounded.Person
