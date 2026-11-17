@@ -92,14 +92,14 @@ internal fun GlyphRegionPicker(results: List<MultiGlyphItem>, selectedIndex: Int
         if (selectedIndex in results.indices) listState.animateScrollToItem(selectedIndex)
     }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("${results.size} regions · choose a result", style = MaterialTheme.typography.labelLarge,
+        Text("${results.size} regions · select a number", style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary)
         LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(results, key = { _, item -> item.number }) { index, item ->
                 FilterChip(selected = index == selectedIndex, onClick = { onSelect(index) },
-                    modifier = Modifier.heightIn(min = 48.dp).semantics {
+                    modifier = Modifier.widthIn(min = 48.dp).heightIn(min = 48.dp).semantics {
                         contentDescription = "Show region ${item.number}"
-                    }, label = { Text("Region ${item.number}") },
+                    }, label = { Text(item.number.toString()) },
                     leadingIcon = if (index == selectedIndex) {
                         { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
                     } else null)

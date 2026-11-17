@@ -214,15 +214,18 @@ class GlyphReferenceWorkflowTest {
     @Test fun multiResultsShowDetectedRegionsWithoutManualCropControls() {
         val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))
-        val panel=Bitmap.createBitmap(400,224,Bitmap.Config.ARGB_8888)
+        val panel=Bitmap.createBitmap(400,400,Bitmap.Config.ARGB_8888)
         val canvas=Canvas(panel);canvas.drawColor(Color.WHITE)
-        listOf(32,44).forEachIndexed { i, sign ->
+        listOf(32,44,548,4).forEachIndexed { i, sign ->
             val image=words.imageFor(words.references.first { it.twkmSign==sign })
-            try { canvas.drawBitmap(image,null,Rect(48+i*176,48,176+i*176,176),null) }
+            try {
+                val x=48+(i%2)*176;val y=48+(i/2)*176
+                canvas.drawBitmap(image,null,Rect(x,y,x+128,y+128),null)
+            }
             finally { image.recycle() }
         }
         val regions=GlyphWhitespaceDetector.detect(panel)
-        assertEquals(2,regions.size)
+        assertEquals(4,regions.size)
         val items=regions.mapIndexed { i,region ->
             val(x,y,w,h)=region.crop.pixels(panel.width,panel.height)
             val crop=Bitmap.createBitmap(panel,x,y,w,h)
@@ -237,12 +240,13 @@ class GlyphReferenceWorkflowTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Scan image with 2 numbered glyph boxes").assertExists()
+        compose.onNodeWithContentDescription("Scan image with 4 numbered glyph boxes").assertExists()
         compose.onNodeWithContentDescription("Detected glyph region 1").assertExists()
         compose.onAllNodesWithText("Inspect / correct crop").assertCountEquals(0)
+        for(number in 1..4)compose.onNodeWithContentDescription("Show region $number").assertIsDisplayed()
         screenshot("multi-region-review")
-        compose.onNodeWithContentDescription("Show region 2").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Detected glyph region 2").assertExists()
+        compose.onNodeWithContentDescription("Show region 4").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Detected glyph region 4").assertExists()
 
     }
 
@@ -285,7 +289,10 @@ class GlyphReferenceWorkflowTest {
             screenshot("scanner-tappable-regions")
             compose.onAllNodesWithContentDescription("Previous region").assertCountEquals(0)
             compose.onAllNodesWithContentDescription("Next region").assertCountEquals(0)
-            compose.onNodeWithContentDescription("Show region 1").performScrollTo().performClick()
+            // The chips live inside a horizontal list. First reveal the result
+            // vertically, then scroll the number row and tap its visible chip.
+            compose.onNodeWithContentDescription("Detected glyph region 2").performScrollTo()
+            compose.onNodeWithContentDescription("Show region 1").performScrollTo().assertIsDisplayed().performClick()
             compose.onNodeWithContentDescription("Detected glyph region 1").assertExists()
             overlay.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,"Region 1 selected"))
             compose.onNodeWithContentDescription("Show region 2").performScrollTo().performClick()
