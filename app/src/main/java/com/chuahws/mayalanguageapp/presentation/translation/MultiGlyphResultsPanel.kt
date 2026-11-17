@@ -2,6 +2,14 @@ package com.chuahws.mayalanguageapp.presentation.translation
 
 import android.graphics.Bitmap
 import android.graphics.Paint as AndroidPaint
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.ui.layout.ContentScale
@@ -42,14 +50,9 @@ import kotlin.math.roundToInt
 internal fun MultiGlyphResultsPanel(
     bitmap: Bitmap,
     results: List<MultiGlyphItem>,
-    onInspect: (MultiGlyphItem) -> Unit = {},
     showOverview: Boolean = true,
 ) {
     if (results.isEmpty()) return
-    val context = LocalContext.current
-    val catalogue = remember(context) {
-        runCatching { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }.getOrNull()
-    }
     Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
         Column(
             Modifier.padding(16.dp),
@@ -58,11 +61,24 @@ internal fun MultiGlyphResultsPanel(
             Text("Block reference comparisons", style = MaterialTheme.typography.titleLarge)
             if (showOverview) {
                 GlyphRegionOverlay(bitmap, results)
-                Text("${results.size} regions outlined · inspect each crop below",
+                Text("${results.size} regions outlined · browse each result below",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            results.forEach { item ->
+            var selected by rememberSaveable(bitmap) { mutableIntStateOf(0) }
+            val index=selected.coerceIn(0,results.lastIndex)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
+                verticalAlignment=Alignment.CenterVertically) {
+                IconButton(onClick={selected=maxOf(0,index-1)},enabled=index>0) {
+                    Icon(Icons.Rounded.ChevronLeft,contentDescription="Previous region")
+                }
+                Text("Region ${index+1} of ${results.size}",style=MaterialTheme.typography.titleMedium)
+                IconButton(onClick={selected=minOf(results.lastIndex,index+1)},enabled=index<results.lastIndex) {
+                    Icon(Icons.Rounded.ChevronRight,contentDescription="Next region")
+                }
+            }
+            val item=results[index]
+            Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
                 HorizontalDivider()
                 Text("Region ${item.number} · row ${item.region.row}, column ${item.region.column}",
                     style = MaterialTheme.typography.labelLarge)
@@ -75,36 +91,14 @@ internal fun MultiGlyphResultsPanel(
                     if(resized !== cropped && cropped !== bitmap)cropped.recycle()
                     resized
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Image(preview.asImageBitmap(), contentDescription = "Uploaded crop for region ${item.number}",
-                        modifier = Modifier.size(112.dp).background(Color.White), contentScale = ContentScale.Fit)
-                    TextButton(onClick = { onInspect(item) }) { Text("Inspect / correct crop") }
-                }
-                Text(item.note, style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                val meaning = item.englishMatches.firstOrNull()?.reference
-                val sound = item.visualMatches.firstOrNull()?.reference?.syllable
-                when {
-                    meaning != null -> {
-                        Text("Closest visual match · ${meaning.english}",
-                            style = MaterialTheme.typography.titleMedium)
-                        Text("Maya reading · ${meaning.reading}")
-                        Text("Visual alternative · unconfirmed", style = MaterialTheme.typography.bodySmall)
-                        var expanded by remember(item.number, item.englishMatches) { mutableStateOf(false) }
-                        TextButton(onClick = { expanded = !expanded }) {
-                            Text(if (expanded) "Close references" else "Compare ${item.englishMatches.size} reference drawings")
-                        }
-                        if (expanded && catalogue != null) {
-                            item.englishMatches.forEachIndexed { index, match ->
-                                EnglishMeaningMatchRow(catalogue, match, index + 1)
-                            }
-                        }
-                    }
-                    item.reading != null -> Text("Possible reading · ${item.reading} — ${item.englishGloss}")
-                    sound != null -> Text("Nearest syllable reference · $sound (unconfirmed).")
-                    else -> Text("No reference comparison for this region. A block may contain " +
-                        "several signs, so try a closer photo of one glyph.")
-                }
+                Image(preview.asImageBitmap(), contentDescription = "Detected glyph region ${item.number}",
+                    modifier = Modifier.fillMaxWidth().height(144.dp).background(Color.White), contentScale = ContentScale.Fit)
+                if(item.englishMatches.isEmpty()) {
+                    Text("No exact match found",style=MaterialTheme.typography.titleLarge)
+                    Text("No readable reference comparison is available for this region. Try a clearer photo with separated glyphs.",
+                        style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                } else GlyphReferenceResults(item.englishMatches)
+
             }
         }
     }

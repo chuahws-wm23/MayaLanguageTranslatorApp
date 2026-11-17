@@ -60,6 +60,10 @@ internal data class MultiGlyphItem(
 
 internal data class GlyphUiState(
     val bitmap: Bitmap? = null,
+    val activeMode: String? = null,
+    val resultRevision: Int = 0,
+    val referenceMatches: List<GlyphEnglishMatch>? = null,
+    val referenceHints: List<String> = emptyList(),
     val crop: GlyphCrop = GlyphCrop(),
     val result: GlyphNetwork.Result? = null,
     val resultV2: GlyphV2Result? = null,
@@ -267,7 +271,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         val request = ++version
         work?.cancel()
         mutable.value = snapshot.copy(
-            busy = true, result = null, resultV2 = null, resultV3 = null,
+            busy = true, activeMode = "multiple", referenceMatches = null, result = null, resultV2 = null, resultV3 = null,
             resultV4 = null, resultV25 = null, multiple = emptyList(), individualComponents = false,
             assistedGrid = false, detectorNote = null,
             multipleProgress = if (grid == null) "Finding glyph blocks…" else "Preparing grid…",
@@ -327,10 +331,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                 if (regions.isEmpty()) {
                     mutable.value = mutable.value.copy(
                         busy = false, multipleProgress = null,
-                        message = "No reliable glyph-block boundaries found. " +
-                            "Try Grid-assisted scan: drag one crop over the entire panel, " +
-                            "choose its approximate rows and columns, then scan. " +
-                            "You do not need to crop individual glyphs.",
+                        message = "The glyph regions could not be separated. Try a clearer photo with space " +
+                            "between glyphs, or choose Single glyph for one isolated sign.",
                     )
                     return@launch
                 }
@@ -417,14 +419,14 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                         } catch (_: Exception) {
                             MultiGlyphItem(
                                 index + 1, region, null, null,
-                                "Could not read this block; try a clearer crop",
+                                "Could not read this region; try a clearer photo",
                             )
                         }
                     }
                 }
                 if (request == version) {
                     mutable.value = mutable.value.copy(
-                        busy = false, multiple = results, multipleProgress = null,
+                        busy = false, multiple = results, multipleProgress = null, resultRevision = request,
                         assistedGrid = grid != null, detectorNote = detectorNote,
                         message = null,
                     )
@@ -438,6 +440,40 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                         message = "Automatic panel scan failed. Try a clearer photo with complete glyph blocks.",
                     )
                 }
+            }
+        }
+    }
+
+    /** Full uploaded image; automatic preprocessing only, no manual crop UI. */
+    fun compareReference() {
+        val snapshot=mutable.value
+        val image=snapshot.bitmap ?: return
+        if(snapshot.busy)return
+        val request=++version
+        work?.cancel()
+        mutable.value=snapshot.copy(busy=true,activeMode="single",referenceMatches=null,referenceHints=emptyList(),
+            multiple=emptyList(),message=null,detectorNote=null)
+        work=viewModelScope.launch {
+            try {
+                val result=withContext(Dispatchers.Default) {
+                    require(!GlyphPanelGuard.looksLikeDensePanel(image)) {
+                        "This photo appears to contain several glyphs. Choose Multiple glyphs to compare its regions."
+                    }
+                    val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(getApplication()))
+                    val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(getApplication()))
+                    words.search(image,sounds,5) to
+                        com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality.hints(image)
+                }
+                if(request==version)mutable.value=mutable.value.copy(busy=false,
+                    referenceMatches=result.first,referenceHints=result.second,resultRevision=request)
+            } catch(cancelled: CancellationException) { throw cancelled }
+            catch(invalid: IllegalArgumentException) {
+                if(request==version)mutable.value=mutable.value.copy(busy=false,
+                    message=invalid.message ?: "This photo could not be compared. Choose another clear photo.")
+            }
+            catch(_: Exception) {
+                if(request==version)mutable.value=mutable.value.copy(busy=false,
+                    message="This photo could not be compared. Choose another clear photo and try again.")
             }
         }
     }

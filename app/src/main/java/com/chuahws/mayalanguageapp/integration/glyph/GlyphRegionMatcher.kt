@@ -11,8 +11,8 @@ internal object GlyphRegionMatcher {
         val hints = GlyphImageQuality.hints(image)
         val matches = if (separated) emptyList() else words.search(image, sounds, 5)
         val note = when {
-            separated -> "This region contains separated shapes. Inspect and isolate one complete sign before comparing."
-            matches.isEmpty() -> "No usable reference comparison. Inspect the crop and image quality."
+            separated -> "This region still contains separated shapes. Try a clearer photo with one complete glyph per region."
+            matches.isEmpty() -> "No readable reference comparison. Try a clearer photo."
             else -> "Unconfirmed visual alternatives. A block may contain several signs."
         } + if (hints.isNotEmpty()) " " + hints.joinToString(" ") else ""
         return GlyphRegionComparison(matches, note)

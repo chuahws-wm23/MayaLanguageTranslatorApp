@@ -1,5 +1,7 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
+import android.graphics.Matrix
+import android.app.Application
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.Bitmap
@@ -85,8 +87,10 @@ class GlyphReferenceWorkflowTest {
         compose.waitUntil(60_000) { saved != null }
         compose.onAllNodes(numericSimilarity).assertCountEquals(5)
         assertEquals(5, saved!!.candidates.size)
-        compose.onNodeWithContentDescription("Reference drawing for ${reference.reading}")
-            .assertExists()
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithContentDescription("Reference drawing for ${reference.reading}").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("Reference drawing for ${reference.reading}").assertExists()
         screenshot("reference-results-light")
         compose.runOnIdle { dark.value = true }
         compose.onAllNodes(numericSimilarity).assertCountEquals(5)
@@ -204,7 +208,7 @@ class GlyphReferenceWorkflowTest {
         return if(union>0f)intersection/union else 0f
     }
 
-    @Test fun inspectActionBelongsToTheSelectedRegionAndShowsItsUploadedCrop() {
+    @Test fun multiResultsShowDetectedRegionsWithoutManualCropControls() {
         val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))
         val panel=Bitmap.createBitmap(400,224,Bitmap.Config.ARGB_8888)
@@ -223,21 +227,20 @@ class GlyphReferenceWorkflowTest {
                 finally { if(crop !== panel)crop.recycle() }
             MultiGlyphItem(i+1,region,null,null,comparison.note,englishMatches=comparison.matches)
         }
-        var inspected: MultiGlyphItem?=null
         compose.setContent {
             MayaTranslateTheme {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
-                    MultiGlyphResultsPanel(panel,items,onInspect={ inspected=it })
+                    MultiGlyphResultsPanel(panel,items)
                 }
             }
         }
         compose.onNodeWithContentDescription("Scan image with 2 numbered glyph boxes").assertExists()
-        compose.onNodeWithContentDescription("Uploaded crop for region 1").assertExists()
-        compose.onNodeWithContentDescription("Uploaded crop for region 2").assertExists()
+        compose.onNodeWithContentDescription("Detected glyph region 1").assertExists()
+        compose.onAllNodesWithText("Inspect / correct crop").assertCountEquals(0)
         screenshot("multi-region-review")
-        compose.onAllNodesWithText("Inspect / correct crop")[1].performScrollTo().performClick()
-        assertEquals(2,inspected?.number)
-        assertEquals(regions[1].crop,inspected?.region?.crop)
+        compose.onNodeWithContentDescription("Next region").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Detected glyph region 2").assertExists()
+
     }
 
     @Test fun historyShowsPictureMeaningAndSearchableScanDetails() {
@@ -265,6 +268,13 @@ class GlyphReferenceWorkflowTest {
         val ref=words.distinctSigns.first()
         val count=words.references.count { it.twkmSign==ref.twkmSign }
         compose.setContent { MayaTranslateTheme { GlyphDictionaryHubScreen() } }
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithContentDescription("Next page").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("Next page").performClick()
+        compose.onNodeWithText("2").assertExists()
+        compose.onNodeWithText("Search meaning, reading or number").performTextInput(ref.english)
+        compose.onNodeWithText("Search meaning, reading or number").performImeAction()
         compose.waitUntil(20_000) {
             compose.onAllNodesWithContentDescription("Reference drawing for ${ref.english}")
                 .fetchSemanticsNodes().isNotEmpty()
@@ -299,6 +309,46 @@ class GlyphReferenceWorkflowTest {
         screenshot("home-archive-design")
         compose.onNodeWithText("Scan a glyph").performClick()
         assertTrue(scanned)
+    }
+
+    @Test fun scannerOnlyOffersSingleOrMultipleAfterPhotoAndShowsNearestBelowNoMatch() {
+        val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val original=words.imageFor(words.references.first { it.twkmSign==32 })
+        val rotated=Bitmap.createBitmap(original,0,0,original.width,original.height,
+            Matrix().apply { postRotate(11f) },true)
+        val folder=File(context.cacheDir,"images").apply { mkdirs() }
+        val file=File(folder,"scanner-mode-fixture.png")
+        try { file.outputStream().use { rotated.compress(Bitmap.CompressFormat.PNG,100,it) } }
+        finally { if(rotated!==original)rotated.recycle();original.recycle() }
+        val model=GlyphRecognitionViewModel(context.applicationContext as Application)
+        compose.setContent { MayaTranslateTheme { GlyphPhotoScreen(
+            onRecordGlyphScan={_,_->},onToggleGlyphFavorite={},savedGlyphIds=emptySet(),
+            onOpenHistory={},onOpenFavourites={},glyphModel=model) } }
+        compose.onAllNodesWithText("Single glyph").assertCountEquals(0)
+        val uri=FileProvider.getUriForFile(context,"${context.packageName}.fileprovider",file)
+        compose.runOnIdle { model.load(uri) }
+        compose.waitUntil(30_000) { model.state.value.bitmap!=null && !model.state.value.busy }
+        compose.onNodeWithText("Multiple glyphs").assertExists()
+        compose.onNodeWithText("Single glyph").performScrollTo().performClick()
+        compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
+        compose.onNodeWithText("No exact match found").performScrollTo().assertExists()
+        compose.onNodeWithText("Nearest references").assertExists()
+        compose.onAllNodes(numericSimilarity).assertCountEquals(5)
+        compose.onAllNodesWithText("Frame your glyph").assertCountEquals(0)
+        compose.onAllNodesWithText("Reset crop").assertCountEquals(0)
+        compose.onAllNodesWithText("Advanced AI models & research settings").assertCountEquals(0)
+        val reading=model.state.value.referenceMatches!!.first().reference.reading
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithContentDescription("Reference drawing for $reading").fetchSemanticsNodes().isNotEmpty()
+        }
+        screenshot("scanner-simple-nearest-results")
+        file.delete()
+    }
+
+    @Test fun originalReferenceArtworkHasVerifiedSourceResolution() {
+        val bitmap=requireNotNull(GlyphReferenceArtwork.load(context,"32vb"))
+        assertEquals(512,bitmap.width)
+        assertEquals(242,bitmap.height)
     }
 
     private val numericSimilarity = SemanticsMatcher("numeric appearance similarity") { node ->

@@ -1,5 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
+import com.chuahws.mayalanguageapp.presentation.components.ReferenceDrawing
 import android.graphics.Bitmap
 import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphTable
 import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphTableRow
@@ -296,7 +297,7 @@ internal fun EnglishMeaningMatchRow(
     rank: Int? = null,
 ) {
     val ref=match.reference
-    val example=remember(catalogue,ref.offset) { catalogue.imageFor(ref) }
+
     Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
         Column(
             Modifier.padding(16.dp),
@@ -309,13 +310,10 @@ internal fun EnglishMeaningMatchRow(
                 Text("Similarity %.3f".format(Locale.ROOT, match.visualOverlap),
                     style = MaterialTheme.typography.labelMedium)
             }
-            Image(
-                example.asImageBitmap(),
-                contentDescription = "Reference drawing for ${ref.reading}",
-                modifier = Modifier.fillMaxWidth().heightIn(min = 144.dp, max = 180.dp)
-                    .background(Color.White, RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Fit,
-            )
+            ReferenceDrawing(ref.graph,"Reference drawing for ${ref.reading}",
+                modifier = Modifier.fillMaxWidth().heightIn(min = 160.dp, max = 200.dp)
+                    .background(Color.White, RoundedCornerShape(12.dp)).padding(12.dp),
+                fallback = { catalogue.imageFor(ref) })
             Text("Reference drawing only", style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(ref.english, style = MaterialTheme.typography.headlineSmall)

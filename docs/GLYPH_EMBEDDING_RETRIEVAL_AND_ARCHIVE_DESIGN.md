@@ -42,13 +42,15 @@ independent photographs per class.
   prompt the user to use the existing multi-glyph tools or isolate a sign.
 - Capture hints cover low contrast, darkness, low resolution and few sharp
   edges. They are heuristics, not validated blur or incompleteness detectors.
-  The crop UI asks users to include the whole sign; missing strokes cannot
-  reliably be detected from the supplied data.
+  Missing strokes cannot reliably be detected from the supplied data.
 - Inference, feature loading and image processing stay on a worker dispatcher.
   Search jobs cancel when the photo/crop changes or the screen leaves, preventing
   obsolete results from being attached to a new image.
-- Preserve camera/gallery, cropping, research models, block/component tools,
-  account history, favourites, dictionary, text and voice features.
+- The main scanner now shows Camera/Gallery, then only Single glyph and Multiple
+  glyphs. Choosing a mode starts the comparison; manual cropping and research
+  controls have been removed from this flow. Automatic preprocessing and
+  detected-region extraction remain internal. History, favourites, dictionary,
+  text and voice features remain available.
 - Replace indigo/teal gradients with parchment, obsidian, muted jade and antique
   gold. Serif display typography, quieter surfaces, recent actual scan previews,
   ranked artwork cards and expandable historical notes create an archive identity.
@@ -106,14 +108,42 @@ normalization/polarity, artwork-row ranking, distinct identities, uncertainty
 alternatives, and capture-hint tests.
 
 Install `app/build/outputs/apk/debug/app-debug.apk` on Android 7.0+.
-Open Scan, choose Single glyph, upload a clear sign, review/adjust the crop and
-choose Compare with the archive. Compare five images and expand their notes.
-Use the existing syllable comparison for phonograms. Scan a second image and
-change the crop while a comparison is active; old results must disappear.
-Check blank, dark, blurred and dense-panel images, then Multiple glyphs, history
-and favourites in both system themes. Physical camera, navigation and memory
-behaviour still require a device smoke test; a successful JVM build alone
-cannot certify those behaviours.
+Open Scan, choose a photo, then Single glyph or Multiple glyphs. A normalized
+reference equality shows that reference; otherwise an explicit “No exact match
+found” message precedes up to five nearest unconfirmed alternatives. Blank
+images do not receive invented neighbours. Multiple mode outlines detected
+regions and displays one selected region's results at a time. Check a second
+photo, both modes, blank/dense images, history and favourites on a device.
+
+## Dictionary pagination and original artwork
+
+Word signs and syllables display at most ten entries per page, with previous,
+next and editable page-number controls. Search/category changes reset the page.
+Word-sign headings use the Maya reading, followed by the English gloss. Sorting
+follows a Romanized reading convention, not a claimed alphabet of hieroglyphs:
+`a, b, ch, ch', e, h, i, j, k, k', l, m, n, o, p, p', s, t, t', tz, tz', u, w, x, y`.
+Typography is normalized and `ts` spellings collate with `tz`.
+
+Dictionary and nearest-reference images use 683 original licensed drawings,
+512 pixels on their longest side, instead of enlarging 64-pixel binary masks.
+Original files remain unchanged. The extra display pack adds about 30 MB of
+assets; it does not improve or alter model inference. The 64-pixel matching
+assets and their embeddings remain unchanged. Display images load on a worker
+thread into a bounded 12 MiB cache, with the existing binary drawing as fallback.
+
+Source: [tadad/twkm-maya-glyphs](https://huggingface.co/datasets/tadad/twkm-maya-glyphs),
+revision `73fe9da1d975a5f1e588c7d42c952dfda53cefd0`, graph drawings by Christian
+Prager / TWKM, University of Bonn, CC BY 4.0. Attribution, individual source URLs,
+SHA-256 and dimensions are recorded in `assets/reference_art/index.json`.
+Rebuild with Python, `pyarrow` and `Pillow` installed:
+
+```sh
+python ml/logogram_expansion/build_reference_art.py --parquet /path/to/graphs/train-00000-of-00001.parquet
+```
+
+The builder verifies each original against the existing catalogue source SHA
+and license; runtime checks each displayed file's SHA and dimensions. No pixels
+were synthesized to claim a higher source resolution.
 
 ## What is needed for reliable recognition
 
