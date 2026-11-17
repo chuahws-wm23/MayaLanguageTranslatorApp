@@ -11,6 +11,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.unit.dp
+import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphDictionaryHubScreen
+import com.chuahws.mayalanguageapp.presentation.home.HomeScreen
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -254,6 +257,48 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("Search meaning, reading or sign number").performTextClearance()
         compose.onNodeWithText(reference.english).performClick()
         compose.onNodeWithText("Scan details").assertExists()
+    }
+
+    @Test fun dictionaryUsesLargeDrawingsAndOpensAlternateReferenceViews() {
+        val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))
+        val ref=words.distinctSigns.first()
+        val count=words.references.count { it.twkmSign==ref.twkmSign }
+        compose.setContent { MayaTranslateTheme { GlyphDictionaryHubScreen() } }
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithContentDescription("Reference drawing for ${ref.english}")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText(ref.english).performScrollTo()
+        compose.onNodeWithContentDescription("Reference drawing for ${ref.english}", useUnmergedTree = true)
+            .assertHeightIsAtLeast(120.dp)
+        screenshot("dictionary-large-word-cards")
+        compose.onNodeWithText(ref.english).performClick()
+        compose.onNodeWithText("Drawing 1 of $count").assertExists()
+        compose.onNodeWithContentDescription("Next drawing").performClick()
+        compose.onNodeWithText("Drawing 2 of $count").assertExists()
+        screenshot("dictionary-enlarged-reference")
+        compose.onNodeWithText("Close").performClick()
+        compose.onNodeWithText("Syllables").performClick()
+        compose.waitForIdle()
+        val syllable=sounds.syllables.first()
+        compose.onNodeWithText(syllable).performScrollTo()
+        compose.onNodeWithContentDescription("Reference drawing for $syllable", useUnmergedTree = true)
+            .assertHeightIsAtLeast(120.dp)
+        screenshot("dictionary-large-syllables")
+        compose.onNodeWithText("Search syllable or sign number").performTextInput("zzzzzz-fixture")
+        compose.onAllNodesWithText(syllable).assertCountEquals(0)
+    }
+
+    @Test fun refreshedHomeKeepsItsPrimaryScanActionAccessible() {
+        var scanned=false
+        compose.setContent { MayaTranslateTheme { HomeScreen(
+            displayName="Maya explorer",onImageTranslation={ scanned=true },
+            onSaved={},onHistory={},onAnalytics={},onFeedback={},onDictionary={},onProfile={}) } }
+        compose.onNodeWithText("Scan a glyph").assertExists()
+        screenshot("home-archive-design")
+        compose.onNodeWithText("Scan a glyph").performClick()
+        assertTrue(scanned)
     }
 
     private val numericSimilarity = SemanticsMatcher("numeric appearance similarity") { node ->

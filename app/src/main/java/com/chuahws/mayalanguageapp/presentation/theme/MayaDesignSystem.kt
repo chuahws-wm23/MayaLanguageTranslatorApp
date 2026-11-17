@@ -69,8 +69,8 @@ val MayaTypography = Typography(
         fontWeight = FontWeight.SemiBold,
     ),
     titleMedium = TextStyle(
-        fontSize = 16.sp,
-        lineHeight = 22.sp,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
         fontWeight = FontWeight.SemiBold,
     ),
     titleSmall = TextStyle(
@@ -84,19 +84,25 @@ val MayaTypography = Typography(
         fontWeight = FontWeight.Normal,
     ),
     bodyMedium = TextStyle(
-        fontSize = 14.sp,
-        lineHeight = 21.sp,
+        fontSize = 15.sp,
+        lineHeight = 23.sp,
         fontWeight = FontWeight.Normal,
     ),
     bodySmall = TextStyle(
-        fontSize = 12.sp,
-        lineHeight = 18.sp,
+        fontSize = 13.sp,
+        lineHeight = 20.sp,
         fontWeight = FontWeight.Normal,
     ),
     labelLarge = TextStyle(
         fontSize = 14.sp,
         lineHeight = 20.sp,
         fontWeight = FontWeight.SemiBold,
+    ),
+    labelSmall = TextStyle(
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        fontWeight = FontWeight.Medium,
+        letterSpacing = .2.sp,
     ),
     labelMedium = TextStyle(
         fontSize = 12.sp,
