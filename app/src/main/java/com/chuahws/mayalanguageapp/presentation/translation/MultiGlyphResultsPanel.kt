@@ -12,8 +12,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.ChevronLeft
-import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -56,18 +54,8 @@ internal fun MultiGlyphResultsPanel(
             Text("Glyph by glyph", style = MaterialTheme.typography.titleLarge)
             if (showOverview) {
                 GlyphRegionOverlay(bitmap, results, index, select)
-                GlyphRegionPicker(results, index, select)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { select(index - 1) }, enabled = index > 0) {
-                    Icon(Icons.Rounded.ChevronLeft, contentDescription = "Previous region")
-                }
-                Text("Region ${index+1} of ${results.size}", style = MaterialTheme.typography.titleMedium)
-                IconButton(onClick = { select(index + 1) }, enabled = index < results.lastIndex) {
-                    Icon(Icons.Rounded.ChevronRight, contentDescription = "Next region")
-                }
-            }
+            GlyphRegionPicker(results, index, select)
             val item = results[index]
             HorizontalDivider()
             Text("Region ${item.number} · row ${item.region.row}, column ${item.region.column}",
@@ -104,7 +92,7 @@ internal fun GlyphRegionPicker(results: List<MultiGlyphItem>, selectedIndex: Int
         if (selectedIndex in results.indices) listState.animateScrollToItem(selectedIndex)
     }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("${results.size} regions found · tap a box or number", style = MaterialTheme.typography.labelLarge,
+        Text("${results.size} regions · choose a result", style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary)
         LazyRow(state = listState, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(results, key = { _, item -> item.number }) { index, item ->

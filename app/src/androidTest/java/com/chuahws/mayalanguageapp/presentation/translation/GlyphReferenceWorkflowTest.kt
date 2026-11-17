@@ -1,6 +1,8 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
 import androidx.compose.ui.geometry.Offset
+import com.chuahws.mayalanguageapp.presentation.profile.ProfileScreen
+import com.chuahws.mayalanguageapp.domain.model.UserProfile
 import android.graphics.Matrix
 import android.app.Application
 import android.graphics.Canvas
@@ -239,7 +241,7 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithContentDescription("Detected glyph region 1").assertExists()
         compose.onAllNodesWithText("Inspect / correct crop").assertCountEquals(0)
         screenshot("multi-region-review")
-        compose.onNodeWithContentDescription("Next region").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Show region 2").performScrollTo().performClick()
         compose.onNodeWithContentDescription("Detected glyph region 2").assertExists()
 
     }
@@ -277,14 +279,18 @@ class GlyphReferenceWorkflowTest {
                     viewport.top+(target.top+target.bottom)/2*viewport.height))
             }
             overlay.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,"Region 2 selected"))
+            compose.onAllNodesWithContentDescription("Show region 2").assertCountEquals(1)
             compose.onNodeWithContentDescription("Show region 2").assertIsSelected()
             compose.onNodeWithContentDescription("Detected glyph region 2").assertExists()
             screenshot("scanner-tappable-regions")
-            compose.onNodeWithContentDescription("Previous region").performScrollTo().performClick()
+            compose.onAllNodesWithContentDescription("Previous region").assertCountEquals(0)
+            compose.onAllNodesWithContentDescription("Next region").assertCountEquals(0)
+            compose.onNodeWithContentDescription("Show region 1").performScrollTo().performClick()
             compose.onNodeWithContentDescription("Detected glyph region 1").assertExists()
             overlay.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,"Region 1 selected"))
             compose.onNodeWithContentDescription("Show region 2").performScrollTo().performClick()
-            compose.onNodeWithContentDescription("Detected glyph region 2").assertExists()
+            compose.onNodeWithContentDescription("Detected glyph region 2").performScrollTo().assertExists()
+            screenshot("scanner-region-result-controls")
             overlay.performScrollTo().performTouchInput { click(Offset(5f,5f)) }
             overlay.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription,"Region 2 selected"))
         } finally { file.delete() }
@@ -305,8 +311,68 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("Search meaning, reading or sign number").performTextInput("no-matching-fixture")
         compose.onAllNodesWithText(reference.english).assertCountEquals(0)
         compose.onNodeWithText("Search meaning, reading or sign number").performTextClearance()
+        compose.onNodeWithText("Search meaning, reading or sign number").performImeAction()
         compose.onNodeWithText(reference.english).performClick()
         compose.onNodeWithText("Scan details").assertExists()
+    }
+
+    @Test fun historyPaginatesTenEntriesResetsSearchAndClampsAfterDeletion() {
+        val records=mutableStateOf((1..13).map { number -> TranslationRecord(
+            translationId="paging-$number",userId="fixture",createdAtMillis=1700000000000L+number*1000L,glyphScanRecord=true,
+            glyphCandidates=listOf(GlyphScanCandidate(twkmSign=number,reading="READING-$number",englishGloss="Meaning $number"))) })
+        compose.setContent { MayaTranslateTheme { HistoryScreen(records.value,onDelete={ record ->
+            records.value=records.value.filterNot { it.translationId==record.translationId }
+        }) } }
+        compose.onNodeWithText("1–10 of 13 entries").assertExists()
+        compose.onNodeWithContentDescription("Next page").performClick()
+        compose.onNodeWithText("11–13 of 13 entries").assertExists()
+        screenshot("history-entry-pagination")
+        compose.onNodeWithText("Search meaning, reading or sign number").performTextInput("Meaning 13")
+        compose.onNodeWithText("Search meaning, reading or sign number").performImeAction()
+        compose.onNodeWithText("1–1 of 1 entry").assertExists()
+        compose.onNode(hasText("Meaning 13") and !hasSetTextAction()).assertExists()
+        compose.onNodeWithText("Search meaning, reading or sign number").performTextClearance()
+        compose.onNodeWithText("Search meaning, reading or sign number").performImeAction()
+        compose.onNodeWithText("1–10 of 13 entries").assertExists()
+        compose.onNodeWithContentDescription("Next page").performClick()
+        compose.runOnIdle { records.value=records.value.takeLast(10) }
+        compose.onNodeWithText("1–10 of 10 entries").assertExists()
+        compose.onAllNodesWithContentDescription("Next page").assertCountEquals(0)
+    }
+
+    @Test fun profileRefreshKeepsEditingRecoveryAndAccountActionsWorking() {
+        val profile=mutableStateOf(UserProfile(userId="profile-ui-fixture",displayName="Maya explorer",
+            email="explorer@example.com",createdAtMillis=1700000000000L))
+        val dark=mutableStateOf(false)
+        var resetCount=0
+        var signOutCount=0
+        compose.setContent { MayaTranslateTheme(darkTheme=dark.value) { ProfileScreen(
+            profile=profile.value,email=profile.value.email,onOpenMenu={},
+            onUpdateName={ profile.value=profile.value.copy(displayName=it) },
+            onResetPassword={ resetCount++ },onOpenAdmin={},onSignOut={ signOutCount++ }) } }
+        compose.onNodeWithText("Your profile").assertExists()
+        compose.onAllNodesWithText("Admin dashboard").assertCountEquals(0)
+        screenshot("profile-archive-light")
+        compose.onNodeWithContentDescription("Profile photo settings").performClick()
+        compose.onNodeWithText("Choose photo").assertExists()
+        screenshot("profile-photo-settings")
+        compose.onNodeWithContentDescription("Back to profile").performClick()
+        compose.onNodeWithText("Edit profile").performClick()
+        compose.onNodeWithText("Save changes").assertIsNotEnabled()
+        compose.onNodeWithText("Display name").performTextReplacement("  Updated explorer  ")
+        compose.onNodeWithText("Save changes").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals("Updated explorer",profile.value.displayName) }
+        compose.onNodeWithText("Password recovery").performScrollTo().performClick()
+        compose.onNodeWithText("Send password reset link").performScrollTo().performClick()
+        assertEquals(1,resetCount)
+        compose.onNodeWithContentDescription("Back to profile").performClick()
+        compose.onNodeWithText("About the archive").performScrollTo().performClick()
+        compose.onNodeWithText("Photo recognition is experimental.",substring=true).assertExists()
+        compose.onNodeWithContentDescription("Back to profile").performClick()
+        compose.runOnIdle { dark.value=true }
+        screenshot("profile-archive-dark")
+        compose.onNodeWithText("Sign out").performScrollTo().performClick()
+        assertEquals(1,signOutCount)
     }
 
     @Test fun dictionaryUsesLargeDrawingsAndOpensAlternateReferenceViews() {

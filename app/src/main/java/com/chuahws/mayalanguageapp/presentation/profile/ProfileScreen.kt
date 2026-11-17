@@ -2,14 +2,11 @@ package com.chuahws.mayalanguageapp.presentation.profile
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +16,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -42,6 +41,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -62,7 +62,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -74,9 +73,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import android.graphics.Bitmap
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageLoader
+import kotlin.math.roundToInt
 import com.chuahws.mayalanguageapp.domain.model.UserProfile
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
-import com.chuahws.mayalanguageapp.presentation.components.SoftBadge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -208,7 +210,7 @@ fun ProfileScreen(
                 currentName =
                     profile?.displayName.orEmpty(),
                 onSave = { name ->
-                    onUpdateName(name)
+                    onUpdateName(name.trim())
                     page = ProfilePage.OVERVIEW
                 },
                 onBack = {
@@ -256,275 +258,95 @@ private fun ProfileOverview(
     onOpenAdmin: () -> Unit,
     onSignOut: () -> Unit,
 ) {
-    val memberSince = remember(
-        profile?.createdAtMillis
-    ) {
-        formatMemberSince(
-            profile?.createdAtMillis ?: 0L
-        )
-    }
-
-    val accountStatus =
-        profile?.accountStatus
-            ?.takeIf { it.isNotBlank() }
-            ?.replaceFirstChar {
-                it.uppercase()
-            }
-            ?: "Active"
-
+    val name = profile?.displayName?.takeIf { it.isNotBlank() } ?: "Maya explorer"
+    val address = email.ifBlank { profile?.email.orEmpty() }
+    val memberSince = remember(profile?.createdAtMillis) { formatMemberSince(profile?.createdAtMillis ?: 0L) }
+    val status = profile?.accountStatus?.takeIf { it.isNotBlank() }
+        ?.replaceFirstChar { it.uppercase() } ?: "Details unavailable"
+    val role = if (profile?.role == "admin") "Administrator" else "Explorer"
     AppGradientBackground {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Keep navigation visible while the profile content scrolls.
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface,
-            ) {
-                ProfilePageTitle(
-                    title = "Profile",
-                    onMenu = onOpenMenu,
-                )
-            }
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(
-                        PaddingValues(
-                            start = 18.dp,
-                            top = 16.dp,
-                            end = 18.dp,
-                            bottom = 112.dp,
-                        )
-                    ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape =
-                        MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(
-                        containerColor =
-                            Color.Transparent,
-                    ),
-                    elevation =
-                        CardDefaults.cardElevation(
-                            defaultElevation = 4.dp,
-                        ),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(
-                                        MaterialTheme
-                                            .colorScheme.primary,
-                                        MaterialTheme
-                                            .colorScheme.primary
-                                            .copy(alpha = 0.88f),
-                                        MaterialTheme
-                                            .colorScheme.secondary,
-                                    )
-                                )
-                            )
-                            .padding(24.dp),
-                        contentAlignment =
-                            Alignment.Center,
-                    ) {
-                        Column(
-                            horizontalAlignment =
-                                Alignment.CenterHorizontally,
-                            verticalArrangement =
-                                Arrangement.spacedBy(8.dp),
-                        ) {
+        Column(Modifier.fillMaxSize()) {
+            ProfilePageTitle(title = "Your profile", onMenu = onOpenMenu)
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF183B30))) {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text("YOUR PLACE IN THE ARCHIVE", style = MaterialTheme.typography.labelMedium,
+                            color = Color(0xFFD5DDCA))
+                        Row(verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                             Box {
-                                ProfilePhoto(
-                                    uri = photoUri,
-                                    context = context,
-                                )
-
-                                Surface(
-                                    modifier = Modifier
-                                        .align(
-                                            Alignment.BottomEnd
-                                        )
-                                        .size(36.dp)
-                                        .clickable(
-                                            onClick =
-                                                onOpenPhoto
-                                        ),
-                                    shape = CircleShape,
-                                    color = Color.White,
-                                    shadowElevation = 3.dp,
-                                ) {
-                                    Box(
-                                        contentAlignment =
-                                            Alignment.Center,
-                                    ) {
-                                        Icon(
-                                            imageVector =
-                                                Icons.Rounded
-                                                    .PhotoCamera,
-                                            contentDescription =
-                                                "Profile photo settings",
-                                            tint =
-                                                MaterialTheme
-                                                    .colorScheme.primary,
-                                            modifier =
-                                                Modifier.size(
-                                                    18.dp
-                                                ),
-                                        )
+                                ProfilePhoto(photoUri, context, onDark = true, diameter = 80.dp)
+                                Surface(onClick = onOpenPhoto, shape = CircleShape,
+                                    color = Color(0xFFF4EDDD), modifier = Modifier.align(Alignment.BottomEnd).size(48.dp)) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Rounded.PhotoCamera, contentDescription = "Profile photo settings",
+                                            tint = Color(0xFF245A49), modifier = Modifier.size(20.dp))
                                     }
                                 }
                             }
-
-                            Text(
-                                text =
-                                    profile?.displayName
-                                        ?.ifBlank { email }
-                                        ?: email,
-                                color = Color.White,
-                                style =
-                                    MaterialTheme
-                                        .typography.titleLarge,
-                                fontWeight =
-                                    FontWeight.Bold,
-                            )
-
-                            Text(
-                                text = email,
-                                color = Color.White
-                                    .copy(alpha = 0.84f),
-                                style =
-                                    MaterialTheme
-                                        .typography.bodyMedium,
-                            )
-
-                            Row(
-                                horizontalArrangement =
-                                    Arrangement.spacedBy(8.dp),
-                            ) {
-                                SoftBadge(
-                                    text =
-                                        if (
-                                            profile?.role ==
-                                                "admin"
-                                        ) {
-                                            "Administrator"
-                                        } else {
-                                            "Learner"
-                                        },
-                                    color = Color.White,
-                                )
-
-                                SoftBadge(
-                                    text = accountStatus,
-                                    color = Color.White,
-                                )
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(name, style = MaterialTheme.typography.headlineSmall, color = Color.White)
+                                Text(address.ifBlank { "Email unavailable" },
+                                    style = MaterialTheme.typography.bodyMedium, color = Color(0xFFE1E8DC))
+                                Text(role, style = MaterialTheme.typography.labelMedium, color = Color(0xFFE8D7A7))
                             }
+                        }
+                        TextButton(onClick = onOpenEdit, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color.White)) {
+                            Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Edit profile", style = MaterialTheme.typography.titleSmall)
                         }
                     }
                 }
-
-                ProfileAction(
-                    icon = Icons.Rounded.PhotoCamera,
-                    title =
-                        if (photoUri == null) {
-                            "Add profile photo"
-                        } else {
-                            "Change profile photo"
-                        },
-                    subtitle =
-                        "Manage your profile picture",
-                    onClick = onOpenPhoto,
-                )
-
-                ProfileAction(
-                    icon = Icons.Rounded.Edit,
-                    title = "Edit profile",
-                    subtitle =
-                        "Update your display name",
-                    onClick = onOpenEdit,
-                )
-
-                ProfileAction(
-                    icon = Icons.Rounded.LockReset,
-                    title = "Change password",
-                    subtitle =
-                        "Manage password recovery",
-                    onClick = onOpenPassword,
-                )
-
-                ProfileInfo(
-                    icon = Icons.Rounded.Person,
-                    title = "Member since",
-                    subtitle =
-                        "Account creation date",
-                    value = memberSince,
-                )
-
-                ProfileAction(
-                    icon = Icons.Rounded.Language,
-                    title = "App language",
-                    subtitle =
-                        "English",
-                    onClick = onOpenLanguage,
-                )
-
-                ProfileAction(
-                    icon = Icons.Rounded.Info,
-                    title = "About app",
-                    subtitle =
-                        "Project information and scope",
-                    onClick = onOpenAbout,
-                )
-
-                if (profile?.role == "admin") {
-                    ProfileAction(
-                        icon =
-                            Icons.Rounded
-                                .AdminPanelSettings,
-                        title =
-                            "Admin dashboard",
-                        subtitle =
-                            "Manage users, words, feedback & reports",
-                        onClick = onOpenAdmin,
-                    )
+                Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                    Row(Modifier.fillMaxWidth().padding(18.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                        Box(Modifier.weight(1f)) { ProfileFact("Member since", memberSince) }
+                        Box(Modifier.weight(1f)) { ProfileFact("Account status", status) }
+                    }
                 }
-
-                OutlinedButton(
-                    onClick = onSignOut,
-                    modifier =
-                        Modifier.fillMaxWidth(),
-                    contentPadding =
-                        PaddingValues(
-                            vertical = 14.dp
-                        ),
-                ) {
-                    Icon(
-                        Icons.Rounded.Logout,
-                        contentDescription = null,
-                        tint =
-                            MaterialTheme
-                                .colorScheme.error,
-                    )
-                    Text(
-                        text = "Logout",
-                        color =
-                            MaterialTheme
-                                .colorScheme.error,
-                        modifier =
-                            Modifier.padding(
-                                start = 8.dp
-                            ),
-                        fontWeight =
-                            FontWeight.SemiBold,
-                    )
+                ProfileSection("ACCOUNT") {
+                    ProfileAction(Icons.Rounded.PhotoCamera, "Profile photo", "Choose or change your picture", onOpenPhoto)
+                    ProfileAction(Icons.Rounded.LockReset, "Password recovery", "Send a reset link to your email", onOpenPassword)
                 }
+                ProfileSection("PREFERENCES & HELP") {
+                    ProfileAction(Icons.Rounded.Language, "App language", "English", onOpenLanguage)
+                    ProfileAction(Icons.Rounded.Info, "About the archive", "Features, sources and recognition limits", onOpenAbout)
+                }
+                if (profile?.role == "admin") ProfileSection("ADMINISTRATION") {
+                    ProfileAction(Icons.Rounded.AdminPanelSettings, "Admin dashboard",
+                        "Manage users, words and feedback", onOpenAdmin)
+                }
+                OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                    Icon(Icons.Rounded.Logout, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text("Sign out")
+                }
+                Spacer(Modifier.height(16.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun ProfileFact(label: String, value: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+@Composable
+private fun ProfileSection(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surface) {
+            Column(Modifier.padding(4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) { content() }
         }
     }
 }
@@ -692,8 +514,7 @@ private fun EditProfilePage(
                                 focusManager
                                     .clearFocus()
                                 if (
-                                    name.trim()
-                                        .length >= 2
+                                    name.trim().length >= 2 && name.trim() != currentName.trim()
                                 ) {
                                     onSave(name)
                                 }
@@ -903,7 +724,7 @@ private fun LanguageSettingsPage(
 
         Text(
             text =
-                "Additional interface languages can be added in a future version.",
+                "English is the interface language for this version.",
             style =
                 MaterialTheme
                     .typography.bodySmall,
@@ -950,12 +771,16 @@ private fun AboutPage(
 
                 Text(
                     text =
-                        "A simple app for translating between English and modern Yucatec Maya.",
+                        "Explore Classic Maya glyph drawings and their source-proposed meanings. Text and voice tools use the modern Yucatec Maya dictionary.",
                     color =
                         MaterialTheme
                             .colorScheme
                             .onSurfaceVariant,
                 )
+
+                Text("Photo recognition is experimental. Reference suggestions can be wrong, and meanings depend on inscription context.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                 Text(
                     text = "What you can do",
@@ -968,12 +793,11 @@ private fun AboutPage(
 
                 Text(
                     text =
-                        "• Translate between English and Maya\n" +
-                            "• Translate text from photos\n" +
-                            "• Speak English to translate\n" +
-                            "• Pronunciation support\n" +
-                            "• Dictionary and saved vocabulary\n" +
-                            "• Review your history and activity",
+                        "• Compare single glyphs or detected regions\n" +
+                            "• Browse illustrated reference drawings\n" +
+                            "• Save scan pictures and proposed meanings\n" +
+                            "• Revisit history and favourites\n" +
+                            "• Use text, voice and pronunciation tools",
                     color =
                         MaterialTheme
                             .colorScheme
@@ -1081,6 +905,8 @@ private fun ProfilePageTitle(
 private fun ProfilePhoto(
     uri: String?,
     context: Context,
+    onDark: Boolean = false,
+    diameter: Dp = 104.dp,
 ) {
     var bitmap by remember(uri) {
         mutableStateOf<ImageBitmap?>(null)
@@ -1095,17 +921,13 @@ private fun ProfilePhoto(
                     Dispatchers.IO
                 ) {
                     runCatching {
-                        context.contentResolver
-                            .openInputStream(
-                                Uri.parse(uri)
-                            )
-                            ?.use { stream ->
-                                BitmapFactory
-                                    .decodeStream(
-                                        stream
-                                    )
-                                    ?.asImageBitmap()
-                            }
+                        val decoded = GlyphImageLoader.load(context, Uri.parse(uri))
+                        val factor = minOf(1f, 320f / maxOf(decoded.width, decoded.height))
+                        val small = if (factor < 1f) Bitmap.createScaledBitmap(decoded,
+                            (decoded.width * factor).roundToInt().coerceAtLeast(1),
+                            (decoded.height * factor).roundToInt().coerceAtLeast(1), true) else decoded
+                        if (small !== decoded) decoded.recycle()
+                        small.asImageBitmap()
                     }.getOrNull()
                 }
             }
@@ -1113,12 +935,12 @@ private fun ProfilePhoto(
 
     Surface(
         color =
-            Color.White.copy(alpha = 0.20f),
+            if (onDark) Color.White.copy(alpha = 0.16f) else MaterialTheme.colorScheme.primaryContainer,
         shape = CircleShape,
     ) {
         Box(
             modifier = Modifier
-                .size(104.dp)
+                .size(diameter)
                 .clip(CircleShape),
             contentAlignment =
                 Alignment.Center,
@@ -1140,7 +962,7 @@ private fun ProfilePhoto(
                         Icons.Rounded.Person,
                     contentDescription =
                         "Default profile photo",
-                    tint = Color.White,
+                    tint = if (onDark) Color.White else MaterialTheme.colorScheme.primary,
                     modifier =
                         Modifier.size(56.dp),
                 )
@@ -1165,7 +987,7 @@ private fun ProfileAction(
                 MaterialTheme.colorScheme.surface,
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
+            defaultElevation = 0.dp,
         ),
     ) {
         Row(
@@ -1232,92 +1054,11 @@ private fun ProfileAction(
     }
 }
 
-@Composable
-private fun ProfileInfo(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    value: String,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor =
-                MaterialTheme.colorScheme.surface,
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp,
-        ),
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment =
-                Alignment.CenterVertically,
-            horizontalArrangement =
-                Arrangement.spacedBy(14.dp),
-        ) {
-            Surface(
-                color =
-                    MaterialTheme
-                        .colorScheme
-                        .primaryContainer,
-                shape =
-                    MaterialTheme.shapes.medium,
-            ) {
-                Box(
-                    modifier =
-                        Modifier.size(44.dp),
-                    contentAlignment =
-                        Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint =
-                            MaterialTheme
-                                .colorScheme.primary,
-                    )
-                }
-            }
-
-            Column(
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = title,
-                    fontWeight =
-                        FontWeight.SemiBold,
-                )
-                Text(
-                    text = subtitle,
-                    style =
-                        MaterialTheme
-                            .typography.bodySmall,
-                    color =
-                        MaterialTheme
-                            .colorScheme
-                            .onSurfaceVariant,
-                )
-            }
-
-            Text(
-                text = value,
-                color =
-                    MaterialTheme
-                        .colorScheme.primary,
-                fontWeight =
-                    FontWeight.SemiBold,
-            )
-        }
-    }
-}
-
 private fun formatMemberSince(
     timestamp: Long,
 ): String {
     if (timestamp <= 0L) {
-        return "Current account"
+        return "Unavailable"
     }
 
     return SimpleDateFormat(

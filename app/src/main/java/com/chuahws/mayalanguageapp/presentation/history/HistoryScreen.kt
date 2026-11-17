@@ -3,6 +3,15 @@ package com.chuahws.mayalanguageapp.presentation.history
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import com.chuahws.mayalanguageapp.domain.service.ListPaging
+import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bookmark
@@ -22,6 +31,7 @@ import com.chuahws.mayalanguageapp.presentation.components.GlyphScanDetailsDialo
 import java.text.DateFormat
 import java.util.Date
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HistoryScreen(
     history: List<TranslationRecord>,
@@ -30,6 +40,9 @@ fun HistoryScreen(
     onToggleGlyphFavorite: (TranslationRecord) -> Unit = {},
 ) {
     var query by rememberSaveable { mutableStateOf("") }
+    var page by rememberSaveable(query) { mutableIntStateOf(1) }
+    val listState = rememberLazyListState()
+    val focus = LocalFocusManager.current
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
     val scans = remember(history) { history.filter { it.glyphScanRecord }.sortedByDescending { it.createdAtMillis } }
@@ -40,6 +53,12 @@ fun HistoryScreen(
                 it.englishGloss.contains(q,true) || it.reading.contains(q,true) || it.twkmSign.toString().contains(q)
             } || scan.translatedText.contains(q,true)
         }
+    }
+    val currentPage = ListPaging.safePage(page, filtered.size)
+    val entries = ListPaging.pageItems(filtered, currentPage)
+    LaunchedEffect(query, currentPage) {
+        page = currentPage
+        listState.scrollToItem(0)
     }
     scans.firstOrNull { it.translationId == selectedId }?.let { scan ->
         val saved = GlyphScanRecords.favoriteId(scan.userId,scan.translationId) in savedGlyphIds
@@ -63,7 +82,7 @@ fun HistoryScreen(
     }
     AppGradientBackground {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp),
+            modifier = Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
@@ -75,11 +94,21 @@ fun HistoryScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            item {
-                OutlinedTextField(value = query, onValueChange = { query = it },
-                    modifier = Modifier.fillMaxWidth(), singleLine = true,
-                    label = { Text("Search meaning, reading or sign number") },
-                    shape = MaterialTheme.shapes.large)
+            stickyHeader {
+                Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
+                    .padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = query, onValueChange = { query = it },
+                        modifier = Modifier.fillMaxWidth(), singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
+                        label = { Text("Search meaning, reading or sign number") },
+                        shape = MaterialTheme.shapes.large)
+                    ListPaginationControls(filtered.size, currentPage, { page = it })
+                    Text(if (filtered.isEmpty()) "0 entries" else
+                        "${ListPaging.firstVisibleIndex(currentPage,filtered.size)}–${ListPaging.lastVisibleIndex(currentPage,filtered.size)} of ${filtered.size} " +
+                            if (filtered.size == 1) "entry" else "entries",
+                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                }
             }
             if (filtered.isEmpty()) item {
                 Column(Modifier.fillMaxWidth().padding(vertical = 42.dp),
@@ -94,7 +123,7 @@ fun HistoryScreen(
                         style = MaterialTheme.typography.bodyMedium)
                 }
             }
-            items(filtered, key = { it.translationId }) { scan ->
+            items(entries, key = { it.translationId }) { scan ->
                 val best = scan.glyphCandidates.firstOrNull()
                 val saved = GlyphScanRecords.favoriteId(scan.userId,scan.translationId) in savedGlyphIds
                 Card(onClick = { selectedId = scan.translationId },
@@ -113,7 +142,7 @@ fun HistoryScreen(
                             best?.let { Text("${it.reading} · TWKM #${it.twkmSign}",
                                 style = MaterialTheme.typography.bodyMedium) }
                             Text(if (best != null && scan.glyphRegionCount > 1) "First candidate · tap for all saved results"
-                                else if (best != null) "Possible meaning · unconfirmed" else "Try a clearer crop",
+                                else if (best != null) "Possible meaning · unconfirmed" else "Try a clearer photo",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(dateLabel(scan.createdAtMillis), style = MaterialTheme.typography.labelSmall,

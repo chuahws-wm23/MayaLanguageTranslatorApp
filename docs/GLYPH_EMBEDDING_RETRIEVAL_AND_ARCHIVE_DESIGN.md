@@ -148,8 +148,9 @@ were synthesized to claim a higher source resolution.
 ## Interactive region review
 
 In Multiple glyphs mode, tap a detected box or its numbered chip to select a
-region. The highlighted box, selected chip, preview and previous/next result
-controls share the same selection. Chips provide keyboard and screen-reader
+region. The highlighted box, selected chip and preview share the same selection.
+Numbered chips live in the “Glyph by glyph” result card, replacing the lower
+arrow navigator; the photo no longer repeats the chip row. Chips provide keyboard and screen-reader
 access; the photo exposes the selected region as its accessibility state.
 Only the selected region's comparisons are rendered. There is no manual crop UI.
 
@@ -158,7 +159,7 @@ letterboxing or gaps do not select unrelated boxes; nested boxes choose the
 smallest containing region. Unit tests cover landscape/portrait transforms,
 empty gutters, overlaps and invalid coordinates. Android instrumentation loads
 an actual constructed reference panel, runs detection and checks box taps,
-chip selection, previous/next navigation and blank-photo recovery.
+chip selection, the absence of duplicate arrow controls and blank-photo recovery.
 
 Detected-region display previews retain up to 512 pixels on their longest side
 instead of 128, without upscaling small source images or changing inference.
@@ -201,3 +202,18 @@ evaluation runner are documented in
 [Android runtime and photo evaluation](GLYPH_ANDROID_RUNTIME_AND_PHOTO_EVALUATION.md).
 No independent photo test results are available; no expert-labelled batch was
 supplied. The included staging/summary fixtures test tooling, not accuracy.
+
+## History and profile follow-up
+
+History shares the ten-entry pagination rules used by the dictionary. Its sticky
+search area shows entry ranges and page controls, resets to page one for a new
+search and clamps the current page after deletions. Scan pictures, proposed
+meanings, dates, favourites and deletion confirmation remain available.
+
+The Profile page uses an archive identity card, account facts and grouped
+account/preferences sections. Editing, photo selection, password recovery,
+admin visibility and sign-out keep their existing callbacks. Profile pictures
+use bounded, EXIF-aware decoding and a readable placeholder in both themes.
+The About section distinguishes glyph reference suggestions from the modern
+Yucatec text/voice dictionary and describes photographic recognition as
+experimental. No recognition weights or reference data changed in this UI update.

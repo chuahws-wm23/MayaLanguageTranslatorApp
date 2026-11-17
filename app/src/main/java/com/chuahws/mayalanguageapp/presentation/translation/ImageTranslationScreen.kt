@@ -140,7 +140,9 @@ internal fun GlyphPhotoScreen(
                     state.bitmap?.let { image ->
                         if(mode=="multiple") {
                             GlyphRegionOverlay(image,state.multiple,selectedRegion) { selectedRegion=it }
-                            if(!state.busy)GlyphRegionPicker(state.multiple,selectedRegion) { selectedRegion=it }
+                            if(!state.busy && state.multiple.isNotEmpty())Text(
+                                "Tap a box to select its result below.",style=MaterialTheme.typography.bodySmall,
+                                color=MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         else Image(image.asImageBitmap(),contentDescription="Selected glyph photo",
                             modifier=Modifier.fillMaxWidth().height(240.dp),contentScale=ContentScale.Fit)
