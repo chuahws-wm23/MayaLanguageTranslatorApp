@@ -6,6 +6,7 @@ import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphTable
 import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphTableRow
 import com.chuahws.mayalanguageapp.domain.service.ListPaging
 import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -45,6 +46,8 @@ import java.util.Locale
  * classification head. Its nearest visual match can be incorrect even when the
  * scholarly logogram reading itself has a strong evidence rating.
  */
+internal const val MAX_CLOSEST_REFERENCES = 3
+
 @Composable
 internal fun EnglishMeaningExploreCard(
     bitmap: Bitmap?,
@@ -183,14 +186,14 @@ internal fun EnglishMeaningExploreCard(
                                 style = MaterialTheme.typography.headlineSmall,
                             )
                             Text(
-                                if (identical) "The normalized shapes are identical. Check the reference and inscription context."
-                                else "No confirmed identification. These are ranked visual alternatives; an unfamiliar sign can still resemble a reference.",
+                                if (identical) "Same reference drawing. Meaning depends on context."
+                                else "Up to three visual matches. Please verify the sign.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            Text("Similarity compares appearance; it is not recognition confidence.",
+                            Text("Similarity measures appearance, not confidence.",
                                 style = MaterialTheme.typography.bodySmall)
-                            matches.forEachIndexed { rank, match ->
+                            matches.take(MAX_CLOSEST_REFERENCES).forEachIndexed { rank, match ->
                                 EnglishMeaningMatchRow(glossary, match, rank + 1)
                             }
                             Text("Drawings: Christian Prager / University of Bonn · CC BY 4.0 · TWKM sign catalogue",
@@ -298,7 +301,12 @@ internal fun EnglishMeaningMatchRow(
 ) {
     val ref=match.reference
 
-    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
         Column(
             Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -314,14 +322,23 @@ internal fun EnglishMeaningMatchRow(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 160.dp, max = 200.dp)
                     .background(Color.White, RoundedCornerShape(12.dp)).padding(12.dp),
                 fallback = { catalogue.imageFor(ref) })
-            Text("Reference drawing only", style = MaterialTheme.typography.labelMedium,
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("${ref.reading} · Proposed reading", style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold)
+                    Text(ref.english, style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+            Text("TWKM #${ref.twkmSign} · Reference drawing", style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(ref.english, style = MaterialTheme.typography.headlineSmall)
-            Text("Maya reading · ${ref.reading}", style = MaterialTheme.typography.titleMedium)
-            Text("TWKM #${ref.twkmSign} · ${ref.graph}", style = MaterialTheme.typography.labelMedium)
             var expanded by remember(ref.twkmSign) { mutableStateOf(false) }
             TextButton(onClick = { expanded = !expanded }) {
-                Text(if (expanded) "Close reference notes" else "Explore meaning & history")
+                Text(if (expanded) "Close reference notes" else "Reference details")
             }
             androidx.compose.animation.AnimatedVisibility(visible = expanded) {
                 Column { EnglishMeaningLearningDetails(ref) }

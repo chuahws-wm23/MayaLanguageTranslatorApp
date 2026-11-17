@@ -126,15 +126,15 @@ fun GlyphScanDetailsDialog(
                 if (candidates.isEmpty()) {
                     Text(
                         "No reliable English reading was confirmed for this image. " +
-                            "You can return to Scan to try another crop.",
+                            "Return to Scan to try a clearer photo.",
                     )
                 } else {
                     Text("Possible reference matches",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold)
-                    candidates.take(10).forEachIndexed { index, candidate ->
+                    candidates.take(10).groupBy { it.regionIndex }.values.flatMap { it.take(3) }.forEachIndexed { index, candidate ->
                         var expanded by remember(index,candidate.twkmSign) {
-                            mutableStateOf(index == 0)
+                            mutableStateOf(false)
                         }
                         Card(Modifier.fillMaxWidth()) {
                             Column(
@@ -162,22 +162,13 @@ fun GlyphScanDetailsDialog(
                                     GlyphLearningNotes.forSign(candidate.twkmSign)
                                         ?: GlyphMoreLearningNotes.forSign(candidate.twkmSign)
                                 }
-                                if (note != null) {
-                                    Text(note.explanation,
-                                        style = MaterialTheme.typography.bodySmall)
-                                } else {
-                                    Text(
-                                        "This source-proposed gloss belongs to a catalogue sign; " +
-                                            "its meaning depends on the other signs in the inscription.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
-                                }
                                 TextButton(onClick = { expanded = !expanded }) {
-                                    Text(if (expanded) "Hide learning notes" else
-                                        "Learn about this sign")
+                                    Text(if (expanded) "Hide reference details" else
+                                        "Reference details")
                                 }
                                 if (expanded) {
                                     if (note != null) {
+                                        Text(note.explanation, style = MaterialTheme.typography.bodySmall)
                                         Text("Historical context",
                                             fontWeight = FontWeight.SemiBold)
                                         Text(note.historicalContext,
@@ -197,9 +188,7 @@ fun GlyphScanDetailsDialog(
                     }
                 }
                 Text(
-                    "The saved JPEG is a small cropped preview, not the original full-resolution photo. " +
-                        "TWKM / University of Bonn sign drawings are research references; " +
-                        "a visual resemblance does not establish an archaeological identification.",
+                    "Saved preview · TWKM / University of Bonn references. Suggested readings need verification.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
