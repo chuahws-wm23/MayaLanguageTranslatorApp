@@ -49,6 +49,22 @@ class IndependentPhotoWorkflowTest(unittest.TestCase):
         self.assertIsNone(stats['unknown_rejection_accuracy'])
         self.assertFalse(stats['release_approved'])
 
+    def test_failed_query_with_partial_candidates_is_still_a_miss(self):
+        result = summarize({'format_version': 1, 'source_manifest_sha256': 'fixture', 'predictions': [
+            {'expected_sign': '32', 'source_group': 'a', 'confirmed_identification': False,
+             'candidates': [{'sign': 32}], 'error': 'runtime failure'}]})
+        self.assertEqual(0, result['known_top1'])
+        self.assertEqual(0, result['known_top5'])
+
+    def test_unknown_duplicate_candidates_and_duplicate_files_are_rejected(self):
+        row = {'file': 'x', 'expected_sign': 'UNKNOWN', 'source_group': 'a',
+               'confirmed_identification': False, 'candidates': [{'sign': 32}, {'sign': 32}]}
+        with self.assertRaises(ValueError):
+            summarize({'format_version': 1, 'predictions': [row]})
+        row['candidates'] = []
+        with self.assertRaises(ValueError):
+            summarize({'format_version': 1, 'predictions': [row, row]})
+
     def test_no_photos_cannot_be_reported_as_zero_or_perfect_accuracy(self):
         with self.assertRaises(ValueError):
             summarize({'format_version': 1, 'predictions': []})

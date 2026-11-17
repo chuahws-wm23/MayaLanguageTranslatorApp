@@ -90,3 +90,4 @@ jobs:
         run: |
           python -m unittest discover -s dataset/scripts -p test_validate_real_glyph_photos.py -v
           python -m unittest discover -s ml/logogram_expansion -p test_independent_photo_test.py -v
+          python -m unittest discover -s ml/logogram_expansion -p test_photo_benchmark.py -v

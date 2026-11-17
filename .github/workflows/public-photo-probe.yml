@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/public-photo-probe.yml'
       - 'ml/logogram_expansion/public_photo_probe.py'
+      - 'ml/logogram_expansion/photo_benchmark.py'
       - 'app/src/androidTest/java/com/chuahws/mayalanguageapp/presentation/translation/PublicGlyphPhotoProbeTest.kt'
 
 permissions:
@@ -46,6 +47,12 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: python ml/logogram_expansion/public_photo_probe.py --run-android
+      - name: Audit baseline and prepare unlabelled development review pack
+        if: always()
+        run: |
+          python ml/logogram_expansion/photo_benchmark.py --manifest app/src/androidTest/assets/public_photo_probe/manifest.json --report public-photo-report.json --output public-photo-benchmark.json
+          python ml/logogram_expansion/photo_benchmark.py --manifest app/src/androidTest/assets/public_photo_probe/manifest.json --photo-root app/src/androidTest/assets/public_photo_probe --output public-photo-review
+          git rev-parse HEAD > evaluated-code-commit.txt
       - name: Preserve source photographs, hashes, predictions and test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -54,6 +61,9 @@ jobs:
           path: |
             public-photo-report.json
             public-photo-summary.json
+            public-photo-benchmark.json
+            public-photo-review/
+            evaluated-code-commit.txt
             app/src/androidTest/assets/public_photo_probe/
             app/build/reports/androidTests/
             app/build/outputs/androidTest-results/

@@ -17,6 +17,20 @@ def summarize(report):
     rows = report.get('predictions', [])
     if not rows:
         raise ValueError('No evaluated photos. Cannot report photo accuracy.')
+    files = [r.get('file') for r in rows if r.get('file') is not None]
+    if len(files) != len(set(files)):
+        raise ValueError('Duplicate evaluated image IDs would inflate the denominator.')
+    for row in rows:
+        if not str(row.get('source_group', '')).strip():
+            raise ValueError('Every prediction needs an artifact/source group.')
+        sign = str(row.get('expected_sign', ''))
+        if sign != 'UNKNOWN' and (not sign.isdigit() or int(sign) <= 0):
+            raise ValueError('Expected sign must be a positive TWKM ID or explicit UNKNOWN.')
+        candidates = [str(c['sign']) for c in row['candidates']]
+        if len(candidates) != len(set(candidates)) or len(candidates) > 5:
+            raise ValueError('Predictions must contain up to five distinct sign identities.')
+        if any(not sign.isdigit() or int(sign) <= 0 for sign in candidates):
+            raise ValueError('Candidate sign IDs must be positive integers.')
     known = [r for r in rows if str(r['expected_sign']) != 'UNKNOWN']
     unknown = [r for r in rows if str(r['expected_sign']) == 'UNKNOWN']
     if any(r.get('confirmed_identification') is not False for r in rows):
@@ -24,7 +38,8 @@ def summarize(report):
     ranks = []
     group_scores = defaultdict(list)
     for row in known:
-        predicted = [str(c['sign']) for c in row['candidates']]
+        # A failed execution cannot become a success from stale/partial candidates.
+        predicted = [] if row.get('error') else [str(c['sign']) for c in row['candidates']]
         if len(predicted) != len(set(predicted)) or len(predicted) > 5:
             raise ValueError('Predictions must contain up to five distinct sign identities.')
         rank = predicted.index(str(row['expected_sign'])) + 1 if str(row['expected_sign']) in predicted else None
@@ -41,7 +56,7 @@ def summarize(report):
         'known_mrr_at_5': mean(1/r if r else 0 for r in ranks) if known else None,
         'known_top1_mean_across_source_groups': mean(mean(s) for s in group_scores.values()) if group_scores else None,
         'error_photos': sum('error' in r for r in rows),
-        'unknown_photos_with_unconfirmed_neighbours': sum(bool(r['candidates']) for r in unknown),
+        'unknown_photos_with_unconfirmed_neighbours': sum(bool(r['candidates']) and not r.get('error') for r in unknown),
         'unknown_rejection_accuracy': None,
         'calibrated_confidence_available': False,
         'release_approved': False,
