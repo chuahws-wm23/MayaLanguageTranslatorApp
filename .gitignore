@@ -102,3 +102,6 @@ ml/logogram_expansion/output/
 
 # Local expert-labelled photos staged only for on-device evaluation
 app/src/androidTest/assets/independent_photos/
+
+# Reproducible public-photo probe inputs are fetched only for evaluation
+app/src/androidTest/assets/public_photo_probe/
