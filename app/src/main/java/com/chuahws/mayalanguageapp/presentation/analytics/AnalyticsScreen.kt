@@ -64,7 +64,7 @@ fun AnalyticsScreen(
                         Text("YOUR EXPLORER JOURNAL", style = MaterialTheme.typography.labelLarge, color = Color(0xFFE4CB91))
                         Text("Small discoveries.\nGrowing understanding.", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                         Text(if (summary.weeklyScans == 0) "Your next discovery starts with a glyph or a lesson."
-                            else "${summary.weeklyScans} scans across ${summary.activeDays} active days in the last 7 days.")
+                            else "${summary.weeklyScans} ${if (summary.weeklyScans == 1) "scan" else "scans"} across ${summary.activeDays} active ${if (summary.activeDays == 1) "day" else "days"} in the last 7 days.")
                         Text("Explore at your own pace.", style = MaterialTheme.typography.bodySmall)
                     }
                 }
