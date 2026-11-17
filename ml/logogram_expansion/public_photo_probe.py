@@ -5,6 +5,7 @@ import concurrent.futures
 import datetime
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 import time
 import urllib.parse
@@ -115,12 +116,32 @@ def summarize(path):
     print("PHOTO_PROBE_SUMMARY " + json.dumps(summary, separators=(",", ":")))
     path.with_name("public-photo-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 
+def run_android():
+    result = subprocess.run([
+        "gradle", "connectedDebugAndroidTest",
+        "-Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true",
+        "-Pandroid.testInstrumentationRunnerArguments.class=com.chuahws.mayalanguageapp.presentation.translation.PublicGlyphPhotoProbeTest",
+        "--stacktrace",
+    ], check=False)
+    report = Path("public-photo-report.json")
+    pull = subprocess.run([
+        "adb", "pull",
+        "/sdcard/Android/data/com.chuahws.mayalanguageapp/files/screenshots/public-photo-development-report.json",
+        str(report),
+    ], check=False, timeout=60)
+    if report.exists():
+        summarize(report)
+    raise SystemExit(result.returncode or pull.returncode)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path("app/src/androidTest/assets/public_photo_probe"))
     parser.add_argument("--summarize", type=Path)
+    parser.add_argument("--run-android", action="store_true")
     args = parser.parse_args()
-    if args.summarize:
+    if args.run_android:
+        run_android()
+    elif args.summarize:
         summarize(args.summarize)
     else:
         prepare(args.root)
