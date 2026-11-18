@@ -117,7 +117,8 @@ class UserJourneyTest {
             compose.onNodeWithText(reference.english).assertExists()
             shot("history")
             tab("Dictionary").performClick()
-            field("Search meaning, reading or number").performTextReplacement("200").performImeAction()
+            field("Search meaning, reading or number").performTextReplacement("200")
+            field("Search meaning, reading or number").performImeAction()
             compose.waitUntil(20_000) { compose.onAllNodesWithText("PIK").fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithText("PIK").performScrollTo().assertIsDisplayed()
             shot("dictionary")
