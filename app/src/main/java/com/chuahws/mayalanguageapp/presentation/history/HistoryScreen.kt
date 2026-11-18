@@ -47,7 +47,13 @@ fun HistoryScreen(
     val focus = LocalFocusManager.current
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
-    val scans = remember(history) { history.filter { it.glyphScanRecord }.map { scan -> scan.copy(glyphCandidates = GlyphDisplayPolicy.visible(scan.glyphCandidates)) }.sortedByDescending { it.createdAtMillis } }
+    val scans = remember(history) {
+        history.filter { it.glyphScanRecord }.map { scan ->
+            val visible = GlyphDisplayPolicy.visible(scan.glyphCandidates)
+            scan.copy(glyphCandidates = visible,
+                translatedText = visible.joinToString(" · ") { "${it.reading}: ${it.englishGloss}" }.ifEmpty { "No match found" })
+        }.sortedByDescending { it.createdAtMillis }
+    }
     val filtered = remember(scans, query) {
         val q = query.trim()
         scans.filter { scan ->
