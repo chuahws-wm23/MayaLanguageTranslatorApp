@@ -40,11 +40,11 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints:
                 Surface(color=MaterialTheme.colorScheme.tertiaryContainer,shape=MaterialTheme.shapes.large) {
                     Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
                         Text("Closest reference found",style=MaterialTheme.typography.titleLarge)
-                        Text("Visual matches, not confirmed readings.",
+                        Text("Visual match, not a confirmed reading.",
                             style=MaterialTheme.typography.bodyMedium)
                     }
                 }
-                Text("Nearest references",style=MaterialTheme.typography.titleLarge)
+                Text("Nearest reference",style=MaterialTheme.typography.titleLarge)
                 if(catalogue!=null)matches.take(MAX_CLOSEST_REFERENCES).forEachIndexed { rank,match ->
                     EnglishMeaningMatchRow(catalogue,match,rank+1)
                 }

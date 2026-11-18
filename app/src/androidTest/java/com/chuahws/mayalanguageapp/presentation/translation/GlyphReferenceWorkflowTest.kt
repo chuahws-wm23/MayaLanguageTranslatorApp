@@ -114,7 +114,7 @@ class GlyphReferenceWorkflowTest {
         }
     }
 
-    @Test fun comparisonUiShowsThreeImagesAndClearsThemWhenPhotoChangesInBothThemes() {
+    @Test fun comparisonUiShowsOneImageAndClearsItWhenPhotoChangesInBothThemes() {
         val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val reference = words.references.first { it.twkmSign == 32 }
         val photo = words.imageFor(reference)
@@ -132,7 +132,7 @@ class GlyphReferenceWorkflowTest {
         }
         compose.onNodeWithText("Compare with the archive").performClick()
         compose.waitUntil(60_000) { saved != null }
-        compose.onAllNodes(numericSimilarity).assertCountEquals(3)
+        compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         assertEquals(5, saved!!.candidates.size)
         compose.waitUntil(20_000) {
             compose.onAllNodesWithContentDescription("Reference drawing for ${reference.reading}").fetchSemanticsNodes().isNotEmpty()
@@ -140,7 +140,7 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithContentDescription("Reference drawing for ${reference.reading}").assertExists()
         screenshot("reference-results-light")
         compose.runOnIdle { dark.value = true }
-        compose.onAllNodes(numericSimilarity).assertCountEquals(3)
+        compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         screenshot("reference-results-dark")
         compose.runOnIdle { selected.value = blank; saved = null }
         compose.waitForIdle()
@@ -509,8 +509,8 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("Single glyph").performScrollTo().performClick()
         compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
         compose.onNodeWithText("Closest reference found").performScrollTo().assertExists()
-        compose.onNodeWithText("Nearest references").assertExists()
-        compose.onAllNodes(numericSimilarity).assertCountEquals(3)
+        compose.onNodeWithText("Nearest reference").assertExists()
+        compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         compose.onAllNodesWithText("Frame your glyph").assertCountEquals(0)
         compose.onAllNodesWithText("Reset crop").assertCountEquals(0)
         compose.onAllNodesWithText("Advanced AI models & research settings").assertCountEquals(0)
@@ -531,7 +531,7 @@ class GlyphReferenceWorkflowTest {
         compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
         compose.onNodeWithText("Reference drawing matched").performScrollTo().assertExists()
         compose.onAllNodesWithText("Closest reference found").assertCountEquals(0)
-        compose.onAllNodesWithText("Nearest references").assertCountEquals(0)
+        compose.onAllNodesWithText("Nearest reference").assertCountEquals(0)
         compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         compose.waitUntil(20_000) { recorded.get()==2 }
         screenshot("scanner-exact-reference")

@@ -46,7 +46,7 @@ import java.util.Locale
  * classification head. Its nearest visual match can be incorrect even when the
  * scholarly logogram reading itself has a strong evidence rating.
  */
-internal const val MAX_CLOSEST_REFERENCES = 3
+internal const val MAX_CLOSEST_REFERENCES = 1
 
 @Composable
 internal fun EnglishMeaningExploreCard(
@@ -182,12 +182,12 @@ internal fun EnglishMeaningExploreCard(
                         } else {
                             val identical = matches.first().identicalNormalizedDrawing
                             Text(
-                                if (identical) "Same normalized reference drawing" else "Nearest reference drawings",
+                                if (identical) "Same normalized reference drawing" else "Nearest reference drawing",
                                 style = MaterialTheme.typography.headlineSmall,
                             )
                             Text(
                                 if (identical) "Same reference drawing. Meaning depends on context."
-                                else "Up to three visual matches. Please verify the sign.",
+                                else "Closest visual match. Please verify the sign.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

@@ -132,7 +132,7 @@ fun GlyphScanDetailsDialog(
                     Text("Possible reference matches",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold)
-                    candidates.take(10).groupBy { it.regionIndex }.values.flatMap { it.take(3) }.forEachIndexed { index, candidate ->
+                    candidates.take(10).groupBy { it.regionIndex }.values.flatMap { it.take(1) }.forEachIndexed { index, candidate ->
                         var expanded by remember(index,candidate.twkmSign) {
                             mutableStateOf(false)
                         }
