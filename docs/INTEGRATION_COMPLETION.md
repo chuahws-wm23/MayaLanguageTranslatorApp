@@ -5,7 +5,7 @@ This supplements FEATURE_VALIDATION.md. Production accounts, production rules de
 ## Completed engineering work
 
 - User Activity reads Firestore server-side document counts instead of best-effort cached analytics. History deletion and repeated saves therefore reflect actual stored records. Aggregation queries avoid downloading all photo previews to compute totals. Administrator aggregate dashboards still use the legacy analytics collection and are not covered by this fix.
-- Camera instructions no longer promise the removed crop/rotate screen.
+- Camera instructions no longer promise the removed crop/rotate screen. Camera initialization and lifecycle binding explicitly resume on the main dispatcher after awaiting the provider; the cold-start integration test exposed an off-main-thread preview access.
 - Firebase emulator integration is reproducible with locked Node dependencies. It is isolated to `demo-maya-glyph-validation` and checks emulator hosts before running. No Google service credentials or live Firebase project are needed.
 - Added a CameraX virtual-camera capture/reopen/cancel test to Android checks. The emulator now has an emulated back camera.
 

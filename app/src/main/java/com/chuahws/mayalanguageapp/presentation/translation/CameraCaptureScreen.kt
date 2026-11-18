@@ -25,6 +25,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.chuahws.mayalanguageapp.integration.ml_kit_ocr.createTemporaryImageFile
 import com.chuahws.mayalanguageapp.integration.ml_kit_ocr.temporaryImageUri
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.guava.await
 import java.util.concurrent.atomic.AtomicBoolean
@@ -46,26 +48,28 @@ fun CameraCaptureScreen(onCancel: () -> Unit, onImageCaptured: (Uri) -> Unit, on
     var message by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(context, lifecycleOwner) {
-        try {
-            val camera = ProcessCameraProvider.getInstance(context).await()
-            provider = camera
-            val selector = when {
-                camera.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA) -> CameraSelector.DEFAULT_BACK_CAMERA
-                camera.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA) -> CameraSelector.DEFAULT_FRONT_CAMERA
-                else -> { errorCallback("No usable camera was found. Choose an image from Gallery."); return@LaunchedEffect }
+        withContext(Dispatchers.Main.immediate) {
+            try {
+                val camera = ProcessCameraProvider.getInstance(context).await()
+                provider = camera
+                val selector = when {
+                    camera.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA) -> CameraSelector.DEFAULT_BACK_CAMERA
+                    camera.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA) -> CameraSelector.DEFAULT_FRONT_CAMERA
+                    else -> { errorCallback("No usable camera was found. Choose an image from Gallery."); return@withContext }
+                }
+                val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
+                val capture = ImageCapture.Builder()
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                    .setTargetRotation(previewView.display?.rotation ?: AndroidSurface.ROTATION_0).build()
+                camera.unbindAll()
+                camera.bindToLifecycle(lifecycleOwner, selector, preview, capture)
+                imageCapture = capture
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                android.util.Log.e("MayaCamera", "Could not initialize camera preview and capture", error)
+                message = "Could not start the camera. Close it and try Gallery instead."
             }
-            val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
-            val capture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .setTargetRotation(previewView.display?.rotation ?: AndroidSurface.ROTATION_0).build()
-            camera.unbindAll()
-            camera.bindToLifecycle(lifecycleOwner, selector, preview, capture)
-            imageCapture = capture
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Exception) {
-            android.util.Log.e("MayaCamera", "Could not initialize camera preview and capture", error)
-            message = "Could not start the camera. Close it and try Gallery instead."
         }
     }
     DisposableEffect(Unit) {
