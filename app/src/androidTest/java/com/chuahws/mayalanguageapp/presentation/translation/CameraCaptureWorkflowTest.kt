@@ -36,9 +36,11 @@ class CameraCaptureWorkflowTest {
             else Text("Camera closed")
         } }
         compose.waitUntil(60_000) {
-            error != null || compose.onAllNodes(hasText("Take photo") and isEnabled()).fetchSemanticsNodes().isNotEmpty()
+            error != null || compose.onAllNodesWithText("Could not start the camera.", substring = true).fetchSemanticsNodes().isNotEmpty() ||
+                compose.onAllNodes(hasText("Take photo") and isEnabled()).fetchSemanticsNodes().isNotEmpty()
         }
         assertNull(error)
+        compose.onAllNodesWithText("Could not start the camera.", substring = true).assertCountEquals(0)
         compose.onNodeWithText("Take photo").performClick()
         compose.waitUntil(30_000) { captured != null || error != null }
         assertNull(error)
