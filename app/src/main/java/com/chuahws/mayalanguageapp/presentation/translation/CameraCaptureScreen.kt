@@ -63,7 +63,8 @@ fun CameraCaptureScreen(onCancel: () -> Unit, onImageCaptured: (Uri) -> Unit, on
             imageCapture = capture
         } catch (cancelled: CancellationException) {
             throw cancelled
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            android.util.Log.e("MayaCamera", "Could not initialize camera preview and capture", error)
             message = "Could not start the camera. Close it and try Gallery instead."
         }
     }
