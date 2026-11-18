@@ -62,7 +62,7 @@ fun RegisterScreen(
         ) {
             AuthHeader(
                 title = "Create your account",
-                subtitle = "Save useful words and keep your translations in one place.",
+                subtitle = "Keep your glyph scans, favourites and activity in one place.",
             )
 
             Spacer(Modifier.height(22.dp))

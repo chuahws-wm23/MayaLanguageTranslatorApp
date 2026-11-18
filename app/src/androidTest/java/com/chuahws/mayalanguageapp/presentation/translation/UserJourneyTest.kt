@@ -104,8 +104,12 @@ class UserJourneyTest {
             assertEquals(1,pickerCalls)
             compose.onNodeWithText("Reference drawing matched").performScrollTo().assertExists()
             shot("scan-result")
+            // A short-lived save notification can cover a button near the bottom edge.
+            // Wait until the visible notification is gone before tapping through it.
+            compose.waitUntil(15_000) { app.uiState.value.message==null && auth.uiState.value.message==null }
             button("Add to favourites").performScrollTo().performClick()
             compose.waitUntil(10_000) { app.uiState.value.savedVocabulary.size==1 }
+            compose.waitUntil(15_000) { app.uiState.value.message==null }
             button("View favourites").performScrollTo().performClick()
             compose.onNodeWithText("Glyph · ${reference.reading}").assertExists()
             button("History").performClick()
@@ -135,6 +139,7 @@ class UserJourneyTest {
             button("Send feedback").performScrollTo().performClick()
             compose.waitUntil(10_000) { app.uiState.value.feedbackSubmissionVersion==1L && !app.uiState.value.feedbackSubmitting }
             button("Profile").performClick()
+            compose.waitUntil(15_000) { app.uiState.value.message==null }
             button("Sign out").performScrollTo().performClick()
             compose.waitUntil(10_000) { auth.uiState.value.currentUser==null && app.uiState.value.userId==null }
             field("Email address").performTextReplacement(email)
@@ -144,6 +149,11 @@ class UserJourneyTest {
             assertEquals(1,app.uiState.value.history.size)
             assertEquals(1,app.uiState.value.savedVocabulary.size)
             assertEquals(1L,app.uiState.value.analytics.totalTranslations)
+        } catch (error: Throwable) {
+            runCatching { shot("failure") }
+            compose.onRoot().printToLog("UserJourneyFailure")
+            println("Journey state: history=${app.uiState.value.history.size}, favourites=${app.uiState.value.savedVocabulary.size}, loading=${app.uiState.value.loading}, message=${app.uiState.value.message}")
+            throw error
         } finally {
             compose.runOnIdle { app.clearUser();auth.signOut();models.clear() }
             file.delete()

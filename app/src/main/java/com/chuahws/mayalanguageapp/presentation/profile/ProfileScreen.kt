@@ -774,7 +774,7 @@ private fun AboutPage(
 
                 Text(
                     text =
-                        "Explore Classic Maya glyph drawings and their source-proposed meanings. Text and voice tools use the modern Yucatec Maya dictionary.",
+                        "Explore Classic Maya glyph drawings, compare photos with references and read their source-proposed meanings.",
                     color =
                         MaterialTheme
                             .colorScheme
@@ -800,7 +800,7 @@ private fun AboutPage(
                             "• Browse illustrated reference drawings\n" +
                             "• Save scan pictures and proposed meanings\n" +
                             "• Revisit history and favourites\n" +
-                            "• Use text, voice and pronunciation tools",
+                            "• Track your scans and saved items",
                     color =
                         MaterialTheme
                             .colorScheme

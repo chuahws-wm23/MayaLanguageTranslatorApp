@@ -62,7 +62,7 @@ fun LoginScreen(
         ) {
             AuthHeader(
                 title = "Welcome back",
-                subtitle = "Translate between English and Maya, save words and come back to them anytime.",
+                subtitle = "Compare Maya glyphs with reference drawings and revisit your saved scans.",
             )
 
             Spacer(Modifier.height(24.dp))
