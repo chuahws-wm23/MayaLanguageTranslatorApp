@@ -57,8 +57,9 @@ class DevelopmentAuthRepository : AuthRepository {
     }
 
     override suspend fun sendPasswordReset(email: String) {
-        // Mimic Firebase's privacy-preserving response. Do not reveal whether
-        // an email exists in this temporary in-memory repository.
+        throw IllegalStateException(
+            "Password reset is unavailable in development mode. Configure Firebase to send reset emails."
+        )
     }
 
     override fun signOut() {
