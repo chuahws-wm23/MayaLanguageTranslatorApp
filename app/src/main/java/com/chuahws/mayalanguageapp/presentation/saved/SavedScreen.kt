@@ -1,5 +1,7 @@
 package com.chuahws.mayalanguageapp.presentation.saved
 
+import com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -57,6 +59,15 @@ fun SavedScreen(
     onRemove: (SavedVocabularyItem) -> Unit,
     onTranslate: (SavedVocabularyItem) -> Unit,
 ) {
+    val displayItems = items.map { item ->
+        if (!item.glyphScanRecord) item else {
+            val visible = GlyphDisplayPolicy.visible(item.glyphCandidates)
+            val sameBest = visible.firstOrNull() != null && visible.firstOrNull() == item.glyphCandidates.firstOrNull()
+            item.copy(glyphCandidates = visible,
+                mayaText = if (sameBest) item.mayaText else visible.firstOrNull()?.reading ?: "No match found",
+                englishText = if (sameBest) item.englishText else visible.firstOrNull()?.englishGloss ?: "No reference above 85% similarity")
+        }
+    }
     var query by rememberSaveable {
         mutableStateOf("")
     }
@@ -74,7 +85,7 @@ fun SavedScreen(
     }
     val listState = rememberLazyListState()
 
-    val selectedItem = items.firstOrNull {
+    val selectedItem = displayItems.firstOrNull {
         it.savedId == selectedSavedId
     }
 
@@ -117,7 +128,7 @@ fun SavedScreen(
         )
     }
 
-    val filtered = items.filter { item ->
+    val filtered = displayItems.filter { item ->
         val matchesQuery =
             query.isBlank() ||
                 item.mayaText.contains(query, ignoreCase = true) ||
@@ -151,7 +162,7 @@ fun SavedScreen(
         listState.scrollToItem(0)
     }
 
-    val itemToRemove = items.firstOrNull {
+    val itemToRemove = displayItems.firstOrNull {
         it.savedId == pendingRemoval
     }
 

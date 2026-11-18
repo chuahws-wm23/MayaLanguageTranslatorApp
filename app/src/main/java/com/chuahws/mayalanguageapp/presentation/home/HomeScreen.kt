@@ -103,7 +103,7 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                             GlyphScanThumbnail(scan.glyphImageBase64, side = 60.dp)
                             Column(Modifier.weight(1f)) {
-                                Text(scan.glyphCandidates.firstOrNull()?.reading ?: "Unidentified sign",
+                                Text(com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy.visible(scan.glyphCandidates).firstOrNull()?.reading ?: "No match found",
                                     style = MaterialTheme.typography.titleMedium)
                                 Text("Visual reference search · unverified",
                                     style = MaterialTheme.typography.bodySmall,

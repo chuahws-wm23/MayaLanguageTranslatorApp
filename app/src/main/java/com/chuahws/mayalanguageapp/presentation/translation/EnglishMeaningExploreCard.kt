@@ -1,6 +1,7 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
 import com.chuahws.mayalanguageapp.presentation.components.ReferenceDrawing
+import com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy
 import android.graphics.Bitmap
 import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphTable
 import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphTableRow
@@ -175,8 +176,12 @@ internal fun EnglishMeaningExploreCard(
                                 color = MaterialTheme.colorScheme.onTertiaryContainer)
                         }
                     }
-                    result?.let { matches ->
-                        if (matches.isEmpty()) {
+                    result?.let { rawMatches ->
+                        val matches = rawMatches.take(1).filter { GlyphDisplayPolicy.accepts(it.visualOverlap) }
+                        if (rawMatches.isNotEmpty() && matches.isEmpty()) {
+                            Text("No match found", style = MaterialTheme.typography.titleLarge)
+                            Text("No reference exceeded 85% visual similarity.")
+                        } else if (matches.isEmpty()) {
                             Text("No usable sign strokes found. Try even lighting, a sharper photo, " +
                                 "and a crop around one complete sign.")
                         } else {
@@ -315,7 +320,7 @@ internal fun EnglishMeaningMatchRow(
                 Text(rank?.let { "REFERENCE  /  %02d".format(it) } ?: "REFERENCE DRAWING",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary)
-                Text("Similarity %.3f".format(Locale.ROOT, match.visualOverlap),
+                Text("Visual similarity ${GlyphDisplayPolicy.percent(match.visualOverlap)}",
                     style = MaterialTheme.typography.labelMedium)
             }
             ReferenceDrawing(ref.graph,"Reference drawing for ${ref.reading}",

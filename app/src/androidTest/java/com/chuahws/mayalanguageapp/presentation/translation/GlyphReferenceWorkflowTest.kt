@@ -44,10 +44,36 @@ class GlyphReferenceWorkflowTest {
     @get:Rule val compose = createComposeRule()
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
+    @Test fun similarityFilterHidesCandidatesAtOrBelow85AndShowsPercentageAboveIt() {
+        val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val ref = catalogue.references.first()
+        val score = mutableStateOf(.84f)
+        compose.setContent { MayaTranslateTheme {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                GlyphReferenceResults(listOf(GlyphEnglishMatch(ref, score.value)))
+            }
+        } }
+        listOf(.84f, .85f).forEach { value ->
+            compose.runOnIdle { score.value = value }
+            compose.onNodeWithText("No match found").assertExists()
+            compose.onAllNodes(numericSimilarity).assertCountEquals(0)
+            compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}").assertCountEquals(0)
+        }
+        compose.runOnIdle { score.value = .95f }
+        compose.onNodeWithText("Visual similarity 95.00%").assertExists()
+        compose.onAllNodes(numericSimilarity).assertCountEquals(1)
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}").fetchSemanticsNodes().size == 1
+        }
+        compose.runOnIdle { score.value = .5f }
+        compose.onNodeWithText("No match found").assertExists()
+        compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}").assertCountEquals(0)
+    }
+
     @Test fun favouriteGlyphSearchDetailsAndConfirmedRemovalWork() {
         val saved = mutableStateOf(listOf(com.chuahws.mayalanguageapp.domain.model.SavedVocabularyItem(
             savedId = "saved-check", userId = "user", glyphScanRecord = true,
-            englishText = "Validation favourite", glyphCandidates = listOf(GlyphScanCandidate(reading = "AJAW", englishGloss = "lord")))))
+            englishText = "Validation favourite", glyphCandidates = listOf(GlyphScanCandidate(reading = "AJAW", englishGloss = "lord", visualOverlap = .99)))))
         var removals = 0
         compose.setContent { MayaTranslateTheme {
             com.chuahws.mayalanguageapp.presentation.saved.SavedScreen(saved.value,
@@ -354,7 +380,7 @@ class GlyphReferenceWorkflowTest {
         val packed=try { GlyphScanPreviewCodec.encode(picture,GlyphCrop()) } finally { picture.recycle() }
         val record=TranslationRecord(translationId="history-ui-fixture",userId="fixture",glyphScanRecord=true,
             glyphImageBase64=packed,glyphCandidates=listOf(GlyphScanCandidate(
-                twkmSign=reference.twkmSign,reading=reference.reading,englishGloss=reference.english)))
+                twkmSign=reference.twkmSign,reading=reference.reading,englishGloss=reference.english,visualOverlap=.99)))
         compose.setContent { MayaTranslateTheme { HistoryScreen(listOf(record),onDelete={}) } }
         compose.onNodeWithText(reference.english).assertExists()
         compose.onNodeWithContentDescription("Saved preview of the scanned Maya glyph").assertExists()
@@ -370,7 +396,7 @@ class GlyphReferenceWorkflowTest {
     @Test fun historyPaginatesTenEntriesResetsSearchAndClampsAfterDeletion() {
         val records=mutableStateOf((1..13).map { number -> TranslationRecord(
             translationId="paging-$number",userId="fixture",createdAtMillis=1700000000000L+number*1000L,glyphScanRecord=true,
-            glyphCandidates=listOf(GlyphScanCandidate(twkmSign=number,reading="READING-$number",englishGloss="Meaning $number"))) })
+            glyphCandidates=listOf(GlyphScanCandidate(visualOverlap=.99,twkmSign=number,reading="READING-$number",englishGloss="Meaning $number"))) })
         compose.setContent { MayaTranslateTheme { HistoryScreen(records.value,onDelete={ record ->
             records.value=records.value.filterNot { it.translationId==record.translationId }
         }) } }
@@ -559,8 +585,8 @@ class GlyphReferenceWorkflowTest {
     private val numericSimilarity = SemanticsMatcher("numeric appearance similarity") { node ->
         node.config.contains(SemanticsProperties.Text) &&
             node.config[SemanticsProperties.Text].any { text ->
-                text.text.startsWith("Similarity ") &&
-                    text.text.removePrefix("Similarity ").toFloatOrNull() != null
+                text.text.startsWith("Visual similarity ") &&
+                    text.text.removePrefix("Visual similarity ").removeSuffix("%").toFloatOrNull() != null
             }
     }
 

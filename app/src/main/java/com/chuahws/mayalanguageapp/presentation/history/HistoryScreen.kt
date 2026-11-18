@@ -1,5 +1,7 @@
 package com.chuahws.mayalanguageapp.presentation.history
 
+import com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -45,7 +47,7 @@ fun HistoryScreen(
     val focus = LocalFocusManager.current
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
-    val scans = remember(history) { history.filter { it.glyphScanRecord }.sortedByDescending { it.createdAtMillis } }
+    val scans = remember(history) { history.filter { it.glyphScanRecord }.map { scan -> scan.copy(glyphCandidates = GlyphDisplayPolicy.visible(scan.glyphCandidates)) }.sortedByDescending { it.createdAtMillis } }
     val filtered = remember(scans, query) {
         val q = query.trim()
         scans.filter { scan ->
@@ -137,7 +139,7 @@ fun HistoryScreen(
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             Text(if (scan.glyphRegionCount > 1) "${scan.glyphRegionCount} scanned regions" else "SCANNED GLYPH",
                                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                            Text(best?.englishGloss ?: "No reliable meaning identified",
+                            Text(best?.englishGloss ?: "No match found",
                                 style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                             best?.let { Text("${it.reading} · TWKM #${it.twkmSign}",
                                 style = MaterialTheme.typography.bodyMedium) }

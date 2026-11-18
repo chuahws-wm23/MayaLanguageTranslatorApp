@@ -1,5 +1,7 @@
 package com.chuahws.mayalanguageapp.presentation.components
 
+import com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -123,16 +125,15 @@ fun GlyphScanDetailsDialog(
                     }
                 }
                 HorizontalDivider()
-                if (candidates.isEmpty()) {
+                if (GlyphDisplayPolicy.visible(candidates).isEmpty()) {
                     Text(
-                        "No reliable English reading was confirmed for this image. " +
-                            "Return to Scan to try a clearer photo.",
+                        "No match found. No reference exceeded 85% visual similarity.",
                     )
                 } else {
                     Text("Possible reference matches",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold)
-                    candidates.take(10).groupBy { it.regionIndex }.values.flatMap { it.take(1) }.forEachIndexed { index, candidate ->
+                    GlyphDisplayPolicy.visible(candidates.take(10)).forEachIndexed { index, candidate ->
                         var expanded by remember(index,candidate.twkmSign) {
                             mutableStateOf(false)
                         }
@@ -153,9 +154,7 @@ fun GlyphScanDetailsDialog(
                                     if (scanKind == "RESEARCH" || candidate.visualOverlap <= 0.0)
                                         "TWKM #${candidate.twkmSign} · experimental research model; " +
                                             "not verified from this photograph"
-                                    else "TWKM #${candidate.twkmSign} · similarity ${String.format(Locale.US,"%.3f",
-                                        candidate.visualOverlap)} " +
-                                        "(NOT translation confidence)",
+                                    else "TWKM #${candidate.twkmSign} · visual similarity ${GlyphDisplayPolicy.percent(candidate.visualOverlap.toFloat())}",
                                     style = MaterialTheme.typography.bodySmall,
                                 )
                                 val note = remember(candidate.twkmSign) {

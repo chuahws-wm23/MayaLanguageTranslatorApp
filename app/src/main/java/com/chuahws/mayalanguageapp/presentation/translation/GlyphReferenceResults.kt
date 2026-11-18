@@ -1,6 +1,7 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
 import androidx.compose.foundation.layout.*
+import com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -14,7 +15,8 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMatch
 internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints: List<String> = emptyList()) {
     val context=LocalContext.current
     val catalogue=remember(context) { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }
-    val exact=matches.filter { it.identicalNormalizedDrawing }.singleOrNull()
+    val eligible = matches.take(1).filter { GlyphDisplayPolicy.accepts(it.visualOverlap) }
+    val exact=eligible.filter { it.identicalNormalizedDrawing }.singleOrNull()
     Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         when {
             matches.isEmpty() -> {
@@ -27,6 +29,14 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints:
                             "Use soft, even light and keep the camera steady.",
                             "Include the whole glyph, with a little space around it.",
                         ) }.distinct().take(3).forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                    }
+                }
+            }
+            eligible.isEmpty() -> {
+                Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.large) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("No match found", style = MaterialTheme.typography.titleLarge)
+                        Text("No reference exceeded 85% visual similarity.", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -45,7 +55,7 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints:
                     }
                 }
                 Text("Nearest reference",style=MaterialTheme.typography.titleLarge)
-                if(catalogue!=null)matches.take(MAX_CLOSEST_REFERENCES).forEachIndexed { rank,match ->
+                if(catalogue!=null)eligible.take(MAX_CLOSEST_REFERENCES).forEachIndexed { rank,match ->
                     EnglishMeaningMatchRow(catalogue,match,rank+1)
                 }
             }
