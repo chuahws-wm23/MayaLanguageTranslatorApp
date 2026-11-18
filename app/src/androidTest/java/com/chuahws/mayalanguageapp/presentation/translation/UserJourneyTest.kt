@@ -9,6 +9,8 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.FileProvider
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.*
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -33,6 +35,7 @@ import java.io.File
 class UserJourneyTest {
     @get:Rule val compose = createComposeRule()
     private fun button(text: String) = compose.onNode(hasText(text) and hasClickAction())
+    private fun tab(text: String) = compose.onNode(hasText(text) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
     private fun field(label: String) = compose.onNode(hasText(label) and hasSetTextAction())
     private fun shot(name: String) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -97,7 +100,7 @@ class UserJourneyTest {
             compose.waitUntil(10_000) { app.uiState.value.profile?.displayName=="Journey explorer" && !app.uiState.value.loading }
             compose.onNodeWithText("Welcome back").assertExists()
             shot("home")
-            button("Scan").performClick()
+            tab("Scan").performClick()
             button("Gallery").performScrollTo().performClick()
             compose.onNodeWithText("Single glyph").performScrollTo().performClick()
             compose.waitUntil(60_000) { app.uiState.value.history.size==1 }
@@ -112,14 +115,14 @@ class UserJourneyTest {
             compose.waitUntil(15_000) { app.uiState.value.message==null }
             button("View favourites").performScrollTo().performClick()
             compose.onNodeWithText("Glyph · ${reference.reading}").assertExists()
-            button("History").performClick()
+            tab("History").performClick()
             compose.onNodeWithText(reference.english).assertExists()
             shot("history")
-            button("Dictionary").performClick()
+            tab("Dictionary").performClick()
             field("Search meaning, reading or number").performTextReplacement("200")
             compose.onNodeWithText("PIK").assertExists()
             shot("dictionary")
-            button("Profile").performClick()
+            tab("Profile").performClick()
             button("Edit profile").performScrollTo().performClick()
             field("Display name").performTextReplacement("Updated explorer")
             button("Save changes").performScrollTo().performClick()
@@ -138,7 +141,7 @@ class UserJourneyTest {
             compose.onNodeWithContentDescription("Rate 4 out of 5 stars").performScrollTo().performClick()
             button("Send feedback").performScrollTo().performClick()
             compose.waitUntil(10_000) { app.uiState.value.feedbackSubmissionVersion==1L && !app.uiState.value.feedbackSubmitting }
-            button("Profile").performClick()
+            tab("Profile").performClick()
             compose.waitUntil(15_000) { app.uiState.value.message==null }
             button("Sign out").performScrollTo().performClick()
             compose.waitUntil(10_000) { auth.uiState.value.currentUser==null && app.uiState.value.userId==null }
