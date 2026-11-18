@@ -127,6 +127,7 @@ class UserJourneyTest {
             field("Display name").performTextReplacement("Updated explorer")
             button("Save changes").performScrollTo().performClick()
             compose.waitUntil(10_000) { app.uiState.value.profile?.displayName=="Updated explorer" }
+            compose.waitUntil(15_000) { app.uiState.value.message==null }
             shot("profile")
             compose.onNodeWithContentDescription("Open menu").performClick()
             button("My activity").performScrollTo().performClick()
