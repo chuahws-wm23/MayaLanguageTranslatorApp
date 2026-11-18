@@ -1,5 +1,7 @@
 # Feature validation and remaining release checks
 
+Latest user-flow run: see [USER_FLOW_REVIEW.md](USER_FLOW_REVIEW.md) for 180 passing JVM tests, 18 passing Android runtime tests, two passing Firebase emulator scenarios, fixes and remaining limitations. Older counts below describe earlier runs.
+
 This pass removes the Learn Maya hub, lessons, quizzes, number playground, progress display, and their entry points. It restores the earlier Activity layout. Existing scanner result wording (“Closest reference found”), region selection, dictionary pages, History and Profile improvements remain.
 
 ## Fixes from validation
