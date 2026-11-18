@@ -6,6 +6,9 @@ import com.chuahws.mayalanguageapp.domain.model.SavedVocabularyItem
 import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.domain.model.UsageAnalytics
 import com.chuahws.mayalanguageapp.domain.repository.UserDataRepository
+import com.google.firebase.firestore.AggregateSource
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import android.util.Log
@@ -201,15 +204,18 @@ class FirebaseUserDataRepository(
             }
             .sortedByDescending { it.submittedAtMillis }
 
-    override suspend fun getAnalytics(
-        userId: String,
-    ): UsageAnalytics =
-        firestore.collection("analytics")
-            .document(userId)
-            .get()
-            .await()
-            .toObject(UsageAnalytics::class.java)
-            ?: UsageAnalytics(userId = userId)
+    override suspend fun getAnalytics(userId: String): UsageAnalytics = coroutineScope {
+        // Server counts reflect actual documents, including deletion and repeated saves.
+        // Aggregations avoid downloading every stored photo just to calculate totals.
+        val records = firestore.collection("translations").whereEqualTo("userId", userId)
+        val total = async { records.count().get(AggregateSource.SERVER).await().count }
+        val text = async { records.whereEqualTo("inputType", InputType.TEXT.name).count().get(AggregateSource.SERVER).await().count }
+        val image = async { records.whereEqualTo("inputType", InputType.IMAGE.name).count().get(AggregateSource.SERVER).await().count }
+        val voice = async { records.whereEqualTo("inputType", InputType.VOICE.name).count().get(AggregateSource.SERVER).await().count }
+        val saved = async { firestore.collection("savedVocabulary").whereEqualTo("userId", userId).count().get(AggregateSource.SERVER).await().count }
+        UsageAnalytics(userId = userId, totalTranslations = total.await(), textTranslations = text.await(),
+            imageTranslations = image.await(), voiceTranslations = voice.await(), savedWords = saved.await())
+    }
 
     override suspend fun getAllAnalytics(): List<UsageAnalytics> =
         firestore.collection("analytics")

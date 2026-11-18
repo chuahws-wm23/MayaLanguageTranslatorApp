@@ -114,7 +114,7 @@ fun CameraCaptureScreen(onCancel: () -> Unit, onImageCaptured: (Uri) -> Unit, on
         }
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color.Black.copy(alpha = .65f)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Keep the full drawing visible. You can crop and rotate it next.", color = Color.White)
+            Text("Keep the full glyph visible and hold the camera steady.", color = Color.White)
             message?.let { Text(it, color = Color.White) }
             if (imageCapture == null && message == null) {
                 CircularProgressIndicator(); Text("Starting camera…", color = Color.White)

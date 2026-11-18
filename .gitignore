@@ -105,3 +105,7 @@ app/src/androidTest/assets/independent_photos/
 
 # Reproducible public-photo probe inputs are fetched only for evaluation
 app/src/androidTest/assets/public_photo_probe/
+
+# Local Firebase emulator logs (no production credentials)
+*-debug.log
+*-debug.log.*

@@ -39,3 +39,7 @@ These are limitations of available evidence, not claims that those workflows hav
 ## Local verification
 
 `testDebugUnitTest assembleDebug assembleDebugAndroidTest`: passed, 177 JVM tests with zero failures/errors. `lintDebug`: passed, zero errors and 39 warnings (dependency updates, Compose modifier conventions, unused resources, KTX suggestions and package visibility in the retired voice screen). Emulator results are recorded by the Android checks workflow; no claim of a passing test is based on compilation alone.
+
+## Integration follow-up
+
+See [INTEGRATION_COMPLETION.md](INTEGRATION_COMPLETION.md) for the added Auth/Firestore emulator scenarios, CameraX virtual-camera check and live Activity counter fix. Emulator service checks narrow the earlier integration gaps but do not certify physical devices, production configuration, actual email delivery, or real-photo identification.
