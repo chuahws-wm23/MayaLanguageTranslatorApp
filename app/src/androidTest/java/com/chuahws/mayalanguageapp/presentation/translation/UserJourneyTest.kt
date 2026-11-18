@@ -9,8 +9,6 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.FileProvider
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.*
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -35,7 +33,7 @@ import java.io.File
 class UserJourneyTest {
     @get:Rule val compose = createComposeRule()
     private fun button(text: String) = compose.onNode(hasText(text) and hasClickAction())
-    private fun tab(text: String) = compose.onNode(hasText(text) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
+    private fun tab(text: String) = compose.onNodeWithTag("main-tab-$text")
     private fun field(label: String) = compose.onNode(hasText(label) and hasSetTextAction())
     private fun shot(name: String) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -119,8 +117,9 @@ class UserJourneyTest {
             compose.onNodeWithText(reference.english).assertExists()
             shot("history")
             tab("Dictionary").performClick()
-            field("Search meaning, reading or number").performTextReplacement("200")
-            compose.onNodeWithText("PIK").assertExists()
+            field("Search meaning, reading or number").performTextReplacement("200").performImeAction()
+            compose.waitUntil(20_000) { compose.onAllNodesWithText("PIK").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText("PIK").performScrollTo().assertIsDisplayed()
             shot("dictionary")
             tab("Profile").performClick()
             button("Edit profile").performScrollTo().performClick()
