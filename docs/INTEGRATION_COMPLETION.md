@@ -36,3 +36,21 @@ These test Firebase services and the repository's Firestore rules through the Ja
 - Administrator UI end-to-end testing and legacy administrator analytics-counter consistency remain separate from the backend admin/rules scenarios above.
 
 A passing integration suite must not be presented as proof that these outstanding items pass.
+
+## Verified run results
+
+At application commit `5ef1d42bbafa997337974256258c504a6ae5f86a`:
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Android build and JVM suite | PASS: 177 unit tests | Android checks run 44268220748 |
+| Android runtime | PASS: 16 tests, no skips/failures | Includes actual virtual-camera capture, decoding, reopening and cancellation |
+| Firebase integration | PASS: both emulator scenarios | Firebase emulator integration run 44268220535 |
+| Evaluation-tool checks | PASS: 19 tests | Android checks photo-evaluation-tooling job |
+| Production email delivery / physical phone | Not verified | Requires the configured project and physical hardware |
+| Full admin UI and legacy admin analytics | Not certified | Backend rules/CRUD checks are narrower than the full dashboard |
+| Natural-photograph glyph recognition | Known misses remain | Existing photograph benchmark; no model changes made |
+
+[Android checks](https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/44268220748) · [Firebase checks](https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/44268220535).
+
+The first camera run exposed mismatched emulator camera capabilities; the following diagnostic run exposed a background-thread access to PreviewView after asynchronous provider initialization. Both were addressed before the successful capture run. The test was not skipped or weakened to obtain a pass.
