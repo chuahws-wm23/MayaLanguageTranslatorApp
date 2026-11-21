@@ -131,7 +131,7 @@ private fun GlyphAssembly() {
                     }
                 }
             }
-        
+
     }
     Box(Modifier.fillMaxSize().onGloballyPositioned { rootOrigin = it.boundsInRoot().topLeft }) {
     Column(Modifier.fillMaxSize()) {
@@ -139,17 +139,9 @@ private fun GlyphAssembly() {
     LazyColumn(modifier = Modifier.weight(1f).testTag("assembly-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Text("Hold a drawing to drag; tap to place. Hold filled cells to swap. Select a cell to replace its sign.") }
 
-        item {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Sign-by-sign transliteration", style = MaterialTheme.typography.titleMedium)
-                    Text(slots.filter { it.isNotEmpty() }.joinToString("-").ifEmpty { "Add signs to begin" }, style = MaterialTheme.typography.headlineMedium)
-                    Text("Order: 1 → 2 → 3 → 4 → 5 → 6. This displays selected syllable values in Latin letters. It does not verify a Maya word, pronunciation or translation. Complements and spelling rules require interpretation.")
-                    dragging?.let { Text("Dragging: $it — release over a slot") }
-                }
-            }
-        }
+
         item { OutlinedTextField(query, { query = it }, label = { Text("Find a syllable, e.g. ka") }, modifier = Modifier.fillMaxWidth(), singleLine = true) }
+        item { Text("Sign-by-sign syllable values in cell order 1–6. This is not a verified word, pronunciation or translation; spelling and complements require interpretation.", style = MaterialTheme.typography.bodySmall) }
         if (catalogue == null) item {
             if (loadFailed) { Text("Reference drawings could not be loaded."); TextButton(onClick = { retry++ }) { Text("Retry") } }
             else Text("Loading reference drawings…")
