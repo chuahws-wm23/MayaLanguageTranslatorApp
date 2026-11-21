@@ -39,6 +39,11 @@ class ResearchWorkflowTest {
         compose.onNodeWithContentDescription("Drag syllable wa").performClick()
         compose.onAllNodesWithText("ka-wa").onFirst().assertExists()
         screenshot("workspace")
+        val first = compose.onNodeWithText("1 · ka")
+        val second = compose.onNodeWithText("2 · wa").fetchSemanticsNode().boundsInRoot.center
+        val firstOrigin = first.fetchSemanticsNode().boundsInRoot.topLeft
+        first.performTouchInput { down(center); advanceEventTime(700); moveTo(second-firstOrigin, delayMillis=500); up() }
+        compose.onAllNodesWithText("wa-ka").onFirst().assertExists()
         compose.onNodeWithText("Clear block").performClick()
         compose.onNodeWithText("Your reading appears here").assertExists()
     }

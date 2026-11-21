@@ -94,7 +94,7 @@ private fun GlyphAssembly() {
     LazyColumn(modifier = Modifier.testTag("assembly-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Text("GLYPH WORKSPACE", style = MaterialTheme.typography.labelLarge) }
         item { Text("Build a study block", style = MaterialTheme.typography.headlineLarge) }
-        item { Text("Hold and drag a syllable drawing into a numbered slot, or select a slot and tap a drawing. Tap a filled slot to select it.") }
+        item { Text("Hold and drag a syllable drawing into a numbered slot, or select a slot and tap a drawing. Hold and drag filled slots to swap them. Tap a slot to select it.") }
         stickyHeader {
             Card {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -104,7 +104,22 @@ private fun GlyphAssembly() {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             repeat(2) { col ->
                                 val index = row * 2 + col
-                                OutlinedCard(onClick = { selected = index }, modifier = Modifier.weight(1f).height(80.dp).onGloballyPositioned { bounds[index] = it.boundsInRoot() }) {
+                                OutlinedCard(onClick = { selected = index }, modifier = Modifier.weight(1f).height(80.dp).onGloballyPositioned { bounds[index] = it.boundsInRoot() }.pointerInput(index, slots) {
+                                    detectDragGesturesAfterLongPress(
+                                        onDragStart = { position -> dragging = slots[index].takeIf { it.isNotEmpty() }; dragPosition = (bounds[index]?.topLeft ?: Offset.Zero) + position },
+                                        onDrag = { change, amount -> if (dragging != null) { change.consume(); dragPosition += amount } },
+                                        onDragEnd = {
+                                            if (dragging != null) bounds.entries.firstOrNull { it.value.contains(dragPosition) }?.let { target ->
+                                                val next = slots.toMutableList()
+                                                val previous = next[target.key]
+                                                next[target.key] = next[index]
+                                                next[index] = previous
+                                                slots = next
+                                                selected = target.key
+                                            }
+                                            dragging = null
+                                        }, onDragCancel = { dragging = null })
+                                }) {
                                     Column(Modifier.fillMaxSize().background(if (selected == index || (dragging != null && bounds[index]?.contains(dragPosition) == true)) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface).padding(8.dp)) {
                                         Text("${index + 1} · ${slots[index].ifEmpty { "Empty" }}", style = MaterialTheme.typography.labelMedium)
                                         refs.firstOrNull { it.syllable == slots[index] }?.let { ref ->
