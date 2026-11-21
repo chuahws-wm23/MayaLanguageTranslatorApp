@@ -1,6 +1,5 @@
 package com.chuahws.mayalanguageapp.presentation.research
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -69,7 +68,6 @@ fun ResearchScreen(builder: Boolean = false) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun GlyphAssembly() {
     val context = LocalContext.current
@@ -90,21 +88,17 @@ private fun GlyphAssembly() {
     var rootOrigin by remember { mutableStateOf(Offset.Zero) }
     val refs = catalogue?.references.orEmpty().distinctBy { it.syllable }
     fun place(value: String, index: Int) { slots = slots.toMutableList().also { it[index] = value } }
-    Box(Modifier.fillMaxSize().onGloballyPositioned { rootOrigin = it.boundsInRoot().topLeft }) {
-    LazyColumn(modifier = Modifier.testTag("assembly-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { Text("GLYPH WORKSPACE", style = MaterialTheme.typography.labelLarge) }
-        item { Text("Build a study block", style = MaterialTheme.typography.headlineLarge) }
-        item { Text("Hold and drag a syllable drawing into a numbered slot, or select a slot and tap a drawing. Hold and drag filled slots to swap them. Tap a slot to select it.") }
-        stickyHeader {
-            Card {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    @Composable fun Board() {
+
+            Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(slots.filter { it.isNotEmpty() }.joinToString("-").ifEmpty { "Your reading appears here" }, style = MaterialTheme.typography.titleLarge)
                     if (typing) Text("Hide the keyboard to place drawings.", style = MaterialTheme.typography.labelSmall)
                     repeat(if (typing) 0 else 3) { row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             repeat(2) { col ->
                                 val index = row * 2 + col
-                                OutlinedCard(onClick = { selected = index }, modifier = Modifier.weight(1f).height(80.dp).onGloballyPositioned { bounds[index] = it.boundsInRoot() }.pointerInput(index, slots) {
+                                OutlinedCard(onClick = { selected = index }, modifier = Modifier.weight(1f).height(72.dp).onGloballyPositioned { bounds[index] = it.boundsInRoot() }.pointerInput(index, slots) {
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = { position -> dragging = slots[index].takeIf { it.isNotEmpty() }; dragPosition = (bounds[index]?.topLeft ?: Offset.Zero) + position },
                                         onDrag = { change, amount -> if (dragging != null) { change.consume(); dragPosition += amount } },
@@ -124,7 +118,7 @@ private fun GlyphAssembly() {
                                         Text("${index + 1} · ${slots[index].ifEmpty { "Empty" }}", style = MaterialTheme.typography.labelMedium)
                                         refs.firstOrNull { it.syllable == slots[index] }?.let { ref ->
                                             val image = remember(ref) { catalogue!!.referenceBitmap(ref).asImageBitmap() }
-                                            Image(image, "Syllable ${ref.syllable}", Modifier.fillMaxWidth().height(45.dp))
+                                            Image(image, "Syllable ${ref.syllable}", Modifier.fillMaxWidth().height(38.dp))
                                         }
                                     }
                                 }
@@ -137,7 +131,14 @@ private fun GlyphAssembly() {
                     }
                 }
             }
-        }
+        
+    }
+    Box(Modifier.fillMaxSize().onGloballyPositioned { rootOrigin = it.boundsInRoot().topLeft }) {
+    Column(Modifier.fillMaxSize()) {
+    Board()
+    LazyColumn(modifier = Modifier.weight(1f).testTag("assembly-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        item { Text("Hold a drawing to drag; tap to place. Hold filled cells to swap. Select a cell to replace its sign.") }
+
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -170,6 +171,7 @@ private fun GlyphAssembly() {
                 }
             }
         }
+    }
     }
     dragging?.let { syllable ->
         refs.firstOrNull { it.syllable == syllable }?.let { ref ->
