@@ -25,10 +25,11 @@ class ResearchWorkflowTest {
         val target = compose.onNodeWithText("1 · Empty").fetchSemanticsNode().boundsInRoot.center
         val source = tile.fetchSemanticsNode().boundsInRoot.topLeft
         tile.performTouchInput { swipe(center, target - source, 800) }
+        compose.onNodeWithTag("assembly-list").performScrollToNode(hasText("Find a syllable, e.g. ka"))
         compose.onNodeWithText("Find a syllable, e.g. ka").performTextReplacement("wa")
         compose.onNodeWithTag("assembly-list").performScrollToNode(hasContentDescription("Drag syllable wa"))
         compose.onNodeWithContentDescription("Drag syllable wa").performClick()
-        compose.onNodeWithText("ka-wa").assertExists()
+        compose.onAllNodesWithText("ka-wa").onFirst().assertExists()
         compose.onNodeWithText("Clear block").performClick()
         compose.onNodeWithText("Your reading appears here").assertExists()
     }
