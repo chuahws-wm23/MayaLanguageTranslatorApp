@@ -95,6 +95,8 @@ private enum class AppPage {
     SAVED,
     HISTORY,
     ANALYTICS,
+    RESEARCH,
+    ASSEMBLY,
     FEEDBACK,
     PROFILE,
 }
@@ -120,6 +122,8 @@ private val translateDrawerItems = listOf(
 )
 
 private val learnDrawerItems = listOf(
+    DrawerItem(AppPage.RESEARCH, "Research wiki", Icons.Rounded.MenuBook),
+    DrawerItem(AppPage.ASSEMBLY, "Glyph workspace", Icons.Rounded.MenuBook),
     DrawerItem(
         AppPage.DICTIONARY,
         "Glyph dictionary",
@@ -497,6 +501,8 @@ private fun MainShell(
         AppPage.ANALYTICS -> "My activity"
         AppPage.FEEDBACK -> "Feedback"
         AppPage.PROFILE -> "Profile"
+        AppPage.RESEARCH -> "Research wiki"
+        AppPage.ASSEMBLY -> "Glyph workspace"
     }
 
     ModalNavigationDrawer(
@@ -848,6 +854,8 @@ private fun MainShell(
                             onOpenFavourites = { goTo(AppPage.SAVED) },
                         )
 
+                    AppPage.RESEARCH -> com.chuahws.mayalanguageapp.presentation.research.ResearchScreen()
+                    AppPage.ASSEMBLY -> com.chuahws.mayalanguageapp.presentation.research.ResearchScreen(builder = true)
                     AppPage.DICTIONARY ->
                         GlyphDictionaryHubScreen()
 

@@ -7,5 +7,5 @@ collect_screenshots() {
 trap collect_screenshots EXIT
 gradle connectedDebugAndroidTest \
   -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true \
-  -Pandroid.testInstrumentationRunnerArguments.class=com.chuahws.mayalanguageapp.presentation.translation.GlyphReferenceWorkflowTest,com.chuahws.mayalanguageapp.presentation.translation.CameraCaptureWorkflowTest,com.chuahws.mayalanguageapp.presentation.translation.UserJourneyTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.chuahws.mayalanguageapp.presentation.translation.GlyphReferenceWorkflowTest,com.chuahws.mayalanguageapp.presentation.translation.CameraCaptureWorkflowTest,com.chuahws.mayalanguageapp.presentation.translation.UserJourneyTest,com.chuahws.mayalanguageapp.presentation.research.ResearchWorkflowTest \
   --stacktrace -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --max-workers=2
