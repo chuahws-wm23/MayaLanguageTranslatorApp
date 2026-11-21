@@ -79,7 +79,7 @@ private val drawingClues = mapOf(
 )
 
 private data class Archive(val words: GlyphEnglishMeaningCatalogue, val sounds: GlyphVisualCatalogue)
-private data class ArchiveEntry(
+internal data class ArchiveEntry(
     val key: String,
     val title: String,
     val subtitle: String,
@@ -93,8 +93,19 @@ private data class ArchiveEntry(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun GlyphDictionaryHubScreen() {
+fun GlyphDictionaryHubScreen(accountId: String = "local") {
     val context = LocalContext.current
+    val store = remember(context, accountId) { DictionaryNotebookStore(context, accountId) }
+    var notebook by remember(store) { mutableStateOf(store.load()) }
+    fun updateNotebook(value: DictionaryNotebook) {
+        store.save(value)
+        notebook = value
+    }
+    var tool by rememberSaveable { mutableStateOf<String?>(null) }
+    var activeEntry by rememberSaveable { mutableStateOf<String?>(null) }
+    var compareFirst by rememberSaveable { mutableStateOf<String?>(null) }
+    var activeSet by rememberSaveable { mutableStateOf<String?>(null) }
+    var setName by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
     val focus = LocalFocusManager.current
     var selected by rememberSaveable { mutableStateOf(DictionarySection.WORD_SIGNS) }
@@ -116,8 +127,8 @@ fun GlyphDictionaryHubScreen() {
         }
     }
     val archive = loaded?.getOrNull()
-    val entries = remember(archive, selected) {
-        if (archive == null) emptyList() else when (selected) {
+    val archiveEntries = remember(archive) {
+        fun build(section: DictionarySection): List<ArchiveEntry> = if (archive == null) emptyList() else when (section) {
             DictionarySection.WORD_SIGNS -> archive.words.distinctSigns.map { sign ->
                 val drawings = archive.words.references.filter { it.twkmSign == sign.twkmSign }
                 ArchiveEntry("word-${sign.twkmSign}", sign.english, sign.reading,
@@ -133,6 +144,65 @@ fun GlyphDictionaryHubScreen() {
                     { "TWKM #${drawings[it].twkmSign} · ${drawings[it].graph}" }, { drawings[it].graph })
             }
         }
+        DictionarySection.entries.associateWith(::build)
+    }
+    val entries = archiveEntries[selected].orEmpty()
+    val byKey = remember(archiveEntries) { archiveEntries.values.flatten().associateBy { it.key } }
+    val chosen = byKey[activeEntry]
+    val first = byKey[compareFirst]
+    fun closeTool() { tool = null; activeEntry = null }
+    when (tool) {
+        "compare" -> if (first != null && chosen != null) CompareEntries(first, chosen) {
+            compareFirst = null
+            closeTool()
+        }
+        "note" -> if (chosen != null) ResearchNoteEditor(chosen, notebook.notes[chosen.key] ?: ResearchNote(), { note ->
+            val notes = notebook.notes.toMutableMap()
+            if (note.text.isBlank() && note.source.isBlank()) notes.remove(chosen.key) else notes[chosen.key] = note
+            updateNotebook(notebook.copy(notes = notes))
+            closeTool()
+        }, ::closeTool)
+        "notes" -> ResearchNotes(byKey, notebook.notes, { entry -> activeEntry = entry.key; tool = "note" }, ::closeTool)
+        "add" -> if (chosen != null) DictionaryToolDialog("Add to study set", ::closeTool) {
+            fun addToSet(name: String) {
+                val signs = (notebook.sets[name].orEmpty() + chosen.key).distinct()
+                updateNotebook(notebook.copy(sets = notebook.sets + (name to signs)))
+                closeTool()
+            }
+            notebook.sets.keys.sorted().forEach { name ->
+                TextButton(onClick = { addToSet(name) }) { Text(name) }
+            }
+            OutlinedTextField(setName, { setName = it.take(60) }, singleLine = true,
+                label = { Text("New set name") }, modifier = Modifier.fillMaxWidth())
+            Button(onClick = { addToSet(setName.trim()) }, enabled = setName.isNotBlank()) { Text("Add glyph") }
+        }
+        "sets" -> DictionaryToolDialog("Study sets", ::closeTool) {
+            if (notebook.sets.isEmpty()) Text("Open a dictionary entry to add its glyph to a study set.")
+            notebook.sets.toSortedMap().forEach { (name, keys) ->
+                TextButton(onClick = { activeSet = name; tool = "set" }) { Text("$name · ${keys.size} glyphs") }
+            }
+        }
+        "set" -> {
+            val signs = notebook.sets[activeSet].orEmpty().mapNotNull(byKey::get)
+            DictionaryToolDialog(activeSet.orEmpty(), { tool = "sets" }) {
+                Button(onClick = { tool = "review" }, enabled = signs.isNotEmpty()) { Text("Review set") }
+                if (signs.isEmpty()) Text("This set is empty.")
+                signs.forEach { entry ->
+                    Text(entry.reading())
+                    TextButton(onClick = {
+                        activeSet?.let { name ->
+                            val remaining = notebook.sets[name].orEmpty() - entry.key
+                            updateNotebook(notebook.copy(sets = notebook.sets + (name to remaining)))
+                        }
+                    }) { Text("Remove ${entry.reading()} from set") }
+                }
+                if (signs.isEmpty()) TextButton(onClick = {
+                    updateNotebook(notebook.copy(sets = notebook.sets.filterKeys { it != activeSet }))
+                    tool = "sets"
+                }) { Text("Delete empty set") }
+            }
+        }
+        "review" -> StudyReview(notebook.sets[activeSet].orEmpty().mapNotNull(byKey::get)) { tool = "set" }
     }
     val matchingDrawings = remember(entries, guiding, clues) {
         if (!guiding) emptyMap() else entries.mapNotNull { entry ->
@@ -154,7 +224,16 @@ fun GlyphDictionaryHubScreen() {
         if (listState.firstVisibleItemIndex > 2) listState.scrollToItem(1)
     }
     entries.firstOrNull { it.key == opened }?.let { entry ->
-        ArchiveEntryDialog(entry, initialIndex = matchingDrawings[entry.key] ?: 0, onDismiss = { opened = null })
+        ArchiveEntryDialog(entry, initialIndex = matchingDrawings[entry.key] ?: 0,
+            compareLabel = if (compareFirst == null || compareFirst == entry.key) "Select for comparison" else "Compare with ${first?.reading().orEmpty()}",
+            onCompare = {
+                opened = null
+                if (compareFirst == null || compareFirst == entry.key) compareFirst = entry.key
+                else { activeEntry = entry.key; tool = "compare" }
+            },
+            onStudy = { opened = null; activeEntry = entry.key; setName = ""; tool = "add" },
+            onNote = { opened = null; activeEntry = entry.key; tool = "note" },
+            onDismiss = { opened = null })
     }
     AppGradientBackground {
         LazyColumn(
@@ -184,7 +263,12 @@ fun GlyphDictionaryHubScreen() {
                     OutlinedTextField(value = query, onValueChange = { query = it },
                         modifier = Modifier.fillMaxWidth(), singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
+                        keyboardActions = KeyboardActions(onSearch = {
+                            query.trim().takeIf { it.isNotEmpty() }?.let { term ->
+                                updateNotebook(notebook.copy(searches = (listOf(term) + notebook.searches.filterNot { it.equals(term, true) }).take(5)))
+                            }
+                            focus.clearFocus()
+                        }),
                         shape = MaterialTheme.shapes.large,
                         leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                         trailingIcon = { ClearSearchButton(query) { query = "" } },
@@ -202,6 +286,23 @@ fun GlyphDictionaryHubScreen() {
                         }
                     }
                     ListPaginationControls(filtered.size,currentPage,{ page=it })
+                }
+            }
+            if (archive != null) item {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { tool = "sets" }, modifier = Modifier.weight(1f)) { Text("Study sets") }
+                        OutlinedButton(onClick = { tool = "notes" }, modifier = Modifier.weight(1f)) { Text("Research notes") }
+                    }
+                    if (first != null) {
+                        Text("Selected ${first.reading()}. Open another entry to compare.")
+                        TextButton(onClick = { compareFirst = null }) { Text("Clear selection") }
+                    }
+                    if (query.isEmpty() && notebook.searches.isNotEmpty()) {
+                        Text("Recent searches", style = MaterialTheme.typography.labelLarge)
+                        notebook.searches.forEach { term -> TextButton(onClick = { query = term }) { Text(term) } }
+                        TextButton(onClick = { updateNotebook(notebook.copy(searches = emptyList())) }) { Text("Clear recent searches") }
+                    }
                 }
             }
             if (archive != null && selected == DictionarySection.WORD_SIGNS) item {
@@ -302,16 +403,25 @@ fun GlyphDictionaryHubScreen() {
 }
 
 @Composable
-private fun ArchiveDrawing(entry: ArchiveEntry, index: Int, height: Int) {
+internal fun ArchiveDrawing(entry: ArchiveEntry, index: Int, height: Int, artworkPadding: Int = 16) {
     Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
         ReferenceDrawing(entry.graph(index),"Reference drawing for ${entry.title}",
-            modifier = Modifier.fillMaxWidth().height(height.dp).padding(16.dp),
+            modifier = Modifier.fillMaxWidth().height(height.dp).padding(artworkPadding.dp),
             fallback = { entry.image(index) })
     }
 }
 
 @Composable
-private fun ArchiveEntryDialog(entry: ArchiveEntry, initialIndex: Int, onDismiss: () -> Unit) {
+private fun ArchiveEntryDialog(
+    entry: ArchiveEntry,
+    initialIndex: Int,
+    compareLabel: String,
+    onCompare: () -> Unit,
+    onStudy: () -> Unit,
+    onNote: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
     var index by rememberSaveable(entry.key, initialIndex) { mutableIntStateOf(initialIndex) }
     val uri = LocalUriHandler.current
     AlertDialog(onDismissRequest = onDismiss,
@@ -336,7 +446,14 @@ private fun ArchiveEntryDialog(entry: ArchiveEntry, initialIndex: Int, onDismiss
                 if (entry.word != null) EnglishMeaningLearningDetails(entry.word)
                 else Text("This reference represents the proposed syllable ${entry.title}. Syllable signs write sounds; they are not English word translations.",
                     style = MaterialTheme.typography.bodyLarge)
-                TextButton(onClick = { uri.openUri("https://classicmayan.org/portal/signcatalog") }) {
+                TextButton(onClick = {
+                    copyDictionaryText(context, "Glyph details",
+                        listOf(entry.reading(), entry.meaning(), entry.caption(index), CATALOGUE_URL).joinToString("\n"))
+                }) { Text("Copy glyph details") }
+                TextButton(onClick = onCompare) { Text(compareLabel) }
+                TextButton(onClick = onStudy) { Text("Add to study set") }
+                TextButton(onClick = onNote) { Text("Write research note") }
+                TextButton(onClick = { uri.openUri(CATALOGUE_URL) }) {
                     Text("View catalogue source")
                 }
             }

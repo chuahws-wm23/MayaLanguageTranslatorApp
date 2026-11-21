@@ -855,7 +855,7 @@ private fun MainShell(
 
                     AppPage.ASSEMBLY -> researchState.SaveableStateProvider("assembly-${state.userId}") { com.chuahws.mayalanguageapp.presentation.research.GlyphWorkspaceScreen() }
                     AppPage.DICTIONARY ->
-                        GlyphDictionaryHubScreen()
+                        GlyphDictionaryHubScreen(accountId = state.userId ?: "local")
 
                     AppPage.SAVED ->
                         SavedScreen(

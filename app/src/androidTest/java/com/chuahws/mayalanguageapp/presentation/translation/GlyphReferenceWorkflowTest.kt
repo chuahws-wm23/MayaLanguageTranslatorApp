@@ -463,6 +463,29 @@ class GlyphReferenceWorkflowTest {
         assertEquals(1,signOutCount)
     }
 
+    @Test fun dictionarySavesAndReviewsAGlyphInANamedStudySet() {
+        val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val sign = catalogue.distinctSigns.first()
+        val account = "study-${java.util.UUID.randomUUID()}"
+        compose.setContent {
+            MayaTranslateTheme { GlyphDictionaryHubScreen(accountId = account) }
+        }
+        compose.onNodeWithText("Search meaning, reading or number").performTextReplacement(sign.twkmSign.toString())
+        compose.onNodeWithText("Search meaning, reading or number").performImeAction()
+        compose.waitUntil(20_000) { compose.onAllNodesWithText(sign.english).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(sign.english).performScrollTo().performClick()
+        compose.onNodeWithText("Add to study set").performScrollTo().performClick()
+        compose.onNodeWithText("New set name").performTextReplacement("Reading practice")
+        compose.onNodeWithText("Add glyph").performScrollTo().performClick()
+        compose.onNodeWithText("Study sets").performScrollTo().performClick()
+        compose.onNodeWithText("Reading practice · 1 glyphs").performClick()
+        compose.onNodeWithText("Review set").performClick()
+        compose.onNodeWithText("Reveal reading").performClick()
+        compose.onNodeWithText(sign.reading).assertExists()
+        compose.onNodeWithText("Got it").performClick()
+        compose.onNodeWithText("Review complete").assertExists()
+    }
+
     @Test fun dictionaryUsesLargeDrawingsAndOpensAlternateReferenceViews() {
         val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))
