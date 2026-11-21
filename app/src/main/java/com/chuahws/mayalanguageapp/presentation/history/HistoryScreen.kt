@@ -1,5 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.history
 
+import com.chuahws.mayalanguageapp.presentation.components.ClearSearchButton
 import com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy
 
 import androidx.compose.foundation.layout.*
@@ -109,6 +110,7 @@ fun HistoryScreen(
                         modifier = Modifier.fillMaxWidth(), singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                         keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
+                        trailingIcon = { ClearSearchButton(query) { query = "" } },
                         label = { Text("Search meaning, reading or sign number") },
                         shape = MaterialTheme.shapes.large)
                     ListPaginationControls(filtered.size, currentPage, { page = it })

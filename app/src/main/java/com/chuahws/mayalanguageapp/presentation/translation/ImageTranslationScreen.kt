@@ -1,5 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
+import androidx.compose.ui.text.style.TextAlign
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
@@ -47,6 +48,7 @@ fun ImageTranslationScreen(
     savedGlyphIds: Set<String> = emptySet(),
     onOpenHistory: () -> Unit = {},
     onOpenFavourites: () -> Unit = {},
+    onOpenDictionary: (() -> Unit)? = null,
 ) {
     var legacy by remember(replay?.requestId) { mutableStateOf(replay != null) }
     if (legacy && replay != null) {
@@ -59,6 +61,7 @@ fun ImageTranslationScreen(
         savedGlyphIds = savedGlyphIds,
         onOpenHistory = onOpenHistory,
         onOpenFavourites = onOpenFavourites,
+        onOpenDictionary = onOpenDictionary,
     )
 }
 
@@ -70,6 +73,7 @@ internal fun GlyphPhotoScreen(
     onOpenHistory: () -> Unit,
     onOpenFavourites: () -> Unit,
     glyphModel: GlyphRecognitionViewModel = viewModel(key = "glyph-photo-v1"),
+    onOpenDictionary: (() -> Unit)? = null,
 ) {
     val context=LocalContext.current
     val state by glyphModel.state.collectAsStateWithLifecycle()
@@ -147,10 +151,10 @@ internal fun GlyphPhotoScreen(
                         else Image(image.asImageBitmap(),contentDescription="Selected glyph photo",
                             modifier=Modifier.fillMaxWidth().height(240.dp),contentScale=ContentScale.Fit)
                     }
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                         Button(onClick={gallery.launch("image/*")},enabled=!state.busy,
                             contentPadding=PaddingValues(horizontal=12.dp,vertical=12.dp),
-                            modifier=Modifier.weight(1f).heightIn(min=52.dp)) {
+                            modifier=Modifier.weight(1f).fillMaxHeight().heightIn(min=52.dp)) {
                             Icon(Icons.Rounded.PhotoLibrary,contentDescription=null,modifier=Modifier.size(20.dp))
                             Spacer(Modifier.width(8.dp));Text(if(state.bitmap==null)"Gallery" else "Change")
                         }
@@ -158,7 +162,7 @@ internal fun GlyphPhotoScreen(
                             if(ContextCompat.checkSelfPermission(context,Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED)
                                 showCamera=true else permission.launch(Manifest.permission.CAMERA)
                         },enabled=hasCamera && !state.busy,contentPadding=PaddingValues(horizontal=12.dp,vertical=12.dp),
-                            modifier=Modifier.weight(1f).heightIn(min=52.dp)) {
+                            modifier=Modifier.weight(1f).fillMaxHeight().heightIn(min=52.dp)) {
                             Icon(Icons.Rounded.CameraAlt,contentDescription=null,modifier=Modifier.size(20.dp))
                             Spacer(Modifier.width(8.dp));Text("Camera")
                         }
@@ -166,17 +170,17 @@ internal fun GlyphPhotoScreen(
                     if(state.bitmap!=null) {
                         Text("HOW MANY GLYPHS?",style=MaterialTheme.typography.labelMedium,
                             color=MaterialTheme.colorScheme.primary)
-                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                             FilledTonalButton(onClick={savedScan=null;saveError=null;glyphModel.compareReference()},
-                                enabled=!state.busy,modifier=Modifier.weight(1f).heightIn(min=56.dp),
+                                enabled=!state.busy,modifier=Modifier.weight(1f).fillMaxHeight().heightIn(min=56.dp),
                                 colors=ButtonDefaults.filledTonalButtonColors(
                                     containerColor=if(mode=="single")MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor=if(mode=="single")MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer)) { Text("Single glyph") }
+                                    contentColor=if(mode=="single")MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer)) { Text("Single glyph", textAlign = TextAlign.Center) }
                             FilledTonalButton(onClick={savedScan=null;saveError=null;glyphModel.scanAll()},
-                                enabled=!state.busy,modifier=Modifier.weight(1f).heightIn(min=56.dp),
+                                enabled=!state.busy,modifier=Modifier.weight(1f).fillMaxHeight().heightIn(min=56.dp),
                                 colors=ButtonDefaults.filledTonalButtonColors(
                                     containerColor=if(mode=="multiple")MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor=if(mode=="multiple")MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer)) { Text("Multiple glyphs") }
+                                    contentColor=if(mode=="multiple")MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer)) { Text("Multiple glyphs", textAlign = TextAlign.Center) }
                         }
                     }
                 }
@@ -190,7 +194,7 @@ internal fun GlyphPhotoScreen(
                     Text(it,Modifier.padding(16.dp),color=MaterialTheme.colorScheme.onErrorContainer)
                 }
             }
-            if(!state.busy && mode=="single")state.referenceMatches?.let { GlyphReferenceResults(it,photoHints=state.referenceHints) }
+            if(!state.busy && mode=="single")state.referenceMatches?.let { GlyphReferenceResults(it, photoHints = state.referenceHints, onOpenDictionary = onOpenDictionary) }
             if(!state.busy && mode=="multiple" && state.multiple.isNotEmpty())state.bitmap?.let {
                 MultiGlyphResultsPanel(bitmap=it,results=state.multiple,showOverview=false,
                     selectedIndex=selectedRegion,onRegionSelected={ selectedRegion=it })
@@ -202,10 +206,8 @@ internal fun GlyphPhotoScreen(
                     Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                         Text("Saved to history",style=MaterialTheme.typography.titleMedium)
                         TextButton(onClick={onToggleGlyphFavorite(record)}) { Text(if(favorite)"Remove favourite" else "Add to favourites") }
-                        Row {
-                            TextButton(onClick=onOpenHistory) { Text("View history") }
-                            TextButton(onClick=onOpenFavourites) { Text("View favourites") }
-                        }
+                        TextButton(onClick = onOpenHistory) { Text("View history") }
+                        TextButton(onClick = onOpenFavourites) { Text("View favourites") }
                     }
                 }
             }

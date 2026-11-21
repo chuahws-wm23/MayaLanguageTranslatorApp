@@ -850,6 +850,7 @@ private fun MainShell(
                                 .toSet(),
                             onOpenHistory = { goTo(AppPage.HISTORY) },
                             onOpenFavourites = { goTo(AppPage.SAVED) },
+                            onOpenDictionary = { goTo(AppPage.DICTIONARY) },
                         )
 
                     AppPage.ASSEMBLY -> researchState.SaveableStateProvider("assembly-${state.userId}") { com.chuahws.mayalanguageapp.presentation.research.GlyphWorkspaceScreen() }

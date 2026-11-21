@@ -1,5 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.dictionary
 
+import com.chuahws.mayalanguageapp.presentation.components.ClearSearchButton
 import com.chuahws.mayalanguageapp.presentation.components.ReferenceDrawing
 import android.graphics.Bitmap
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -146,6 +147,7 @@ fun GlyphDictionaryHubScreen() {
                         keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
                         shape = MaterialTheme.shapes.large,
                         leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                        trailingIcon = { ClearSearchButton(query) { query = "" } },
                         label = { Text(if (selected == DictionarySection.WORD_SIGNS) "Search meaning, reading or number" else "Search syllable or sign number") })
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         DictionarySection.entries.forEach { section ->

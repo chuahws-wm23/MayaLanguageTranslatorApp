@@ -1,5 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.research
 
+import com.chuahws.mayalanguageapp.presentation.components.ClearSearchButton
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -118,7 +119,7 @@ fun GlyphWorkspaceScreen() {
             }
             Button(onClick = { focus.clearFocus(); result = true }, enabled = parts.all { it.isNotEmpty() }, modifier = Modifier.fillMaxWidth()) { Text("Next") }
             LazyColumn(Modifier.weight(1f).testTag("syllable-palette"), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 16.dp)) {
-                item { OutlinedTextField(query,{ query=it }, label = { Text("Find a syllable") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+                item { OutlinedTextField(query,{ query=it }, label = { Text("Find a syllable") }, shape = MaterialTheme.shapes.large, trailingIcon = { ClearSearchButton(query) { query = "" } }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
                 item { Text(if (parts.all { it.isNotEmpty() }) "Move the cards, or tap Clear canvas to choose different syllables." else "Hold to drag, or tap a card to add it.", style = MaterialTheme.typography.bodySmall) }
                 if (catalogue == null) item { if (failed) TextButton(onClick = { retry++ }) { Text("Retry loading drawings") } else Text("Loading syllables…") }
                 val filtered = refs.filter { it.syllable.contains(query.trim(),true) }

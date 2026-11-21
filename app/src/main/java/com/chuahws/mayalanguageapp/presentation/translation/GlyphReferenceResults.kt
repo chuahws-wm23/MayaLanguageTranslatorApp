@@ -12,7 +12,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMatch
 
 /** Exact drawing equality is not a verified historical identification. */
 @Composable
-internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints: List<String> = emptyList()) {
+internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints: List<String> = emptyList(), onOpenDictionary: (() -> Unit)? = null) {
     val context=LocalContext.current
     val catalogue=remember(context) { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }
     val eligible = matches.take(1).filter { GlyphDisplayPolicy.accepts(it.visualOverlap) }
@@ -58,6 +58,11 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints:
                 if(catalogue!=null)eligible.take(MAX_CLOSEST_REFERENCES).forEachIndexed { rank,match ->
                     EnglishMeaningMatchRow(catalogue,match,rank+1)
                 }
+            }
+        }
+        if (eligible.isEmpty() && onOpenDictionary != null) {
+            OutlinedButton(onClick = onOpenDictionary, modifier = Modifier.fillMaxWidth()) {
+                Text("Browse dictionary")
             }
         }
     }
