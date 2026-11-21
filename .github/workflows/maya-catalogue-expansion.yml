@@ -1,0 +1,61 @@
+name: Evaluate larger TWKM sign inventory
+
+on:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/catalogue_expansion/**'
+      - '.github/workflows/maya-catalogue-expansion.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    name: Audit licensed graphs and benchmark expanded signs
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install research dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install 'datasets>=4.0,<5.0' Pillow numpy opencv-python-headless scikit-image scikit-learn
+      - name: Check syntax and safety tests (offline)
+        run: |
+          python -m py_compile ml/catalogue_expansion/benchmark.py
+          python -m unittest discover -s ml/catalogue_expansion -p 'test_*.py' -v
+      - name: Audit TWKM dataset and test >10-class recognition candidates
+        run: |
+          python ml/catalogue_expansion/benchmark.py --min-originals 5 --max-signs 50
+      - name: Summarize real research results
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('ml/catalogue_expansion/output/benchmark.json')
+          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'], 'a') as out:
+              out.write('## TWKM sign expansion (research only)\n\n')
+              if not p.exists():
+                  out.write('The benchmark did not finish. Inspect job logs. No Android model was modified.\n')
+              else:
+                  info = json.loads(p.read_text())
+                  out.write(f"**Pilot classes:** {info['n_signs']}  \n")
+                  out.write(f"**Chosen method:** {info['selection_validation_only']}  \n")
+                  out.write(f"**Known research test:** {info['test_known']}  \n")
+                  out.write(f"**Unknown research test:** {info['test_unknown']}  \n")
+                  out.write('**Android:** unchanged. These are catalogue drawings, not phone photos.\n')
+          PY
+      - name: Upload audited results and research gallery
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TWKM-Expanded-Sign-Research
+          path: ml/catalogue_expansion/output/
+          if-no-files-found: warn
+          retention-days: 14

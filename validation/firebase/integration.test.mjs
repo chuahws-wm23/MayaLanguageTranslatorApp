@@ -1,0 +1,76 @@
+import { test, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, confirmPasswordReset } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator, doc, setDoc, getDocFromServer, updateDoc, deleteDoc, collection, query, where, getDocsFromServer, getCountFromServer, terminate } from 'firebase/firestore';
+const projectId = 'demo-maya-glyph-validation';
+let env; const clients=[];
+async function client(name) {
+  const app=initializeApp({projectId,apiKey:'demo-key',appId:'demo-app'},name);
+  const auth=getAuth(app); connectAuthEmulator(auth,'http://127.0.0.1:9099',{disableWarnings:true});
+  const db=getFirestore(app); connectFirestoreEmulator(db,'127.0.0.1',8080);
+  const c={app,auth,db};clients.push(c);return c;
+}
+before(async()=>{
+  assert.equal(process.env.FIRESTORE_EMULATOR_HOST,'127.0.0.1:8080');
+  assert.equal(process.env.FIREBASE_AUTH_EMULATOR_HOST,'127.0.0.1:9099');
+  env=await initializeTestEnvironment({projectId,firestore:{host:'127.0.0.1',port:8080,rules:readFileSync(new URL('../../firestore.rules',import.meta.url),'utf8')}});
+});
+after(async()=>{for(const c of clients){await terminate(c.db);await deleteApp(c.app);}await env?.cleanup();});
+test('real Auth emulator registration, login, password-reset code and new client persistence',async()=>{
+  const a=await client('owner');const email='owner@example.test';const password='GlyphTest123!';
+  const user=(await createUserWithEmailAndPassword(a.auth,email,password)).user;
+  await setDoc(doc(a.db,'users',user.uid),{userId:user.uid,displayName:'Explorer',email,role:'user',accountStatus:'active'});
+  await setDoc(doc(a.db,'translations','scan-1'),{userId:user.uid,glyphScanRecord:true,inputType:'IMAGE',createdAtMillis:1});
+  await signOut(a.auth);await assert.rejects(signInWithEmailAndPassword(a.auth,email,'wrong-password'));
+  await signInWithEmailAndPassword(a.auth,email,password);
+  await sendPasswordResetEmail(a.auth,email);
+  const codes=await (await fetch(`http://127.0.0.1:9099/emulator/v1/projects/${projectId}/oobCodes`)).json();
+  const reset=codes.oobCodes.find(c=>c.email===email&&c.requestType==='PASSWORD_RESET');assert.ok(reset);
+  await confirmPasswordReset(a.auth,reset.oobCode,'NewGlyphTest456!');await signOut(a.auth);
+  await assert.rejects(signInWithEmailAndPassword(a.auth,email,password));
+  const b=await client('second-device');await signInWithEmailAndPassword(b.auth,email,'NewGlyphTest456!');
+  assert.equal((await getDocFromServer(doc(b.db,'translations','scan-1'))).data().userId,user.uid);
+  await signOut(b.auth);await assertFails(getDocFromServer(doc(b.db,'translations','scan-1')));
+});
+test('Firestore ownership, favourites, feedback, admin CRUD, and suspension',async()=>{
+  const a=await client('regular');const owner=(await createUserWithEmailAndPassword(a.auth,'regular@example.test','GlyphTest123!')).user.uid;
+  await setDoc(doc(a.db,'users',owner),{userId:owner,role:'user',accountStatus:'active'});
+  await assertFails(updateDoc(doc(a.db,'users',owner),{role:'admin'}));
+  const b=await client('other');const other=(await createUserWithEmailAndPassword(b.auth,'other@example.test','GlyphTest123!')).user.uid;
+  await setDoc(doc(b.db,'users',other),{userId:other,role:'user',accountStatus:'active'});
+  await setDoc(doc(a.db,'translations','owned-scan'),{userId:owner,glyphScanRecord:true});
+  await assertFails(getDocFromServer(doc(b.db,'translations','owned-scan')));
+  await assertFails(deleteDoc(doc(b.db,'translations','owned-scan')));
+  await assertFails(getDocsFromServer(collection(a.db,'translations')));
+  assert.equal((await getDocsFromServer(query(collection(a.db,'translations'),where('userId','==',owner)))).size,1);
+  await setDoc(doc(a.db,'savedVocabulary','favourite'),{userId:owner,glyphScanRecord:true});
+  await assertFails(getDocFromServer(doc(b.db,'savedVocabulary','favourite')));
+  const ownHistory=query(collection(a.db,'translations'),where('userId','==',owner));
+  assert.equal((await getCountFromServer(ownHistory)).data().count,1);
+  await deleteDoc(doc(a.db,'translations','owned-scan'));
+  assert.equal((await getCountFromServer(ownHistory)).data().count,0);
+  await setDoc(doc(a.db,'savedVocabulary','favourite'),{userId:owner,glyphScanRecord:true});
+  assert.equal((await getCountFromServer(query(collection(a.db,'savedVocabulary'),where('userId','==',owner)))).data().count,1);
+  assert.ok((await getDocFromServer(doc(a.db,'savedVocabulary','favourite'))).exists());
+  await setDoc(doc(a.db,'feedback','feedback-check'),{userId:owner,rating:4,status:'pending'});
+  await assertFails(updateDoc(doc(a.db,'feedback','feedback-check'),{status:'reviewed'}));
+  await assertFails(setDoc(doc(a.db,'dictionary','entry'),{mayaText:'test',englishText:'test'}));
+  const admin=await client('admin');const adminId=(await createUserWithEmailAndPassword(admin.auth,'admin@example.test','GlyphTest123!')).user.uid;
+  // Bootstrap is server-side only. The client is explicitly tested against self-promotion above.
+  await env.withSecurityRulesDisabled(async ctx=>{await setDoc(doc(ctx.firestore(),'users',adminId),{userId:adminId,role:'admin',accountStatus:'active'});});
+  await assertSucceeds(getDocsFromServer(collection(admin.db,'users')));
+  await setDoc(doc(admin.db,'dictionary','entry'),{mayaText:'test',englishText:'test'});
+  await updateDoc(doc(admin.db,'dictionary','entry'),{englishText:'edited'});
+  assert.equal((await getDocFromServer(doc(a.db,'dictionary','entry'))).data().englishText,'edited');
+  await deleteDoc(doc(admin.db,'dictionary','entry'));
+  await updateDoc(doc(admin.db,'feedback','feedback-check'),{status:'reviewed',reviewedAtMillis:1});
+  assert.equal((await getDocFromServer(doc(a.db,'feedback','feedback-check'))).data().status,'reviewed');
+  await updateDoc(doc(admin.db,'users',owner),{accountStatus:'suspended'});
+  await assertFails(getDocFromServer(doc(a.db,'savedVocabulary','favourite')));
+  await assertFails(setDoc(doc(a.db,'translations','suspended-write'),{userId:owner}));
+  await updateDoc(doc(admin.db,'users',owner),{accountStatus:'active'});
+  await assertSucceeds(deleteDoc(doc(a.db,'savedVocabulary','favourite')));
+});

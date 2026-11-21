@@ -1,0 +1,51 @@
+name: FYP final glyph scanner regression checks
+on:
+  push:
+    branches: [fyp-final-bugfix-20261114]
+    paths:
+      - 'app/**'
+      - '.github/workflows/fyp-final-regression.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Run all unit tests and build Android APK
+        run: gradle testDebugUnitTest assembleDebug --stacktrace
+      - name: Summarize test counts and results
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          import os
+          totals = {key: 0 for key in ('tests', 'failures', 'errors', 'skipped')}
+          xmls = list(Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml'))
+          assert xmls, 'No JVM test results generated'
+          for path in xmls:
+              root = ET.parse(path).getroot()
+              for key in totals:
+                  totals[key] += int(root.attrib.get(key, 0))
+          assert totals['tests'] >= 64, totals
+          assert totals['failures'] == 0 and totals['errors'] == 0, totals
+          apk = Path('app/build/outputs/apk/debug/app-debug.apk')
+          assert apk.is_file()
+          report = f"All regression checks passed: {totals}. Debug APK: {apk.stat().st_size:,} bytes.\n"
+          print(report)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f: f.write(report)
+          PY
+      - name: Upload QA debug APK for optional device validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: MayaFYPBugfixDebugAPK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7

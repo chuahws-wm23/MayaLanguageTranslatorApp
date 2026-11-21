@@ -1,0 +1,33 @@
+{
+  "model": "TinyGlyphNet quantized int8 per-channel",
+  "classes": ["DEER", "HAWK", "JAGUAR", "STAR", "KAKAW", "OTHER"],
+  "source_originals_used": 11,
+  "positive_class_originals": 1,
+  "trained_on": ["796st.jpg", "748st.jpg", "524st.jpg", "510bt.jpg", "KAKAW_DEMO.png", "1068st.jpg", "1537br.jpg", "1690bb.jpg", "1711st.jpg", "1869st.jpg", "529hp.jpg"],
+  "held_out_negative_originals": ["741st.jpg", "1990st.jpg"],
+  "model_file_bytes": 29420,
+  "model_sha256": "d4ed697fbb7dd3552f6efac0e58e6c29e872b9b60832dba8d5f6a19bd94a4094",
+  "diagnostic_synthetic_accuracy": 0.9644,
+  "diagnostic_synthetic_confusion_matrix": [
+    [71, 1, 0, 1, 0, 2],
+    [0, 74, 1, 0, 0, 0],
+    [0, 0, 72, 0, 2, 1],
+    [0, 0, 0, 74, 1, 0],
+    [0, 0, 0, 3, 72, 0],
+    [1, 0, 1, 1, 1, 71]
+  ],
+  "original_reference_predictions": [
+    {"label": "DEER", "predicted": "DEER", "max_softmax": 1.0},
+    {"label": "HAWK", "predicted": "HAWK", "max_softmax": 1.0},
+    {"label": "JAGUAR", "predicted": "JAGUAR", "max_softmax": 0.9999},
+    {"label": "STAR", "predicted": "STAR", "max_softmax": 0.9999},
+    {"label": "KAKAW", "predicted": "KAKAW", "max_softmax": 1.0}
+  ],
+  "held_out_negative_diagnostics": [
+    {"source_id": "741st.jpg", "total": 26, "reject_or_other": 25, "predict_counts": {"DEER": 2, "HAWK": 1, "JAGUAR": 6, "STAR": 0, "KAKAW": 2, "OTHER": 15}},
+    {"source_id": "1990st.jpg", "total": 26, "reject_or_other": 24, "predict_counts": {"DEER": 4, "HAWK": 1, "JAGUAR": 6, "STAR": 0, "KAKAW": 0, "OTHER": 15}}
+  ],
+  "independent_in_scope_accuracy": null,
+  "warning": "All positive classes have only ONE original image each. Synthetic augmentation produces variants of the SAME images. Synthetic diagnostic numbers are NOT valid measures of real-world recognition accuracy. Unknown-glyph rejection is not calibrated.",
+  "integration_note": "These diagnostic values are preserved from the supplied model package; no retraining or new accuracy evaluation was performed during Android integration."
+}

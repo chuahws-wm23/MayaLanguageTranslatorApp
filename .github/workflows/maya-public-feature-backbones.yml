@@ -1,0 +1,43 @@
+name: Prepare public pretrained features for local syllabary evaluation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fyp-development]
+    paths:
+      - '.github/workflows/maya-public-feature-backbones.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install public torchvision backbones
+        run: |
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+      - name: Save public model weights only (NO user images)
+        run: |
+          mkdir -p external_public_weights
+          python - <<'PY'
+          import torch
+          from torchvision import models
+          for name, obj in (
+              ('mobilenet_v3_small',models.mobilenet_v3_small(weights=models.MobileNet_V3_Small_Weights.DEFAULT)),
+              ('resnet18',models.resnet18(weights=models.ResNet18_Weights.DEFAULT)),
+          ):
+              torch.save(obj.state_dict(), f'external_public_weights/{name}.pth')
+              print(name, 'parameters', sum(p.numel() for p in obj.parameters()))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Public-Torchvision-Feature-Weights-Only
+          path: external_public_weights/*.pth
+          retention-days: 7
+          if-no-files-found: error

@@ -1,0 +1,38 @@
+name: Inspect TWKM syllabic reading metadata for sign expansion
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fyp-development]
+    paths:
+      - '.github/workflows/maya-twkm-syllabic-metadata.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install 'datasets>=4,<5'
+      - name: Inspect source schema and limited sample values (never user artwork)
+        run: |
+          python - <<'PY'
+          import json, collections
+          from datasets import load_dataset
+          src='tadad/twkm-maya-glyphs'
+          rev='73fe9da1d975a5f1e588c7d42c952dfda53cefd0'
+          d=load_dataset(src,'decipherments',split='train',revision=rev)
+          print('ROW_COUNT',len(d))
+          print('KEYS',list(d.column_names))
+          print('FIRST_TWO_SAMPLES',json.dumps([d[i] for i in range(min(2,len(d)))],ensure_ascii=False,default=str)[:3500])
+          for key in d.column_names:
+              if any(s in key.lower() for s in ('type','reading','value','confidence','decipher','sign_reference','sign_no')):
+                  val=collections.Counter(str(r.get(key)) for r in d)
+                  print('FIELD',key,'distinct',len(val),'examples',val.most_common(12))
+          PY

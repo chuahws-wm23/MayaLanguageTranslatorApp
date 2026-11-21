@@ -1,0 +1,104 @@
+# Requirements Implementation Status
+
+This file maps the Project I requirements to the current `fyp-development`
+implementation. Functional implementation and evaluation evidence are tracked
+separately: a feature can be implemented while still requiring device or
+performance testing for the final Results chapter.
+
+## Functional requirements
+
+| ID | Requirement | Implementation |
+| --- | --- | --- |
+| FR01 | User Registration | Implemented with Firebase Authentication and user profiles. |
+| FR02 | User Login | Implemented for users and administrators with role-based routing. |
+| FR03 | Password Recovery | Implemented through Firebase password-reset email. |
+| FR04 | Profile Management | Implemented for permitted profile fields. |
+| FR05 | Text Input | Implemented for Maya and English text. |
+| FR06 | Text Translation | Implemented with dictionary/phrase lookup in both directions. |
+| FR07 | Image Selection | Implemented with CameraX capture and gallery selection. |
+| FR08 | OCR Text Extraction | Google ML Kit recognises Latin-script photo text; a direction-specific dictionary filter displays supported English or Yucatec Maya words/phrases without inventing unsupported dialect translations. |
+| FR09 | OCR Text Correction | The detected-text field is read-only. A separate Review OCR dialog allows users to correct recognition mistakes before the filtered source-language text is translated. |
+| FR10 | Voice Input | Implemented with runtime microphone-permission handling and Android speech recognition. |
+| FR11 | Speech-to-Text Conversion | Recognised English speech is displayed as editable text. |
+| FR12 | Pronunciation Support | Implemented through device TTS with an explicit unavailable-audio state when the requested voice is not installed. |
+| FR13 | Translation History | Successful translations are stored with input type and timestamp. |
+| FR14 | History Management | View, search/filter, 10-record pages with inline editable page number above the list, polished details and Translate again in the original Text/Photo/Voice mode are implemented. Confirmed deletion remains owner-scoped. Current history retrieval loads at most 100 recent records. |
+| FR15 | Dictionary Access | User-facing Maya/English search, sorting/sections and progressive Load More browsing are implemented. |
+| FR16 | Saved Vocabulary | Save, duplicate prevention, search/filter, 10-entry pages with inline editable page number above the list, polished details/pronunciation, Translate again (Maya to English), and confirmed removal are implemented. |
+| FR17 | Usage Analytics | Text, image and voice counters and activity summaries are implemented. |
+| FR18 | Feedback Submission | A 1–5 star rating is required; written comments are optional. The registered account email is displayed read-only and submissions are stored in Firestore with pending status. |
+| FR19 | User Management | Administrators can search users and suspend/reactivate permitted accounts. Suspended accounts are blocked at login and signed out when status is loaded. |
+| FR20 | Dictionary Management | Administrators can search, add, edit, delete and CSV bulk-import Firestore dictionary entries with duplicate/invalid-row validation. Built-in fallback entries are intentionally read-only. |
+| FR21 | Feedback Management | Administrators can review feedback and mark it reviewed. |
+| FR22 | System Reports | Administrator reports aggregate users/translations/feedback, show method charts and numeric values, and include recent translation records. |
+
+## Non-functional requirements
+
+The architecture supports the NFRs, but some final compliance claims require
+measured/manual evidence rather than code inspection alone.
+
+- **NFR01 Usability:** role-specific navigation, readable labels, search/filter controls and confirmation dialogs are implemented.
+- **NFR02 Performance:** final device timing must verify the Project I targets for text, image and voice processing.
+- **NFR03 Reliability:** invalid input, OCR failure, camera/microphone permission denial, unclear/cancelled speech, unavailable TTS and repository/service failures have controlled UI responses. Final device regression testing remains required.
+- **NFR04 Security:** Firebase Authentication, role checks and Firestore rules protect privileged operations.
+- **NFR05 Privacy:** user records are scoped by authenticated user ID; administrator reads are explicitly role-gated.
+- **NFR06 Maintainability:** UI, ViewModel/service and repository responsibilities remain separated using the existing MVVM/repository structure.
+- **NFR07 Compatibility:** minSdk/targetSdk are defined; final emulator/physical-device and screen-size tests remain required.
+- **NFR08 Scalability:** Firestore collections remain document-based; dictionary browsing is progressive and system-report reads are bounded. Chapter 4's broader pagination wording should be revised or completed for saved vocabulary/feedback if literal design matching is required.
+- **NFR09 Accessibility:** important icon actions have content descriptions and controls use Material components; final font-scale/TalkBack review remains required.
+- **NFR10 Availability:** cloud/device-service errors are caught and surfaced; key data retrieval failures offer Retry actions. Final offline testing remains required.
+
+## Added automated checks
+
+`RequirementRepositoryTest` covers:
+
+- owner-scoped history deletion behaviour
+- dictionary add/edit/search/delete behaviour
+- administrator account-status updates
+- system analytics aggregation across users
+
+## Photo translation acceptance checks
+
+- Scan a photo containing both English and Yucatec Maya and confirm the read-only text displays only matched words for the selected source direction.
+- Tap the full-width direction bar and verify the original scan is re-filtered without taking another photo or retaining the previous translation.
+- Verify the main OCR text field never opens the keyboard; use the separate Review OCR dialog to correct mistakes.
+- Try unsupported dialect words: no invented translation should appear, and Yucatec spelling matches must require explicit review.
+- Verify that an unrecognised photo produces a helpful message and disables Translate.
+- Verify a long scan is limited with clear crop/shorten guidance; evaluate OCR accuracy separately from dictionary filtering.
+
+## Detail and replay acceptance checks
+
+- Tap a History record from Text, Photo, and Voice respectively. Verify the correct translation screen opens, the exact original source text and direction are restored, and translation runs automatically.
+- History photo replay uses saved detected text because the image URI/photo is not stored in history; the photo screen must keep it read-only.
+- Tap a Saved Word and choose Translate again. Verify it opens Text Translation with the exact saved Yucatec Maya word and Maya-to-English direction.
+- Verify the details dialog remains readable for long text and shows action buttons without overflowing smaller screens.
+- Test the back arrow after replay and confirm it returns to the original History or Saved Words list.
+
+## Pagination acceptance checks
+
+- Confirm History and Saved Words display a maximum of ten entries on any page.
+- Verify arrows and direct page input navigate correctly, including the last partial page.
+- Changing a search/filter must restart at page 1; removing a final-page entry must clamp to the previous valid page.
+- History currently retrieves at most 100 recent records; full archival pagination would require Firestore cursor-based loading.
+
+## Feedback acceptance checks
+
+- Submit with no star selected: the submit button must remain disabled.
+- Select a star and leave the comment blank: submission should succeed and store an empty comment.
+- Select a star and write a comment: the comment should be stored with the rating.
+- Verify that the email is shown as non-editable registered-account information.
+- Verify that administrators can review rating-only feedback without a missing-content issue.
+
+## Manual acceptance checks still required
+
+Before final evaluation, perform the device/Firebase checks in
+`docs/TESTING_STRATEGY.md`, including OCR accuracy, performance timing,
+camera/microphone permission cases, offline behaviour, multiple screen sizes,
+and Firestore access-control tests.
+
+
+## Full Project I alignment
+
+See `docs/PROJECT_I_REPORT_ALIGNMENT.md` for the UC-01–UC-23 flow audit,
+activity/sequence-diagram alignment, report numbering corrections, and the
+remaining manual acceptance gate.

@@ -1,0 +1,71 @@
+name: Build 25-sign experimental Android debug APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fyp-development]
+    paths:
+      - '.github/workflows/maya-twkm25-research-debug-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Bundle verified experimental assets and compile debug app
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install research export dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'datasets>=4.0,<5' Pillow numpy opencv-python-headless scikit-image scikit-learn skl2onnx onnx onnxruntime onnxscript
+      - name: Train 25-sign research SVM and verify ONNX parity
+        run: |
+          python ml/catalogue_expansion/export_android_candidate.py
+      - name: Package exactly matching feature, SVM, gallery and manifest in Android assets
+        run: |
+          cp ml/catalogue_expansion/android_export/maya_twkm25_*.onnx app/src/main/assets/
+          cp ml/catalogue_expansion/android_export/maya_twkm25_gallery.bin app/src/main/assets/
+          cp ml/catalogue_expansion/android_export/maya_twkm25_metadata.json app/src/main/assets/
+          test -s app/src/main/assets/maya_twkm25_feature.onnx
+          test -s app/src/main/assets/maya_twkm25_svm.onnx
+          test -s app/src/main/assets/maya_twkm25_gallery.bin
+          test -s app/src/main/assets/maya_twkm25_metadata.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Run Android tests and compile model-bundled debug APK
+        run: |
+          gradle testDebugUnitTest assembleDebug --stacktrace
+      - name: Upload test APK only (NOT a production release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: MayaTWKM25-Experimental-Android-Debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+          if-no-files-found: error
+      - name: Describe demo limitations
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          path=Path('ml/catalogue_expansion/android_export/maya_twkm25_metadata.json')
+          d=json.loads(path.read_text())
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('## Research-only 25 TWKM-sign Android APK\n\n')
+              f.write(f"**Supported experimental sign IDs:** {len(d['supported_twkm_sign_numbers'])}  \n")
+              f.write(f"**Exposed catalogue test:** {d['evaluation']['previously_exposed_test']}  \n")
+              f.write(f"**ONNX parity:** {d['onnx_parity']}  \n")
+              f.write('**Not a released Classic Maya translator.** No independent photo accuracy or multi-sign reading validated.\n')
+              f.write('This build uses no private google-services.json; Firebase production credentials are never uploaded.\n')
+          PY

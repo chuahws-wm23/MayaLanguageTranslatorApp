@@ -1,0 +1,52 @@
+name: Evaluate TWKM few-shot glyph shape SVM
+
+on:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/research_v4_single/shape_svm_experiment.py'
+      - '.github/workflows/maya-shape-svm.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore pinned TWKM data-preparation files
+        run: |
+          mkdir -p ml/glyph_v4/outputs ml/glyph_v2
+          git fetch --depth=1 origin glyph-v4-expanded-training
+          git show FETCH_HEAD:ml/glyph_v4/train_v4.py > ml/glyph_v4/train_v4.py
+          git fetch --depth=1 origin glyph-model-v2-experiment
+          git show FETCH_HEAD:ml/glyph_v2/train.py > ml/glyph_v2/train.py
+          git show FETCH_HEAD:ml/glyph_v2/train_transfer.py > ml/glyph_v2/train_transfer.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Python CPU research libraries
+        run: |
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'datasets>=4.0,<5' 'Pillow>=11,<13' opencv-python-headless scikit-learn scikit-image joblib
+      - name: Check source syntax
+        run: python -m py_compile ml/research_v4_single/shape_svm_experiment.py
+      - name: Train-grouped cross-validation, then test shape and CNN baselines
+        run: python ml/research_v4_single/shape_svm_experiment.py
+      - name: Publish measured shape comparisons
+        run: |
+          {
+            echo "## TWKM HOG + SVM shape second opinion"
+            echo
+            cat ml/research_v4_single/shape_svm_results/summary.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MayaFewShotShapeSvmExperiment
+          path: ml/research_v4_single/shape_svm_results/
+          if-no-files-found: warn
+          retention-days: 14

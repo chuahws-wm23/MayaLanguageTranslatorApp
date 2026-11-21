@@ -1,0 +1,30 @@
+name: Audit TWKM English-meaning logograms
+on:
+  workflow_dispatch:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/logogram_expansion/audit_meanings.py'
+      - '.github/workflows/maya-logogram-meanings-audit.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install 'datasets>=4,<5' 'Pillow>=11,<13'
+      - name: Inspect complete pinned TWKM logogram glosses, provenance and confidence
+        run: |
+          python ml/logogram_expansion/audit_meanings.py
+      - name: Upload research candidate records without claiming translation accuracy
+        uses: actions/upload-artifact@v4
+        with:
+          name: TWKM-English-Meaning-Logogram-Candidates
+          path: ml/logogram_expansion/output/
+          if-no-files-found: error
+          retention-days: 14

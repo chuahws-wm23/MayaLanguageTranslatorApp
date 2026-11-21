@@ -1,0 +1,58 @@
+name: Evaluate DINOv2 pretrained Maya glyph features
+
+on:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/research_v4_single/frozen_dinov2_features.py'
+      - '.github/workflows/maya-dinov2-features.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore pinned TWKM sources and original split
+        run: |
+          mkdir -p ml/glyph_v4/outputs ml/glyph_v2
+          git fetch --depth=1 origin glyph-v4-expanded-training
+          git show FETCH_HEAD:ml/glyph_v4/train_v4.py > ml/glyph_v4/train_v4.py
+          git fetch --depth=1 origin glyph-model-v2-experiment
+          git show FETCH_HEAD:ml/glyph_v2/train.py > ml/glyph_v2/train.py
+          git show FETCH_HEAD:ml/glyph_v2/train_transfer.py > ml/glyph_v2/train_transfer.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install DINOv2 and evaluation dependencies
+        run: |
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'datasets>=4.0,<5' 'Pillow>=11,<13' opencv-python-headless scikit-learn scikit-image joblib 'transformers>=4.45,<5' safetensors
+      - name: Compile code
+        run: python -m py_compile ml/research_v4_single/frozen_dinov2_features.py
+      - name: Frozen ViT-Small feature extraction and grouped TWKM comparison
+        run: python ml/research_v4_single/frozen_dinov2_features.py
+      - name: Publish actual training/validation results
+        run: |
+          python - <<'PY'
+          import json,os
+          r=json.load(open('ml/research_v4_single/dinov2_results/results.json'))
+          s=('## Frozen DINOv2 glyph feature evaluation\n\n'
+             f"* Training-only grouped CV: {r['research_selection']['grouped_cv']['correct']}/45\n"
+             f"* Val: {r['known_validation']['correct']}/10\n"
+             f"* Previously exposed known test: {r['previously_exposed_test']['correct']}/10\n"
+             "* No independent real-camera photo accuracy or unknown-sign rejection. No Android changes.\n")
+          open(os.environ['GITHUB_STEP_SUMMARY'],'a').write(s)
+          print(s)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: DINOv2TWKMGlyphFewShotEvaluation
+          path: ml/research_v4_single/dinov2_results/
+          if-no-files-found: warn
+          retention-days: 14

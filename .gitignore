@@ -1,5 +1,6 @@
 # Android / Gradle
 .gradle/
+.kotlin/
 build/
 **/build/
 local.properties
@@ -23,6 +24,18 @@ dataset/raw/*
 dataset/processed/*.csv
 !dataset/processed/maya_english_dictionary_template.csv
 
+# Local research photos and private quality-control reports
+dataset/local_verified_photos/
+
+# Neural MT data / model outputs
+ml/data/raw/*
+!ml/data/raw/.gitkeep
+ml/data/processed/*
+!ml/data/processed/.gitkeep
+ml/artifacts/
+ml/runs/
+ml/**/*.log
+
 # Python
 __pycache__/
 *.py[cod]
@@ -32,3 +45,67 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Roboflow Maya glyph local research downloads, crops, and model weights
+Maya_v11_Research_Kit/
+Maya_v11_All_Crops/
+Maya_Glyphs_v11.zip
+Maya_v11_Research_Kit.zip
+Maya_v11_All_Crops.zip
+ml/research_roboflow_v11/output/
+
+# Standalone 21-class spatial-HOG audit kit (not Android assets)
+Maya_v11_Spatial_Research_Kit/
+Maya_v11_Spatial_Research_Kit.zip
+
+# Local research only: calibrated template-gallery bank and evaluation
+ml/research_v4_single/template_match_results/
+
+# Large local Roboflow reference-galleries and raw v11 ZIP
+maya_roboflow_v11_gallery.npz
+maya_roboflow_v11_full_gallery.npz
+Maya_Glyphs_v11.zip
+Maya-Glyphs-segmentation-model-11/
+
+# 494MB Roboflow block images and locally trained YOLO weights (never commit)
+Maya_Block_Detection_v18.zip
+maya_blocks_v18/
+mb18/
+ml/blocks_v18/output/
+ml/blocks_v18/runs/
+
+# Optional TWKM 25 research model — generated locally and supplied as CI artifact
+ml/catalogue_expansion/output/
+ml/catalogue_expansion/pretrained_output/
+ml/catalogue_expansion/android_export/
+ml/catalogue_expansion/android_export_with_photos/
+app/src/main/assets/maya_twkm25_feature.onnx
+app/src/main/assets/maya_twkm25_svm.onnx
+app/src/main/assets/maya_twkm25_gallery.bin
+app/src/main/assets/maya_twkm25_metadata.json
+ml/catalogue_expansion/twkm_background_output/
+
+# Local-only Maya syllabary research results and CC BY drawing indexes
+ml/syllabary_ml/output/
+
+# User-supplied v11 COCO polygons and converted one-class segmentation data
+*Maya*Glyphs*segmentation*model*.v11i*.zip
+yolo_v11_components/
+maya_v11_yolo_signs/
+ml/research_roboflow_v11/v11_model_training_output/
+
+# Optional locally exported one-class v11 instance segmentation model
+app/src/main/assets/maya_signs_v11_seg.onnx
+
+# Generated English-logogram research evaluation data (rebuild from pinned TWKM)
+ml/logogram_expansion/output/
+
+# Local expert-labelled photos staged only for on-device evaluation
+app/src/androidTest/assets/independent_photos/
+
+# Reproducible public-photo probe inputs are fetched only for evaluation
+app/src/androidTest/assets/public_photo_probe/
+
+# Local Firebase emulator logs (no production credentials)
+*-debug.log
+*-debug.log.*

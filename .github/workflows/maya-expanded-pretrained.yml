@@ -1,0 +1,62 @@
+name: Evaluate pretrained 25-sign classifier research
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fyp-development]
+    paths:
+      - 'ml/catalogue_expansion/pretrained_pilot.py'
+      - '.github/workflows/maya-expanded-pretrained.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    name: Compare pretrained sign classifiers (research only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pretrained CPU feature extractors
+        run: |
+          python -m pip install -U pip
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'datasets>=4.0,<5' Pillow numpy opencv-python-headless scikit-image scikit-learn
+      - name: Check script syntax
+        run: |
+          python -m py_compile ml/catalogue_expansion/benchmark.py ml/catalogue_expansion/pretrained_pilot.py
+          python -m unittest discover -s ml/catalogue_expansion -p 'test_*.py' -v
+      - name: Evaluate original-grouped CV and historical 25-class regression
+        run: |
+          python ml/catalogue_expansion/pretrained_pilot.py --max-signs 25
+      - name: Publish actual results to action summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          f = Path('ml/catalogue_expansion/pretrained_output/results.json')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as out:
+              out.write('## Expanded pretrained sign study (no Android change)\n\n')
+              if not f.exists():
+                  out.write('No completed model results; inspect this run’s logs.\n')
+              else:
+                  r = json.loads(f.read_text())
+                  out.write(f"Sign identities: **{r['sign_count']}**  \n")
+                  out.write(f"Selected by train-original CV: **{r['selected_backbone_by_training_cv']}**  \n")
+                  out.write(f"Historical catalogue regression: **{r['selected_historical_test_regression']}**  \n")
+                  out.write(f"Different-sign unknown regression: **{r['selected_unknown_regression']}**  \n")
+                  out.write('The same catalogue test was exposed in earlier research: **NOT a fresh blind test**. Model remains research-only.\n')
+          PY
+      - name: Upload research metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TWKM-Pretrained-25-Sign-Results
+          path: ml/catalogue_expansion/pretrained_output/
+          if-no-files-found: warn
+          retention-days: 14
