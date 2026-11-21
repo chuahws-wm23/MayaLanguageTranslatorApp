@@ -3,7 +3,7 @@ package com.chuahws.mayalanguageapp.presentation.research
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -92,7 +92,7 @@ private fun GlyphAssembly() {
     LazyColumn(modifier = Modifier.testTag("assembly-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Text("GLYPH WORKSPACE", style = MaterialTheme.typography.labelLarge) }
         item { Text("Build a study block", style = MaterialTheme.typography.headlineLarge) }
-        item { Text("Drag a syllable drawing into a numbered slot, or select a slot and tap a drawing. Tap a filled slot to select it.") }
+        item { Text("Hold and drag a syllable drawing into a numbered slot, or select a slot and tap a drawing. Tap a filled slot to select it.") }
         stickyHeader {
             Card {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -141,7 +141,7 @@ private fun GlyphAssembly() {
             var origin by remember { mutableStateOf(Offset.Zero) }
             val image = remember(ref) { catalogue!!.referenceBitmap(ref).asImageBitmap() }
             Card(onClick = { place(ref.syllable, selected); selected = (selected + 1) % 6 }, modifier = Modifier.fillMaxWidth().onGloballyPositioned { origin = it.boundsInRoot().topLeft }.pointerInput(ref.syllable, slots, selected) {
-                detectDragGestures(onDragStart = { dragging = ref.syllable; dragPosition = origin + it }, onDrag = { change, amount -> change.consume(); dragPosition += amount }, onDragEnd = {
+                detectDragGesturesAfterLongPress(onDragStart = { dragging = ref.syllable; dragPosition = origin + it }, onDrag = { change, amount -> change.consume(); dragPosition += amount }, onDragEnd = {
                     bounds.entries.firstOrNull { it.value.contains(dragPosition) }?.let { place(ref.syllable, it.key); selected = (it.key + 1) % 6 }
                     dragging = null
                 }, onDragCancel = { dragging = null })

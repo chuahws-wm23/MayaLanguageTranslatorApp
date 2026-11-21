@@ -24,7 +24,7 @@ class ResearchWorkflowTest {
         val tile = compose.onNodeWithContentDescription("Drag syllable ka")
         val target = compose.onNodeWithText("1 · Empty").fetchSemanticsNode().boundsInRoot.center
         val source = tile.fetchSemanticsNode().boundsInRoot.topLeft
-        tile.performTouchInput { swipe(center, target - source, 800) }
+        tile.performTouchInput { down(center); advanceEventTime(700); moveTo(target - source, delayMillis = 500); up() }
         compose.onNodeWithTag("assembly-list").performScrollToNode(hasText("Find a syllable, e.g. ka"))
         compose.onNodeWithText("Find a syllable, e.g. ka").performTextReplacement("wa")
         compose.onNodeWithTag("assembly-list").performScrollToNode(hasContentDescription("Drag syllable wa"))
