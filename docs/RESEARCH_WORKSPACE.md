@@ -1,19 +1,15 @@
-# Research wiki and glyph workspace
+# Two-syllable workspace
 
-Open the navigation drawer → **Research wiki** or **Glyph workspace**. These extend the existing scanner, dictionary, History and Activity; they do not reinstate the old Learn Maya quizzes.
+The Research wiki has been removed, including its drawer entry and bundled articles. Open the menu → **Glyph workspace**.
 
-The offline wiki has ten searchable, expandable articles: writing systems, block order, syllables, phonetic complements, variants, source attribution, the ka-ka-wa spelling example, transliteration/transcription, numbers/calendar context and an inscription research checklist. Further-reading links lead to Kettunen and Helmke's *Introduction to Maya Hieroglyphs* at Mesoweb and the TWKM website. The articles are introductory editorial summaries, not quoted source text or expert-reviewed decipherments. External sources require internet access.
+1. Find a syllable in the catalogue. Hold a card, then drag it onto the empty canvas. Tapping a card also adds it at a default position.
+2. Add one more syllable. The canvas accepts exactly two cards; the palette disables additions when both are present.
+3. Hold and drag either placed card to arrange them freely. An out-of-canvas drop does not change the composition. Clear canvas removes both cards.
+4. Tap **Next**, enabled only when both cards are placed. Only then does a separate result screen show the combined sign sequence in Latin letters, with the two reference drawings.
+5. **Edit combination** returns to the existing canvas; **Start again** clears it. Android Back from the result also returns to the canvas.
 
-The workspace displays the existing TWKM CC BY 4.0 syllable drawings and source-proposed syllable values. Search a syllable and hold then drag a drawing into one of six numbered cells, or select a cell and tap a drawing. A floating drawing follows the drag, and a hovered cell highlights. Dropping from the palette replaces that cell and selects the next one. Hold and drag a filled cell onto another cell to swap their contents. Remove selected clears one cell; Clear block clears all six. The board remains visible while browsing the palette. The current sign sequence appears in Latin letters, separated by hyphens, in explicit cell order 1–6. Empty cells are skipped.
+Order is explicitly left to right (with vertical position, then insertion index resolving ties). The canvas is a study arrangement, not an automatic reconstruction of historical block order. Source-proposed TWKM syllable values are joined with a hyphen. The result is a transliteration of the chosen signs, not a verified Maya word, pronunciation or translation. Drawings remain the existing TWKM CC BY 4.0 references; parts are not extracted from uploaded photographs.
 
-A study block and wiki search survive navigation between sections and configuration recreation within the current signed-in shell. They are not a cloud-saved research notebook or an exported inscription, and are cleared when the signed-in shell ends.
+The canvas and search survive navigation within the signed-in shell. They are not a cloud-saved notebook. Closing the keyboard restores the canvas; dragging or tapping a palette card also dismisses keyboard focus.
 
-This first workspace assembles **syllable reference drawings**, not arbitrary fragments extracted from photographs. It provides a sign-by-sign transliteration, not a linguistic transcription, automatic pronunciation, semantic translation or validation that a composition is attested Maya. A grid does not establish historical reading order, identify complements or resolve spelling conventions. The documented ka-ka-wa example helps explain why written values cannot simply be concatenated into spoken words. Word-sign/phonetic-complement interpretation requires further linguistic review.
-
-Validation: `testDebugUnitTest assembleDebug assembleDebugAndroidTest` passes locally (180 JVM tests). ResearchWorkflowTest adds Android tests for article search/expansion, an actual drag into cell 1, a tap into the next cell, the combined ka-wa sequence, swapping cells into wa-ka and clearing. Check Android checks for the actual runtime outcome; compiling instrumentation tests alone is not a runtime pass.
-
-## Verified runtime result
-
-At application commit `d8739daef10c1a9cadb705a6486e2c4c1f46bf70`, [Android checks run 44884816925](https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/44884816925) passed the build, 180 JVM tests, 20 Android runtime tests (zero failures/errors/skips) and the evaluation-tool checks. The new runtime test actually holds and drags a part into the board, adds another by tap, verifies ka-wa, swaps filled cells to verify wa-ka, then clears the block. Wiki search, expanded content and no-results feedback are also checked. Research article and workspace screenshots are included in the runtime artifact and were inspected.
-
-The board is a fixed panel outside the palette's scrolling list. While the keyboard is visible its cells collapse temporarily, preserving the selected parts and reading. Hiding the keyboard restores the cells. This first validation uses the emulator's default phone size and font scale, not every physical device or accessibility configuration. It does not validate arbitrary compositions as authentic Maya or change the scanner's known real-photo limitations.
+The Android regression suite covers a real drag onto the canvas, adding a second card, moving a placed card, hiding the combined reading before Next, checking the left-to-right result, editing, starting again, clearing and empty search results. Compilation alone is not reported as a runtime pass; see the completed Android checks run.

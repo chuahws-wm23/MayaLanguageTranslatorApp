@@ -95,7 +95,6 @@ private enum class AppPage {
     SAVED,
     HISTORY,
     ANALYTICS,
-    RESEARCH,
     ASSEMBLY,
     FEEDBACK,
     PROFILE,
@@ -122,7 +121,6 @@ private val translateDrawerItems = listOf(
 )
 
 private val learnDrawerItems = listOf(
-    DrawerItem(AppPage.RESEARCH, "Research wiki", Icons.Rounded.MenuBook),
     DrawerItem(AppPage.ASSEMBLY, "Glyph workspace", Icons.Rounded.MenuBook),
     DrawerItem(
         AppPage.DICTIONARY,
@@ -502,7 +500,6 @@ private fun MainShell(
         AppPage.ANALYTICS -> "My activity"
         AppPage.FEEDBACK -> "Feedback"
         AppPage.PROFILE -> "Profile"
-        AppPage.RESEARCH -> "Research wiki"
         AppPage.ASSEMBLY -> "Glyph workspace"
     }
 
@@ -855,8 +852,7 @@ private fun MainShell(
                             onOpenFavourites = { goTo(AppPage.SAVED) },
                         )
 
-                    AppPage.RESEARCH -> researchState.SaveableStateProvider("wiki-${state.userId}") { com.chuahws.mayalanguageapp.presentation.research.ResearchScreen() }
-                    AppPage.ASSEMBLY -> researchState.SaveableStateProvider("assembly-${state.userId}") { com.chuahws.mayalanguageapp.presentation.research.ResearchScreen(builder = true) }
+                    AppPage.ASSEMBLY -> researchState.SaveableStateProvider("assembly-${state.userId}") { com.chuahws.mayalanguageapp.presentation.research.GlyphWorkspaceScreen() }
                     AppPage.DICTIONARY ->
                         GlyphDictionaryHubScreen()
 
