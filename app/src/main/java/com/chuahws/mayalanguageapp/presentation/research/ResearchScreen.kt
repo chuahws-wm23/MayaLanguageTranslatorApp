@@ -133,7 +133,7 @@ private fun GlyphAssembly() {
                     }
                     Row {
                         TextButton(onClick = { place("", selected) }, enabled = slots[selected].isNotEmpty()) { Text("Remove selected") }
-                        TextButton(onClick = { slots = List(6) { "" } }) { Text("Clear block") }
+                        TextButton(onClick = { slots = List(6) { "" }; selected = 0 }) { Text("Clear block") }
                     }
                 }
             }
