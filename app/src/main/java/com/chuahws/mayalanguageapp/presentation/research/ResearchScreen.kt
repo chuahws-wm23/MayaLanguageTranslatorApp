@@ -21,6 +21,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualCatalogue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -83,8 +85,10 @@ private fun GlyphAssembly() {
     val bounds = remember { mutableMapOf<Int, Rect>() }
     var dragging by remember { mutableStateOf<String?>(null) }
     var dragPosition by remember { mutableStateOf(Offset.Zero) }
+    var rootOrigin by remember { mutableStateOf(Offset.Zero) }
     val refs = catalogue?.references.orEmpty().distinctBy { it.syllable }
     fun place(value: String, index: Int) { slots = slots.toMutableList().also { it[index] = value } }
+    Box(Modifier.fillMaxSize().onGloballyPositioned { rootOrigin = it.boundsInRoot().topLeft }) {
     LazyColumn(modifier = Modifier.testTag("assembly-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Text("GLYPH WORKSPACE", style = MaterialTheme.typography.labelLarge) }
         item { Text("Build a study block", style = MaterialTheme.typography.headlineLarge) }
@@ -98,7 +102,7 @@ private fun GlyphAssembly() {
                             repeat(2) { col ->
                                 val index = row * 2 + col
                                 OutlinedCard(onClick = { selected = index }, modifier = Modifier.weight(1f).height(80.dp).onGloballyPositioned { bounds[index] = it.boundsInRoot() }) {
-                                    Column(Modifier.fillMaxSize().background(if (selected == index) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface).padding(8.dp)) {
+                                    Column(Modifier.fillMaxSize().background(if (selected == index || (dragging != null && bounds[index]?.contains(dragPosition) == true)) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface).padding(8.dp)) {
                                         Text("${index + 1} · ${slots[index].ifEmpty { "Empty" }}", style = MaterialTheme.typography.labelMedium)
                                         refs.firstOrNull { it.syllable == slots[index] }?.let { ref ->
                                             val image = remember(ref) { catalogue!!.referenceBitmap(ref).asImageBitmap() }
@@ -149,4 +153,12 @@ private fun GlyphAssembly() {
             }
         }
     }
+    dragging?.let { syllable ->
+        refs.firstOrNull { it.syllable == syllable }?.let { ref ->
+            val bitmap = remember(ref) { catalogue!!.referenceBitmap(ref).asImageBitmap() }
+            Image(bitmap, null, Modifier.offset { IntOffset((dragPosition.x-rootOrigin.x-32.dp.toPx()).roundToInt(), (dragPosition.y-rootOrigin.y-32.dp.toPx()).roundToInt()) }.size(64.dp).background(MaterialTheme.colorScheme.surface))
+        }
+    }
+    }
+
 }

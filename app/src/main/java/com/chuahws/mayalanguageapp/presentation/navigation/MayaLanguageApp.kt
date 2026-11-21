@@ -277,6 +277,7 @@ private fun MainShell(
 ) {
     val state by appDataViewModel.uiState.collectAsStateWithLifecycle()
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
+    val researchState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val snackbarHostState = remember { SnackbarHostState() }
     val drawerState = rememberDrawerState(
         initialValue = DrawerValue.Closed,
@@ -854,8 +855,8 @@ private fun MainShell(
                             onOpenFavourites = { goTo(AppPage.SAVED) },
                         )
 
-                    AppPage.RESEARCH -> com.chuahws.mayalanguageapp.presentation.research.ResearchScreen()
-                    AppPage.ASSEMBLY -> com.chuahws.mayalanguageapp.presentation.research.ResearchScreen(builder = true)
+                    AppPage.RESEARCH -> researchState.SaveableStateProvider("wiki-${state.userId}") { com.chuahws.mayalanguageapp.presentation.research.ResearchScreen() }
+                    AppPage.ASSEMBLY -> researchState.SaveableStateProvider("assembly-${state.userId}") { com.chuahws.mayalanguageapp.presentation.research.ResearchScreen(builder = true) }
                     AppPage.DICTIONARY ->
                         GlyphDictionaryHubScreen()
 
