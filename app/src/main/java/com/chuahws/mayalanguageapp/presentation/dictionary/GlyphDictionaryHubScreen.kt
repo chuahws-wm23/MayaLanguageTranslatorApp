@@ -49,6 +49,35 @@ private enum class DictionarySection(val title: String) {
     WORD_SIGNS("Word signs"), SYLLABLES("Syllables"),
 }
 
+private enum class VisualClue(val label: String, val example: String) {
+    ROUNDS("Rows of circles", "32vb"),
+    LINES("Parallel lines", "12st"),
+    PROFILE("Face in profile", "4vc"),
+    CROSS("Crossed bands", "44bb"),
+}
+
+// Tags describe individual TWKM drawings. Variants of a sign can have different clues.
+private val drawingClues = mapOf(
+    "4vc" to setOf(VisualClue.PROFILE),
+    "4va" to setOf(VisualClue.PROFILE),
+    "12st" to setOf(VisualClue.LINES),
+    "12md" to setOf(VisualClue.LINES),
+    "32vb" to setOf(VisualClue.ROUNDS),
+    "32vl" to setOf(VisualClue.ROUNDS),
+    "32vr" to setOf(VisualClue.ROUNDS),
+    "44bv" to setOf(VisualClue.ROUNDS, VisualClue.CROSS),
+    "44do" to setOf(VisualClue.ROUNDS),
+    "44bb" to setOf(VisualClue.CROSS, VisualClue.LINES),
+    "45st" to setOf(VisualClue.ROUNDS),
+    "45dh" to setOf(VisualClue.ROUNDS),
+    "79bv" to setOf(VisualClue.LINES),
+    "109ex" to setOf(VisualClue.LINES),
+    "122bv" to setOf(VisualClue.LINES),
+    "128hh" to setOf(VisualClue.PROFILE),
+    "187hh" to setOf(VisualClue.PROFILE, VisualClue.LINES),
+    "200br" to setOf(VisualClue.ROUNDS),
+)
+
 private data class Archive(val words: GlyphEnglishMeaningCatalogue, val sounds: GlyphVisualCatalogue)
 private data class ArchiveEntry(
     val key: String,
@@ -70,7 +99,11 @@ fun GlyphDictionaryHubScreen() {
     val focus = LocalFocusManager.current
     var selected by rememberSaveable { mutableStateOf(DictionarySection.WORD_SIGNS) }
     var query by rememberSaveable(selected) { mutableStateOf("") }
-    var page by rememberSaveable(selected, query) { mutableIntStateOf(1) }
+    var guided by rememberSaveable { mutableStateOf(false) }
+    var clueNames by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
+    val clues = VisualClue.entries.filter { it.name in clueNames }
+    val guiding = guided && selected == DictionarySection.WORD_SIGNS
+    var page by rememberSaveable(selected, query, guiding, clueNames) { mutableIntStateOf(1) }
     var opened by rememberSaveable { mutableStateOf<String?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     val loaded by produceState<Result<Archive>?>(null, context, reload) {
@@ -101,8 +134,15 @@ fun GlyphDictionaryHubScreen() {
             }
         }
     }
-    val filtered = remember(entries, query) {
-        entries.filter { it.searchText.contains(query.trim(), ignoreCase = true) }
+    val matchingDrawings = remember(entries, guiding, clues) {
+        if (!guiding) emptyMap() else entries.mapNotNull { entry ->
+            (0 until entry.count).firstOrNull { index ->
+                drawingClues[entry.graph(index)]?.containsAll(clues) == true
+            }?.let { entry.key to it }
+        }.toMap()
+    }
+    val filtered = remember(entries, query, guiding, matchingDrawings) {
+        entries.filter { (!guiding || it.key in matchingDrawings) && it.searchText.contains(query.trim(), ignoreCase = true) }
             .sortedWith { a,b ->
                 val result=MayaReadingOrder.compare(a.word?.reading ?: a.title,b.word?.reading ?: b.title)
                 if(result!=0)result else a.key.compareTo(b.key)
@@ -110,11 +150,11 @@ fun GlyphDictionaryHubScreen() {
     }
     val currentPage=ListPaging.safePage(page,filtered.size)
     val visibleEntries=ListPaging.pageItems(filtered,currentPage)
-    LaunchedEffect(selected, query, currentPage) {
+    LaunchedEffect(selected, query, currentPage, guiding, clueNames) {
         if (listState.firstVisibleItemIndex > 2) listState.scrollToItem(1)
     }
     entries.firstOrNull { it.key == opened }?.let { entry ->
-        ArchiveEntryDialog(entry, onDismiss = { opened = null })
+        ArchiveEntryDialog(entry, initialIndex = matchingDrawings[entry.key] ?: 0, onDismiss = { opened = null })
     }
     AppGradientBackground {
         LazyColumn(
@@ -164,6 +204,43 @@ fun GlyphDictionaryHubScreen() {
                     ListPaginationControls(filtered.size,currentPage,{ page=it })
                 }
             }
+            if (archive != null && selected == DictionarySection.WORD_SIGNS) item {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { focus.clearFocus(); guided = !guided }, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (guiding) "Return to all word signs" else "Find by visible clues")
+                    }
+                    if (guiding) {
+                        Text("Guided Glyph Lookup", style = MaterialTheme.typography.titleLarge)
+                        Text("Choose visible features to find drawings that share every selected clue. Covers ${drawingClues.size} curated drawings.")
+                        VisualClue.entries.chunked(2).forEach { row ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                row.forEach { clue ->
+                                    FilterChip(
+                                        selected = clue in clues,
+                                        onClick = {
+                                            clueNames = ArrayList(clueNames).apply {
+                                                if (!remove(clue.name)) add(clue.name)
+                                            }
+                                        },
+                                        label = {
+                                            Column(Modifier.padding(vertical = 6.dp)) {
+                                                val example = archive.words.references.firstOrNull { it.graph == clue.example }
+                                                if (example != null) {
+                                                    val bitmap = remember(example) { archive.words.imageFor(example).asImageBitmap() }
+                                                    Image(bitmap, contentDescription = null, modifier = Modifier.fillMaxWidth().height(44.dp))
+                                                }
+                                                Text(clue.label)
+                                            }
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                            }
+                        }
+                        TextButton(onClick = { clueNames = arrayListOf() }, enabled = clues.isNotEmpty()) { Text("Clear clues") }
+                    }
+                }
+            }
             if (loaded == null) item {
                 Column(Modifier.fillMaxWidth().padding(40.dp), horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -184,7 +261,7 @@ fun GlyphDictionaryHubScreen() {
                 if (filtered.isEmpty()) item {
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("No matching glyphs", style = MaterialTheme.typography.titleLarge)
-                        Text("Try a different meaning, reading or sign number.")
+                        Text(if (guiding) "Remove a clue or clear your text search to see more drawings." else "Try a different meaning, reading or sign number.")
                         TextButton(onClick = { query = "" }) { Text("Clear search") }
                     }
                 }
@@ -195,7 +272,12 @@ fun GlyphDictionaryHubScreen() {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(if (entry.word != null) "WORD SIGN · TWKM #${entry.word.twkmSign}" else "SYLLABLE REFERENCE",
                                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                            ArchiveDrawing(entry, 0, 168)
+                            val drawing = matchingDrawings[entry.key] ?: 0
+                            ArchiveDrawing(entry, drawing, 168)
+                            if (guiding) {
+                                val labels = drawingClues[entry.graph(drawing)].orEmpty().joinToString(" · ") { it.label }
+                                Text(labels, style = MaterialTheme.typography.labelMedium)
+                            }
                             Text(entry.word?.reading ?: entry.title, style = MaterialTheme.typography.headlineSmall)
                             Text(if(entry.word!=null)entry.title else entry.subtitle, style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -229,8 +311,8 @@ private fun ArchiveDrawing(entry: ArchiveEntry, index: Int, height: Int) {
 }
 
 @Composable
-private fun ArchiveEntryDialog(entry: ArchiveEntry, onDismiss: () -> Unit) {
-    var index by rememberSaveable(entry.key) { mutableIntStateOf(0) }
+private fun ArchiveEntryDialog(entry: ArchiveEntry, initialIndex: Int, onDismiss: () -> Unit) {
+    var index by rememberSaveable(entry.key, initialIndex) { mutableIntStateOf(initialIndex) }
     val uri = LocalUriHandler.current
     AlertDialog(onDismissRequest = onDismiss,
         title = { Text(entry.word?.reading ?: entry.title, style = MaterialTheme.typography.headlineSmall) },
