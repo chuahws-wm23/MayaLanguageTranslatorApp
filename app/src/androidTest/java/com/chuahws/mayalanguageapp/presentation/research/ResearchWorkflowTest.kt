@@ -1,6 +1,7 @@
 package com.chuahws.mayalanguageapp.presentation.research
 
 import androidx.compose.ui.test.*
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.chuahws.mayalanguageapp.presentation.theme.MayaTranslateTheme
 import org.junit.Rule
@@ -8,11 +9,18 @@ import org.junit.Test
 
 class ResearchWorkflowTest {
     @get:Rule val compose = createComposeRule()
+    private fun screenshot(name: String) {
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        val directory = requireNotNull(context.getExternalFilesDir("screenshots")).apply { mkdirs() }
+        val image = compose.onRoot().captureToImage().asAndroidBitmap()
+        java.io.File(directory, "research-$name.png").outputStream().use { image.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+    }
     @Test fun searchAndExpandResearchArticle() {
         compose.setContent { MayaTranslateTheme { ResearchScreen() } }
         compose.onNodeWithText("Search topics or terms").performTextReplacement("complements")
         compose.onNodeWithText("Word signs and phonetic complements").performScrollTo().performClick()
         compose.onNodeWithText("Read the source ↗").performScrollTo().assertIsDisplayed()
+        screenshot("article")
         compose.onNodeWithText("Search topics or terms").performTextReplacement("zzzzzz")
         compose.onNodeWithText("No topics found. Try syllables, reading or variants.").assertExists()
     }
@@ -30,6 +38,7 @@ class ResearchWorkflowTest {
         compose.onNodeWithTag("assembly-list").performScrollToNode(hasContentDescription("Drag syllable wa"))
         compose.onNodeWithContentDescription("Drag syllable wa").performClick()
         compose.onAllNodesWithText("ka-wa").onFirst().assertExists()
+        screenshot("workspace")
         compose.onNodeWithText("Clear block").performClick()
         compose.onNodeWithText("Your reading appears here").assertExists()
     }

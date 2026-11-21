@@ -18,6 +18,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
@@ -72,6 +73,7 @@ fun ResearchScreen(builder: Boolean = false) {
 @Composable
 private fun GlyphAssembly() {
     val context = LocalContext.current
+    val typing = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     var loadFailed by remember { mutableStateOf(false) }
     var retry by remember { mutableIntStateOf(0) }
     val catalogue by produceState<GlyphVisualCatalogue?>(null, retry) {
@@ -97,7 +99,8 @@ private fun GlyphAssembly() {
             Card {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(slots.filter { it.isNotEmpty() }.joinToString("-").ifEmpty { "Your reading appears here" }, style = MaterialTheme.typography.titleLarge)
-                    repeat(3) { row ->
+                    if (typing) Text("Hide the keyboard to place drawings.", style = MaterialTheme.typography.labelSmall)
+                    repeat(if (typing) 0 else 3) { row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             repeat(2) { col ->
                                 val index = row * 2 + col
