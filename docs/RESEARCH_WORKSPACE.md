@@ -13,3 +13,7 @@ Order is explicitly left to right (with vertical position, then insertion index 
 The canvas and search survive navigation within the signed-in shell. They are not a cloud-saved notebook. Closing the keyboard restores the canvas; dragging or tapping a palette card also dismisses keyboard focus.
 
 The Android regression suite covers a real drag onto the canvas, adding a second card, moving a placed card, hiding the combined reading before Next, checking the left-to-right result, editing, starting again, clearing and empty search results. Compilation alone is not reported as a runtime pass; see the completed Android checks run.
+
+## Verified result
+
+Application commit `5ffdb3016c611b578e3d302becd93cb3587c6a9b` passed the build, 180 JVM tests and all 20 Android runtime tests (zero failures/errors/skips). [Android checks run 44889020836](https://github.com/chuahws-wm23/MayaLanguageTranslatorApp/actions/runs/44889020836) includes the new drag/move/Next/result/edit/restart and clear/search checks alongside existing app workflows. Canvas and result screenshots were inspected. This is emulator evidence at the default phone size, not validation of every physical device or arbitrary syllable combinations as valid Maya.
