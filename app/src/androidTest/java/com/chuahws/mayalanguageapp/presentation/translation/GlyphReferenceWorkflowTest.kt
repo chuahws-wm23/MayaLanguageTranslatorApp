@@ -44,36 +44,39 @@ class GlyphReferenceWorkflowTest {
     @get:Rule val compose = createComposeRule()
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
-    @Test fun similarityFilterHidesCandidatesAtOrBelow85AndShowsPercentageAboveIt() {
+    @Test fun lowSimilarityAlternativesRemainReviewableWithoutClaimingConfidence() {
         val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val ref = catalogue.references.first()
         val score = mutableStateOf(.84f)
         var dictionaryOpened = false
         compose.setContent { MayaTranslateTheme {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                GlyphReferenceResults(listOf(GlyphEnglishMatch(ref, score.value)), onOpenDictionary = { dictionaryOpened = true })
+                GlyphReferenceResults(listOf(GlyphEnglishMatch(ref, score.value)),
+                    onOpenDictionary = { dictionaryOpened = true })
             }
         } }
         listOf(.84f, .85f).forEach { value ->
             compose.runOnIdle { score.value = value }
             compose.onNodeWithText("No match found").assertExists()
-            compose.onAllNodes(numericSimilarity).assertCountEquals(0)
-            compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}").assertCountEquals(0)
+            compose.onNodeWithText("Review possible reference drawings").assertExists()
+            compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         }
-        compose.onNodeWithText("Browse dictionary").performScrollTo().performClick()
+        compose.onNodeWithText("Browse full glyph dictionary").performScrollTo().performClick()
         compose.runOnIdle {
             check(dictionaryOpened)
             score.value = .95f
         }
-        compose.onNodeWithText("Browse dictionary").assertDoesNotExist()
+        compose.onNodeWithText("No match found").assertDoesNotExist()
         compose.onNodeWithText("Visual similarity 95.00%").assertExists()
         compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         compose.waitUntil(20_000) {
-            compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}").fetchSemanticsNodes().size == 1
+            compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}")
+                .fetchSemanticsNodes().size == 1
         }
+        compose.onNodeWithText("None of these match my glyph").performScrollTo().performClick()
+        compose.onNodeWithText("No reading selected.", substring = true).assertExists()
         compose.runOnIdle { score.value = .5f }
         compose.onNodeWithText("No match found").assertExists()
-        compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}").assertCountEquals(0)
     }
 
     @Test fun favouriteGlyphSearchDetailsAndConfirmedRemovalWork() {
@@ -478,6 +481,9 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("New set name").performTextReplacement("Reading practice")
         compose.onNodeWithText("Add glyph").performScrollTo().performClick()
         compose.onNodeWithText("Study sets").performScrollTo().performClick()
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithText("Reading practice · 1 glyphs").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithText("Reading practice · 1 glyphs").performClick()
         compose.onNodeWithText("Review set").performClick()
         compose.onNodeWithText("Reveal reading").performClick()
