@@ -564,7 +564,7 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("Single glyph").performScrollTo().performClick()
         compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
         compose.onNodeWithText("Closest reference found").performScrollTo().assertExists()
-        compose.onNodeWithText("Nearest reference").assertExists()
+        compose.onNodeWithText("Review possible reference drawings").assertExists()
         compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         compose.onAllNodesWithText("Frame your glyph").assertCountEquals(0)
         compose.onAllNodesWithText("Reset crop").assertCountEquals(0)
