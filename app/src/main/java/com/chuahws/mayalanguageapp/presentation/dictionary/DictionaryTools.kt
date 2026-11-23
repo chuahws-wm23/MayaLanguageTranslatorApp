@@ -26,6 +26,7 @@ internal fun copyDictionaryText(context: Context, label: String, text: String) {
 internal fun DictionaryToolDialog(
     title: String,
     onClose: () -> Unit,
+    confirm: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     AlertDialog(
@@ -38,7 +39,12 @@ internal fun DictionaryToolDialog(
                 content = content,
             )
         },
-        confirmButton = { TextButton(onClick = onClose) { Text("Close") } },
+        confirmButton = {
+            if (confirm != null) confirm() else TextButton(onClick = onClose) { Text("Close") }
+        },
+        dismissButton = if (confirm != null) {
+            { TextButton(onClick = onClose) { Text("Cancel") } }
+        } else null,
     )
 }
 

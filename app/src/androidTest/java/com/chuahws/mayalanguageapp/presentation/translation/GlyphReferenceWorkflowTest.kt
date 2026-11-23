@@ -467,8 +467,9 @@ class GlyphReferenceWorkflowTest {
         val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val sign = catalogue.distinctSigns.first()
         val account = "study-${java.util.UUID.randomUUID()}"
+        val dictionarySession = mutableStateOf(0)
         compose.setContent {
-            MayaTranslateTheme { GlyphDictionaryHubScreen(accountId = account) }
+            MayaTranslateTheme { androidx.compose.runtime.key(dictionarySession.value) { GlyphDictionaryHubScreen(accountId = account) } }
         }
         compose.onNodeWithText("Search meaning, reading or number").performTextReplacement(sign.twkmSign.toString())
         compose.onNodeWithText("Search meaning, reading or number").performImeAction()
@@ -476,9 +477,11 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText(sign.english).performScrollTo().performClick()
         compose.onNodeWithText("Add to study set").performScrollTo().performClick()
         compose.onNodeWithText("New set name").performTextReplacement("Reading practice")
-        compose.onNodeWithText("Add glyph").performScrollTo().performClick()
+        compose.onNodeWithText("New set name").performImeAction()
+        compose.onNodeWithText("Review set").assertExists()
+        compose.runOnIdle { dictionarySession.value++ }
         compose.onNodeWithText("Study sets").performScrollTo().performClick()
-        compose.onNodeWithText("Reading practice · 1 glyphs").performClick()
+        compose.onNodeWithText("Reading practice · 1 glyph").performClick()
         compose.onNodeWithText("Review set").performClick()
         compose.onNodeWithText("Reveal reading").performClick()
         compose.onNodeWithText(sign.reading).assertExists()

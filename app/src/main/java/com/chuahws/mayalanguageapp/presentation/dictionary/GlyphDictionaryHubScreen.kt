@@ -163,23 +163,42 @@ fun GlyphDictionaryHubScreen(accountId: String = "local") {
             closeTool()
         }, ::closeTool)
         "notes" -> ResearchNotes(byKey, notebook.notes, { entry -> activeEntry = entry.key; tool = "note" }, ::closeTool)
-        "add" -> if (chosen != null) DictionaryToolDialog("Add to study set", ::closeTool) {
+        "add" -> if (chosen != null) {
             fun addToSet(name: String) {
+                if (name.isBlank()) return
                 val signs = (notebook.sets[name].orEmpty() + chosen.key).distinct()
                 updateNotebook(notebook.copy(sets = notebook.sets + (name to signs)))
-                closeTool()
+                activeSet = name
+                activeEntry = null
+                tool = "set"
             }
-            notebook.sets.keys.sorted().forEach { name ->
-                TextButton(onClick = { addToSet(name) }) { Text(name) }
+            DictionaryToolDialog(
+                title = "Add to study set",
+                onClose = ::closeTool,
+                confirm = {
+                    Button(onClick = { addToSet(setName.trim()) }, enabled = setName.isNotBlank()) {
+                        Text("Add glyph")
+                    }
+                },
+            ) {
+                notebook.sets.keys.sorted().forEach { name ->
+                    TextButton(onClick = { addToSet(name) }) { Text(name) }
+                }
+                OutlinedTextField(
+                    value = setName,
+                    onValueChange = { setName = it.take(60) },
+                    singleLine = true,
+                    label = { Text("New set name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { addToSet(setName.trim()) }),
+                )
             }
-            OutlinedTextField(setName, { setName = it.take(60) }, singleLine = true,
-                label = { Text("New set name") }, modifier = Modifier.fillMaxWidth())
-            Button(onClick = { addToSet(setName.trim()) }, enabled = setName.isNotBlank()) { Text("Add glyph") }
         }
         "sets" -> DictionaryToolDialog("Study sets", ::closeTool) {
             if (notebook.sets.isEmpty()) Text("Open a dictionary entry to add its glyph to a study set.")
             notebook.sets.toSortedMap().forEach { (name, keys) ->
-                TextButton(onClick = { activeSet = name; tool = "set" }) { Text("$name · ${keys.size} glyphs") }
+                TextButton(onClick = { activeSet = name; tool = "set" }) { Text("$name · ${keys.size} ${if (keys.size == 1) "glyph" else "glyphs"}") }
             }
         }
         "set" -> {
