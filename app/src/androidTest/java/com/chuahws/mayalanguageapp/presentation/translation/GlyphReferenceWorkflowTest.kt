@@ -605,6 +605,54 @@ class GlyphReferenceWorkflowTest {
         file.delete()
     }
 
+    @Test fun userCanCorrectGlyphAreaReviewAlternativesAndRescanManualRegions() {
+        val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val example = words.imageFor(words.references.first { it.twkmSign == 32 })
+        val folder = File(context.cacheDir, "images").apply { mkdirs() }
+        val file = File(folder, "manual-region-test.png")
+        try { file.outputStream().use { example.compress(Bitmap.CompressFormat.PNG, 100, it) } }
+        finally { example.recycle() }
+        val model = GlyphRecognitionViewModel(context.applicationContext as Application)
+        var openedSign: Int? = null
+        compose.setContent { MayaTranslateTheme {
+            GlyphPhotoScreen(
+                onRecordGlyphScan = { _, _ -> }, onToggleGlyphFavorite = {},
+                savedGlyphIds = emptySet(), onOpenHistory = {}, onOpenFavourites = {},
+                glyphModel = model, onOpenDictionary = { openedSign = it },
+            )
+        } }
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        compose.runOnIdle { model.load(uri) }
+        compose.waitUntil(30_000) { model.state.value.bitmap != null && !model.state.value.busy }
+
+        compose.onNodeWithText("Select / adjust one glyph area").performScrollTo().performClick()
+        compose.onNodeWithText("Select one complete glyph").assertExists()
+        compose.onNodeWithText("Scan these areas").performScrollTo().performClick()
+        compose.waitUntil(60_000) { model.state.value.referenceMatches != null && !model.state.value.busy }
+        compose.onNodeWithText("Review possible reference drawings").performScrollTo().assertExists()
+        compose.onNodeWithText("Learn this glyph in dictionary").performScrollTo().performClick()
+        compose.runOnIdle {
+            assertEquals(model.state.value.referenceMatches!!.first().reference.twkmSign, openedSign)
+        }
+        compose.onNodeWithText("None of these match my glyph").performScrollTo().performClick()
+        compose.onNodeWithText("No reading selected.", substring = true).assertExists()
+
+        compose.onNodeWithText("Multiple glyphs").performScrollTo().performClick()
+        compose.waitUntil(60_000) {
+            model.state.value.activeMode == "multiple" && !model.state.value.busy
+        }
+        compose.onNodeWithText("Adjust or add detection areas").performScrollTo().performClick()
+        compose.onNodeWithText("Adjust detected glyph areas").assertExists()
+        compose.onNodeWithText("Add area").performScrollTo().performClick()
+        compose.onNodeWithText("Area 2 of 2", substring = true).assertExists()
+        compose.onNodeWithText("Scan these areas").performScrollTo().performClick()
+        compose.waitUntil(60_000) {
+            !model.state.value.busy && model.state.value.multiple.size == 2
+        }
+        compose.onNodeWithText("Glyph by glyph").performScrollTo().assertExists()
+        file.delete()
+    }
+
     @Test fun originalReferenceArtworkHasVerifiedSourceResolution() {
         val bitmap=requireNotNull(GlyphReferenceArtwork.load(context,"32vb"))
         assertEquals(512,bitmap.width)
