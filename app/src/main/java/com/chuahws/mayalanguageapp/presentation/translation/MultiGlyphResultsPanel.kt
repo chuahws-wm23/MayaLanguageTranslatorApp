@@ -41,6 +41,7 @@ internal fun MultiGlyphResultsPanel(
     showOverview: Boolean = true,
     selectedIndex: Int? = null,
     onRegionSelected: ((Int) -> Unit)? = null,
+    onOpenDictionary: ((Int?) -> Unit)? = null,
 ) {
     if (results.isEmpty()) return
     var localSelection by rememberSaveable(bitmap, results) { mutableIntStateOf(0) }
@@ -78,7 +79,7 @@ internal fun MultiGlyphResultsPanel(
                 Text(item.note.ifBlank {
                     "No readable reference comparison is available for this region. Try a clearer photo with separated glyphs."
                 }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else GlyphReferenceResults(item.englishMatches)
+            } else GlyphReferenceResults(item.englishMatches, onOpenDictionary = onOpenDictionary)
         }
     }
 }

@@ -93,7 +93,7 @@ internal data class ArchiveEntry(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun GlyphDictionaryHubScreen(accountId: String = "local") {
+fun GlyphDictionaryHubScreen(accountId: String = "local", focusSign: Int? = null) {
     val context = LocalContext.current
     val store = remember(context, accountId) { DictionaryNotebookStore(context, accountId) }
     var notebook by remember(store) { mutableStateOf(store.load()) }
@@ -127,6 +127,14 @@ fun GlyphDictionaryHubScreen(accountId: String = "local") {
         }
     }
     val archive = loaded?.getOrNull()
+    LaunchedEffect(focusSign, archive) {
+        if (focusSign != null && archive != null) {
+            selected = DictionarySection.WORD_SIGNS
+            guided = false
+            query = ""
+            opened = "word-$focusSign"
+        }
+    }
     val archiveEntries = remember(archive) {
         fun build(section: DictionarySection): List<ArchiveEntry> = if (archive == null) emptyList() else when (section) {
             DictionarySection.WORD_SIGNS -> archive.words.distinctSigns.map { sign ->

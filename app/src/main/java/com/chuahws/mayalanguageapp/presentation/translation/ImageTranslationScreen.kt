@@ -48,7 +48,7 @@ fun ImageTranslationScreen(
     savedGlyphIds: Set<String> = emptySet(),
     onOpenHistory: () -> Unit = {},
     onOpenFavourites: () -> Unit = {},
-    onOpenDictionary: (() -> Unit)? = null,
+    onOpenDictionary: ((Int?) -> Unit)? = null,
 ) {
     var legacy by remember(replay?.requestId) { mutableStateOf(replay != null) }
     if (legacy && replay != null) {
@@ -73,11 +73,26 @@ internal fun GlyphPhotoScreen(
     onOpenHistory: () -> Unit,
     onOpenFavourites: () -> Unit,
     glyphModel: GlyphRecognitionViewModel = viewModel(key = "glyph-photo-v1"),
-    onOpenDictionary: (() -> Unit)? = null,
+    onOpenDictionary: ((Int?) -> Unit)? = null,
 ) {
     val context=LocalContext.current
     val state by glyphModel.state.collectAsStateWithLifecycle()
     val mode=state.activeMode
+    var editingRegions by remember(state.bitmap) { mutableStateOf(false) }
+    var editingSingle by remember(state.bitmap) { mutableStateOf(true) }
+    var draftRegions by remember(state.bitmap) { mutableStateOf<List<GlyphCrop>>(emptyList()) }
+    var draftSelected by remember(state.bitmap) { mutableIntStateOf(0) }
+    fun beginRegionEdit(single: Boolean) {
+        editingSingle = single
+        draftRegions = if (single) {
+            listOf(state.crop.takeUnless { it == GlyphCrop() } ?: GlyphCrop(.12f, .12f, .88f, .88f))
+        } else {
+            state.multiple.map { it.region.crop }
+                .ifEmpty { listOf(GlyphRegionGeometry.newRegion(emptyList())) }
+        }
+        draftSelected = 0
+        editingRegions = true
+    }
     var selectedRegion by remember(state.bitmap,state.resultRevision) { mutableIntStateOf(0) }
     var savedScan by remember { mutableStateOf<TranslationRecord?>(null) }
     var saveError by remember { mutableStateOf<String?>(null) }
@@ -111,7 +126,7 @@ internal fun GlyphPhotoScreen(
                 val candidates=if(mode=="multiple")state.multiple.flatMap { region ->
                     region.englishMatches.take(1).map { it to region.number }
                 } else state.referenceMatches.orEmpty().map { it to 0 }
-                GlyphScanCapture(previewBase64=GlyphScanPreviewCodec.encode(image,GlyphCrop()),
+                GlyphScanCapture(previewBase64=GlyphScanPreviewCodec.encode(image,if(mode=="single")state.crop else GlyphCrop()),
                     candidates=candidates.take(10).map { (match,number) -> GlyphScanCandidate(
                         twkmSign=match.reference.twkmSign,reading=match.reference.reading,
                         englishGloss=match.reference.english,visualOverlap=match.visualOverlap.toDouble(),
@@ -182,8 +197,37 @@ internal fun GlyphPhotoScreen(
                                     containerColor=if(mode=="multiple")MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
                                     contentColor=if(mode=="multiple")MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer)) { Text("Multiple glyphs", textAlign = TextAlign.Center) }
                         }
+                        if (!state.busy && !editingRegions) {
+                            OutlinedButton(
+                                onClick = { beginRegionEdit(mode != "multiple") },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(if (mode == "multiple") "Adjust or add detection areas"
+                                    else "Select / adjust one glyph area")
+                            }
+                        }
                     }
                 }
+            }
+            if (editingRegions) state.bitmap?.let { photo ->
+                GlyphRegionEditor(
+                    bitmap = photo,
+                    regions = draftRegions,
+                    selectedIndex = draftSelected,
+                    singleMode = editingSingle,
+                    onSelect = { draftSelected = it },
+                    onRegionsChanged = { draftRegions = it },
+                    onApply = {
+                        editingRegions = false
+                        if (editingSingle) {
+                            glyphModel.setCrop(draftRegions.first())
+                            glyphModel.compareReference()
+                        } else {
+                            glyphModel.scanManual(draftRegions)
+                        }
+                    },
+                    onCancel = { editingRegions = false },
+                )
             }
             if(state.busy) {
                 LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -194,10 +238,11 @@ internal fun GlyphPhotoScreen(
                     Text(it,Modifier.padding(16.dp),color=MaterialTheme.colorScheme.onErrorContainer)
                 }
             }
-            if(!state.busy && mode=="single")state.referenceMatches?.let { GlyphReferenceResults(it, photoHints = state.referenceHints, onOpenDictionary = onOpenDictionary) }
-            if(!state.busy && mode=="multiple" && state.multiple.isNotEmpty())state.bitmap?.let {
+            if(!state.busy && !editingRegions && mode=="single")state.referenceMatches?.let { GlyphReferenceResults(it, photoHints = state.referenceHints, onOpenDictionary = onOpenDictionary) }
+            if(!state.busy && !editingRegions && mode=="multiple" && state.multiple.isNotEmpty())state.bitmap?.let {
                 MultiGlyphResultsPanel(bitmap=it,results=state.multiple,showOverview=false,
-                    selectedIndex=selectedRegion,onRegionSelected={ selectedRegion=it })
+                    selectedIndex=selectedRegion,onRegionSelected={ selectedRegion=it },
+                    onOpenDictionary=onOpenDictionary)
             }
             saveError?.let { Text(it,color=MaterialTheme.colorScheme.error) }
             savedScan?.let { record ->
