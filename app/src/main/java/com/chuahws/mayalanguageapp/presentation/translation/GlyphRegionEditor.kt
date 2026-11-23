@@ -20,6 +20,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageViewport
 import kotlin.math.roundToInt
