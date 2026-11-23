@@ -155,6 +155,12 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
      */
     fun scanAll() = scanPanel(null)
 
+    /** Reuse the same offline recogniser on user-corrected bounding boxes. */
+    fun scanManual(regions: List<GlyphCrop>) {
+        if (regions.isEmpty() || regions.size > 48) return
+        scanPanel(null, regions)
+    }
+
     /**
      * Scan graphic COMPONENTS with the separately installed v11 mask model.
      * Never apply a TWKM recognizer or propose a reading for these shapes:
@@ -265,7 +271,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
      * seam detector cannot separate densely carved or uneven blocks. */
     fun scanGrid(rows: Int, columns: Int) = scanPanel(rows to columns)
 
-    private fun scanPanel(grid: Pair<Int, Int>?) {
+    private fun scanPanel(grid: Pair<Int, Int>?, manualRegions: List<GlyphCrop>? = null) {
         val snapshot = mutable.value
         val image = snapshot.bitmap ?: return
         if (snapshot.busy) return
@@ -276,13 +282,21 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
             busy = true, activeMode = "multiple", referenceMatches = null, result = null, resultV2 = null, resultV3 = null,
             resultV4 = null, resultV25 = null, multiple = emptyList(), individualComponents = false,
             assistedGrid = false, detectorNote = null,
-            multipleProgress = if (grid == null) "Finding glyph blocks…" else "Preparing grid…",
+            multipleProgress = when {
+                manualRegions != null -> "Comparing your selected glyph areas…"
+                grid == null -> "Finding glyph blocks…"
+                else -> "Preparing grid…"
+            },
             message = null,
         )
         work = viewModelScope.launch {
             try {
                 val (regions, detectorNote) = withContext(Dispatchers.Default) {
-                    if (grid != null) {
+                    if (manualRegions != null) {
+                        manualRegions.mapIndexed { index, crop ->
+                            GlyphDetectedRegion(crop, index + 1, 1)
+                        } to "Areas selected and adjusted by the user. Readings remain unverified."
+                    } else if (grid != null) {
                         GlyphPanelGrid.regions(snapshot.crop, grid.first, grid.second) to
                             "User-chosen approximate grid. Adjust rows and columns as needed."
                     } else {
@@ -458,13 +472,23 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         work=viewModelScope.launch {
             try {
                 val result=withContext(Dispatchers.Default) {
-                    require(!GlyphPanelGuard.looksLikeDensePanel(image)) {
-                        "This photo appears to contain several glyphs. Choose Multiple glyphs to compare its regions."
+                    val (x, y, width, height) = snapshot.crop.pixels(image.width, image.height)
+                    require(width >= 25 && height >= 25) {
+                        "Selected area is too small. Include one complete glyph."
                     }
-                    val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(getApplication()))
-                    val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(getApplication()))
-                    words.search(image,sounds,5) to
-                        com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality.hints(image)
+                    val selected = if (snapshot.crop == GlyphCrop()) image
+                        else Bitmap.createBitmap(image, x, y, width, height)
+                    try {
+                        require(!GlyphPanelGuard.looksLikeDensePanel(selected)) {
+                            "This area contains several glyphs. Choose Multiple glyphs or adjust the selection."
+                        }
+                        val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(getApplication()))
+                        val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(getApplication()))
+                        words.search(selected, sounds, 5) to
+                            com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality.hints(selected)
+                    } finally {
+                        if (selected !== image) selected.recycle()
+                    }
                 }
                 if(request==version)mutable.value=mutable.value.copy(busy=false,
                     referenceMatches=result.first,referenceHints=result.second,resultRevision=request)
