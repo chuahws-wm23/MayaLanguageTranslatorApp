@@ -296,6 +296,7 @@ private fun MainShell(
     }
     var replaySequence by remember { mutableLongStateOf(0L) }
     val screenStateHolder = rememberSaveableStateHolder()
+    var selectedDictionarySign by rememberSaveable { mutableStateOf<Int?>(null) }
 
     fun openSavedTranslation(item: SavedVocabularyItem) {
         replaySequence += 1
@@ -313,6 +314,7 @@ private fun MainShell(
     }
 
     fun goTo(destination: AppPage) {
+        if (destination != AppPage.DICTIONARY) selectedDictionarySign = null
         replayRequest = null
         replayReturnPage = null
         page = destination
@@ -417,6 +419,7 @@ private fun MainShell(
     }
 
     LaunchedEffect(page) {
+        if (page != AppPage.DICTIONARY) selectedDictionarySign = null
         if (
             page == AppPage.DICTIONARY &&
             state.dictionaryEntries.isEmpty()
@@ -850,12 +853,18 @@ private fun MainShell(
                                 .toSet(),
                             onOpenHistory = { goTo(AppPage.HISTORY) },
                             onOpenFavourites = { goTo(AppPage.SAVED) },
-                            onOpenDictionary = { goTo(AppPage.DICTIONARY) },
+                            onOpenDictionary = { sign ->
+                                selectedDictionarySign = sign
+                                goTo(AppPage.DICTIONARY)
+                            },
                         )
 
                     AppPage.ASSEMBLY -> researchState.SaveableStateProvider("assembly-${state.userId}") { com.chuahws.mayalanguageapp.presentation.research.GlyphWorkspaceScreen() }
                     AppPage.DICTIONARY ->
-                        GlyphDictionaryHubScreen(accountId = state.userId ?: "local")
+                        GlyphDictionaryHubScreen(
+                            accountId = state.userId ?: "local",
+                            focusSign = selectedDictionarySign,
+                        )
 
                     AppPage.SAVED ->
                         SavedScreen(
