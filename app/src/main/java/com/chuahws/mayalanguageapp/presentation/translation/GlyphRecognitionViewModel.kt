@@ -292,9 +292,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                         GlyphPanelGrid.regions(snapshot.crop, grid.first, grid.second) to
                             "User-chosen approximate grid. Adjust rows and columns as needed."
                     } else {
-                        // Run the trained v18 block detector FIRST when its ONNX
-                        // asset has been added after validation. Otherwise keep
-                        // the existing offline seam/grid fallback.
+                        // The regular-grid heuristic can mistake strokes inside one
+                        // sign for boundaries. Keep it out of the main scanner.
                         val selected = if (snapshot.crop == GlyphCrop()) image else {
                             val (x, y, w, h) = snapshot.crop.pixels(image.width, image.height)
                             Bitmap.createBitmap(image, x, y, w, h)
@@ -308,6 +307,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                             val separated = when {
                                 !trained.isNullOrEmpty() -> trained
                                 whitespace.isNotEmpty() -> whitespace
+                                allowSingleFallback -> emptyList()
                                 else -> GlyphMultiDetector.detect(selected)
                             }
                             val note = when {
@@ -317,6 +317,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                                 whitespace.isNotEmpty() ->
                                     "Separated drawing regions found from clear background gutters. " +
                                         "These are layout proposals, not verified sign boundaries or linguistic reading order."
+                                allowSingleFallback ->
+                                    "No separate glyph regions detected."
                                 trained != null ->
                                     "v18 model found no usable boxes; used the original " +
                                         "grid/seam fallback instead."
@@ -340,8 +342,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                     if (allowSingleFallback && tryIsolatedPicture(image, request)) return@launch
                     mutable.value = mutable.value.copy(
                         busy = false, multipleProgress = null,
-                        message = "The glyph regions could not be separated. Try a clearer photo with space " +
-                            "between glyphs.",
+                        message = "The glyph regions could not be separated. Try a closer photo of one complete glyph " +
+                            "or a clearer picture with space between glyphs.",
                     )
                     return@launch
                 }

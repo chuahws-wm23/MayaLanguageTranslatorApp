@@ -654,6 +654,34 @@ class GlyphReferenceWorkflowTest {
         assertTrue(scanned)
     }
 
+    @Test fun scanPictureKeepsOneConnectedCatalogueDrawingTogether() {
+        val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val drawing = catalogue.references.first { it.graph == "44bb" }
+        val original = catalogue.imageFor(drawing)
+        val large = Bitmap.createScaledBitmap(original, 256, 256, false)
+        val directory = File(context.cacheDir, "images").apply { mkdirs() }
+        val file = File.createTempFile("single-outlined-glyph-", ".png", directory)
+        val model = GlyphRecognitionViewModel(context.applicationContext as Application)
+        try {
+            file.outputStream().use { large.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            compose.setContent { MayaTranslateTheme { GlyphPhotoScreen(
+                onRecordGlyphScan = { _, _ -> }, onToggleGlyphFavorite = {}, savedGlyphIds = emptySet(),
+                onOpenHistory = {}, onOpenFavourites = {}, glyphModel = model,
+            ) } }
+            compose.runOnIdle { model.load(uri) }
+            compose.waitUntil(30_000) { model.state.value.bitmap != null && !model.state.value.busy }
+            compose.onNodeWithText("Scan picture").performScrollTo().performClick()
+            compose.waitUntil(60_000) { !model.state.value.busy }
+            check(model.state.value.multiple.isEmpty())
+            check(model.state.value.referenceMatches?.firstOrNull()?.reference?.twkmSign == drawing.twkmSign)
+        } finally {
+            original.recycle()
+            large.recycle()
+            file.delete()
+        }
+    }
+
     @Test fun scannerOffersOneActionAfterPhotoAndShowsResults() {
         val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val original=words.imageFor(words.references.first { it.twkmSign==32 })
