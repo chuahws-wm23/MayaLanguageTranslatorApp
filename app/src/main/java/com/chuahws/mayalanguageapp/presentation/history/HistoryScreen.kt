@@ -41,6 +41,7 @@ fun HistoryScreen(
     onDelete: (TranslationRecord) -> Unit,
     savedGlyphIds: Set<String> = emptySet(),
     onToggleGlyphFavorite: (TranslationRecord) -> Unit = {},
+    onOpenReports: (() -> Unit)? = null,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var page by rememberSaveable(query) { mutableIntStateOf(1) }
@@ -105,6 +106,9 @@ fun HistoryScreen(
                 Text("Revisit the images and possible meanings you explored.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (onOpenReports != null) {
+                    OutlinedButton(onClick = onOpenReports, modifier = Modifier.fillMaxWidth()) { Text("Create a report") }
+                }
             }
             stickyHeader {
                 Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
@@ -160,8 +164,18 @@ fun HistoryScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(dateLabel(scan.createdAtMillis), style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            if (saved) Icon(Icons.Rounded.Bookmark, contentDescription = "Saved to favourites",
-                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                    HorizontalDivider(Modifier.padding(horizontal = 14.dp))
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween) {
+                        TextButton(onClick = { onToggleGlyphFavorite(scan) }, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Rounded.Bookmark, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(if (saved) "Favourited" else "Favourite")
+                        }
+                        TextButton(onClick = { reportId = scan.translationId }, modifier = Modifier.weight(1f)) {
+                            Text("PDF report")
                         }
                     }
                 }

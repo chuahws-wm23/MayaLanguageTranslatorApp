@@ -80,6 +80,7 @@ import com.chuahws.mayalanguageapp.presentation.auth.ResetPasswordScreen
 import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphDictionaryHubScreen
 import com.chuahws.mayalanguageapp.presentation.feedback.FeedbackScreen
 import com.chuahws.mayalanguageapp.presentation.history.HistoryScreen
+import com.chuahws.mayalanguageapp.presentation.history.ReportsScreen
 import com.chuahws.mayalanguageapp.presentation.home.HomeScreen
 import com.chuahws.mayalanguageapp.presentation.profile.ProfileScreen
 import com.chuahws.mayalanguageapp.presentation.saved.SavedScreen
@@ -95,6 +96,7 @@ private enum class AppPage {
     SAVED,
     HISTORY,
     ANALYTICS,
+    REPORTS,
     ASSEMBLY,
     FEEDBACK,
     PROFILE,
@@ -135,6 +137,7 @@ private val learnDrawerItems = listOf(
 )
 
 private val activityDrawerItems = listOf(
+    DrawerItem(AppPage.REPORTS, "Reports", Icons.Rounded.Analytics),
     DrawerItem(
         AppPage.HISTORY,
         "History",
@@ -282,6 +285,7 @@ private fun MainShell(
     )
     val scope = rememberCoroutineScope()
 
+    var reportsStartWithActivity by rememberSaveable { mutableStateOf(false) }
     var dictionarySign by rememberSaveable { mutableStateOf<Int?>(null) }
     var dictionaryDrawing by rememberSaveable { mutableStateOf<String?>(null) }
     var page by rememberSaveable {
@@ -315,6 +319,7 @@ private fun MainShell(
     }
 
     fun goTo(destination: AppPage) {
+        if (destination == AppPage.REPORTS) reportsStartWithActivity = false
         replayRequest = null
         replayReturnPage = null
         page = destination
@@ -500,6 +505,7 @@ private fun MainShell(
         AppPage.SAVED -> "Favourites"
         AppPage.HISTORY -> "History"
         AppPage.ANALYTICS -> "My activity"
+        AppPage.REPORTS -> "Reports"
         AppPage.FEEDBACK -> "Feedback"
         AppPage.PROFILE -> "Profile"
         AppPage.ASSEMBLY -> "Glyph workspace"
@@ -889,13 +895,25 @@ private fun MainShell(
                                 .map { it.savedId }
                                 .toSet(),
                             onToggleGlyphFavorite = appDataViewModel::toggleGlyphFavorite,
+                            onOpenReports = { goTo(AppPage.REPORTS) },
                         )
+
+                    AppPage.REPORTS -> ReportsScreen(
+                        history = state.history,
+                        analytics = state.analytics,
+                        loading = state.loading,
+                        startWithActivity = reportsStartWithActivity,
+                    )
 
                     AppPage.ANALYTICS ->
                         AnalyticsScreen(
                             analytics =
                                 state.analytics,
                             history = state.history,
+                            onOpenReports = {
+                                goTo(AppPage.REPORTS)
+                                reportsStartWithActivity = true
+                            },
                         )
 
                     AppPage.FEEDBACK ->

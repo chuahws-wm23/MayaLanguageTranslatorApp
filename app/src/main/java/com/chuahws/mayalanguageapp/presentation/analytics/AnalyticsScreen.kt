@@ -51,6 +51,7 @@ import java.util.Locale
 fun AnalyticsScreen(
     analytics: UsageAnalytics,
     history: List<TranslationRecord>,
+    onOpenReports: (() -> Unit)? = null,
 ) {
     val weeklyActivity = rememberWeeklyActivity(history)
     val translationsThisWeek =
@@ -77,6 +78,11 @@ fun AnalyticsScreen(
                 ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            if (onOpenReports != null) {
+                androidx.compose.material3.OutlinedButton(onClick = onOpenReports, modifier = Modifier.fillMaxWidth()) {
+                    Text("Create activity PDF")
+                }
+            }
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.extraLarge,

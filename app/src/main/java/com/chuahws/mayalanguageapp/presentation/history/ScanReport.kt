@@ -58,13 +58,16 @@ private fun GlyphScanCandidate.reportText() = listOf(
     "Visual similarity: ${GlyphDisplayPolicy.percent(visualOverlap.toFloat())}",
 ).joinToString("\n")
 
-private fun scanDate(scan: TranslationRecord): String =
+internal fun reportScanDate(scan: TranslationRecord): String =
     if (scan.createdAtMillis > 0) DateFormat.getDateTimeInstance().format(Date(scan.createdAtMillis))
     else "Date unavailable"
 
 internal fun writeScanReport(context: Context, scan: TranslationRecord, note: String, output: OutputStream) {
+    writeReport(context, listOf(scan), null, note, output)
+}
+
+private fun writeReport(context: Context, scans: List<TranslationRecord>, activity: List<String>?, note: String, output: OutputStream) {
     val document = PdfDocument()
-    val regions = scan.reportRegions()
     val catalogue = runCatching { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }.getOrNull()
     var pageNumber = 0
     var page = document.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNumber).create())
@@ -112,24 +115,37 @@ internal fun writeScanReport(context: Context, scan: TranslationRecord, note: St
         }
     }
     try {
-        paragraph("Maya Glyph Scan Report", 26f, true)
-        paragraph("Scanned ${scanDate(scan)}")
-        paragraph(if (regions.first().first == "Glyph result") "Single-glyph scan" else "Multi-glyph scan")
-        paragraph("${regions.count { it.second != null }} of ${regions.size} results have a suggested reference")
-        paragraph(SCORE_NOTE)
-        paragraph("Saved scan preview", 15f, true)
-        val preview = GlyphScanPreviewCodec.decode(scan.glyphImageBase64)
-        if (preview == null) paragraph("Image unavailable for this saved scan.")
-        else image(preview, 515f, 235f)
-        regions.forEach { (label, candidate) ->
-            reserve(90f)
-            paragraph(label, 16f, true)
-            paragraph(candidate?.reportText() ?: "No match found in the saved results.")
-            val reference = candidate?.let { item -> catalogue?.references?.firstOrNull { it.twkmSign == item.twkmSign } }
-            if (reference != null && catalogue != null) {
-                reserve(115f)
-                paragraph("Catalogue example · ${reference.graph}")
-                image(catalogue.imageFor(reference), 96f, 96f)
+        paragraph(if (activity != null) "Maya Glyph Activity Report" else "Maya Glyph Scan Report", 26f, true)
+        if (activity != null) {
+            paragraph("Generated ${DateFormat.getDateTimeInstance().format(Date())}")
+            activity.forEach { paragraph(it) }
+        } else {
+            paragraph("${scans.size} selected ${if (scans.size == 1) "scan" else "scans"}")
+            paragraph(SCORE_NOTE)
+            scans.forEachIndexed { index, scan ->
+                if (scans.size > 1) {
+                    reserve(80f)
+                    paragraph("Scan ${index + 1}", 18f, true)
+                }
+                val regions = scan.reportRegions()
+                paragraph("Scanned ${reportScanDate(scan)}")
+                paragraph(if (regions.first().first == "Glyph result") "Single-glyph scan" else "Multi-glyph scan")
+                paragraph("${regions.count { it.second != null }} of ${regions.size} results have a suggested reference")
+                paragraph("Saved scan preview", 15f, true)
+                val preview = GlyphScanPreviewCodec.decode(scan.glyphImageBase64)
+                if (preview == null) paragraph("Image unavailable for this saved scan.")
+                else image(preview, 515f, 235f)
+                regions.forEach { (label, candidate) ->
+                    reserve(90f)
+                    paragraph(label, 16f, true)
+                    paragraph(candidate?.reportText() ?: "No match found in the saved results.")
+                    val reference = candidate?.let { item -> catalogue?.references?.firstOrNull { it.twkmSign == item.twkmSign } }
+                    if (reference != null && catalogue != null) {
+                        reserve(115f)
+                        paragraph("Catalogue example · ${reference.graph}")
+                        image(catalogue.imageFor(reference), 96f, 96f)
+                    }
+                }
             }
         }
         if (note.isNotBlank()) {
@@ -137,10 +153,12 @@ internal fun writeScanReport(context: Context, scan: TranslationRecord, note: St
             paragraph("Research note", 16f, true)
             paragraph(note.trim().take(2000))
         }
-        reserve(75f)
-        paragraph("Reference source", 16f, true)
-        paragraph(SOURCE)
-        paragraph(CATALOGUE)
+        if (activity == null) {
+            reserve(75f)
+            paragraph("Reference source", 16f, true)
+            paragraph(SOURCE)
+            paragraph(CATALOGUE)
+        }
         finishPage()
         document.writeTo(output)
     } finally {
@@ -149,14 +167,22 @@ internal fun writeScanReport(context: Context, scan: TranslationRecord, note: St
 }
 
 @Composable
-internal fun ScanReportDialog(scan: TranslationRecord, onClose: () -> Unit) {
+internal fun ScanReportDialog(scan: TranslationRecord, onClose: () -> Unit) =
+    ReportPreview(listOf(scan), onClose = onClose)
+
+@Composable
+internal fun ReportPreview(
+    scans: List<TranslationRecord>,
+    activity: List<String>? = null,
+    onClose: () -> Unit,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val regions = remember(scan) { scan.reportRegions() }
-    var note by rememberSaveable(scan.translationId) { mutableStateOf("") }
+    val scan = scans.singleOrNull()
+    var note by rememberSaveable(scan?.translationId, activity != null) { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
-    val fileName = "Maya-glyph-scan-${scan.createdAtMillis}.pdf"
+    val fileName = if (activity != null) "Maya-glyph-activity.pdf" else "Maya-glyph-scans.pdf"
     fun export(uri: Uri?) {
         val reportNote = note
         busy = true
@@ -166,13 +192,13 @@ internal fun ScanReportDialog(scan: TranslationRecord, onClose: () -> Unit) {
                 val sharedUri = withContext(Dispatchers.IO) {
                     if (uri != null) {
                         requireNotNull(context.contentResolver.openOutputStream(uri, "wt")).use {
-                            writeScanReport(context, scan, reportNote, it)
+                            writeReport(context, scans, activity, reportNote, it)
                         }
                         null
                     } else {
                         val directory = File(context.cacheDir, "reports").apply { mkdirs() }
                         val file = File(directory, "glyph-${java.util.UUID.randomUUID()}.pdf")
-                        file.outputStream().use { writeScanReport(context, scan, reportNote, it) }
+                        file.outputStream().use { writeReport(context, scans, activity, reportNote, it) }
                         FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file, fileName)
                     }
                 }
@@ -199,20 +225,28 @@ internal fun ScanReportDialog(scan: TranslationRecord, onClose: () -> Unit) {
     }
     AlertDialog(
         onDismissRequest = { if (!busy) onClose() },
-        title = { Text("Scan report preview") },
+        title = { Text(if (activity != null) "Activity report preview" else "Scan report preview") },
         text = {
             Column(Modifier.fillMaxWidth().heightIn(max = 460.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(scanDate(scan))
-                GlyphScanThumbnail(scan.glyphImageBase64, side = 112.dp)
-                Text("Saved scan preview")
-                regions.forEach { (label, candidate) ->
-                    Text(label, style = MaterialTheme.typography.titleSmall)
-                    Text(candidate?.reportText() ?: "No match found in the saved results.")
+                if (activity != null) {
+                    activity.forEach { Text(it) }
+                } else if (scan != null) {
+                    Text(reportScanDate(scan))
+                    GlyphScanThumbnail(scan.glyphImageBase64, side = 112.dp)
+                    Text("Saved scan preview")
+                    scan.reportRegions().forEach { (label, candidate) ->
+                        Text(label, style = MaterialTheme.typography.titleSmall)
+                        Text(candidate?.reportText() ?: "No match found in the saved results.")
+                    }
+                    Text(SCORE_NOTE, style = MaterialTheme.typography.bodySmall)
+                    Text(SOURCE, style = MaterialTheme.typography.bodySmall)
+                } else {
+                    Text("${scans.size} scans · includes saved images and results by region")
+                    scans.forEach { Text(reportScanDate(it)) }
+                    Text(SCORE_NOTE, style = MaterialTheme.typography.bodySmall)
                 }
-                Text(SCORE_NOTE, style = MaterialTheme.typography.bodySmall)
-                Text(SOURCE, style = MaterialTheme.typography.bodySmall)
-                Text("Record the site, object ID, photo source, or what you want to verify.", style = MaterialTheme.typography.bodySmall)
+                if (activity == null) Text("Record the site, object ID, photo source, or what you want to verify.", style = MaterialTheme.typography.bodySmall)
                 OutlinedTextField(note, { note = it.take(2000) }, enabled = !busy,
                     label = { Text("Research note (optional)") }, minLines = 2, modifier = Modifier.fillMaxWidth())
                 if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())

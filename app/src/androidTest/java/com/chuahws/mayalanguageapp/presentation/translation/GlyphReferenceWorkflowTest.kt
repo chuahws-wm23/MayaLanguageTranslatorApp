@@ -456,6 +456,28 @@ class GlyphReferenceWorkflowTest {
         } finally { file.delete() }
     }
 
+    @Test fun reportsCanSelectHistoryOrPreviewActivity() {
+        val records = listOf(
+            TranslationRecord(translationId = "report-a", glyphScanRecord = true, createdAtMillis = 1700000000000),
+            TranslationRecord(translationId = "report-b", glyphScanRecord = true, createdAtMillis = 1700000100000),
+        )
+        compose.setContent { MayaTranslateTheme {
+            com.chuahws.mayalanguageapp.presentation.history.ReportsScreen(
+                records, com.chuahws.mayalanguageapp.domain.model.UsageAnalytics(totalTranslations = 7), loading = false,
+            )
+        } }
+        compose.onNodeWithText("Preview PDF · 0 selected").assertIsNotEnabled()
+        compose.onNodeWithText("Select all available scans").performClick()
+        compose.onNodeWithText("Preview PDF · 2 selected").performClick()
+        compose.onNodeWithText("Scan report preview").assertExists()
+        compose.onNodeWithText("Save PDF").assertIsEnabled()
+        compose.onNodeWithText("Close").performClick()
+        compose.onNodeWithText("Overall activity").performClick()
+        compose.onNodeWithText("Preview activity PDF").performClick()
+        compose.onNodeWithText("Activity report preview").assertExists()
+        compose.onNodeWithText("Share PDF").assertIsEnabled()
+    }
+
     @Test fun historyShowsPictureMeaningAndSearchableScanDetails() {
         val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val reference=words.references.first { it.twkmSign==32 }
