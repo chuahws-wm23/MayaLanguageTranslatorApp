@@ -67,3 +67,21 @@ python ml/logogram_expansion/photo_benchmark.py \
   --report ml/logogram_expansion/reports/public_photo_baseline_runtime.json \
   --output /tmp/public-photo-baseline.json
 ```
+
+## Scanner recovery and cutoff comparison
+
+The scanner offers **Try another photo** and **Browse dictionary** after an unreadable image, an unsuccessful region scan, or a result below the display cutoff. Dictionary guidance points to **Word signs → Find by visible clues**. A readable single glyph with a low score gets a separate message from a photo the app cannot read.
+
+A replay of the six stored production candidate lists gives the following display counts using a strict greater-than cutoff. These counts measure how often a suggestion would appear in this development sample.
+
+| Similarity cutoff | Photos with a displayed suggestion |
+| --- | ---: |
+| 75% | 5 / 6 |
+| 80% | 3 / 6 |
+| 85% | 1 / 6 |
+| 90% | 0 / 6 |
+| 95% | 0 / 6 |
+
+The one suggestion above 85% comes from an unlabelled photo. The source-described AJAW originals and close-up had top scores of 78.91%, 72.92%, and 84.26%, respectively. The gap between first and second candidates ranged from 0.18 to 4.25 percentage points across the six photos. The cutoff and gap cannot be validated with these cases because there are no expert sign labels or verified unknown examples. The three AJAW cases also lacked an AJAW-compatible reference in their top five, so a lower cutoff cannot recover that reading from these rankings.
+
+For the next training dataset, have a reviewer label exact sign IDs and visible glyph boundaries, and record explicit out-of-catalogue examples separately. Keep all views and crops of each object together in the split. Use the validation objects to compare additional variants, field-photo training, and acceptance rules, then report performance on held-out objects.

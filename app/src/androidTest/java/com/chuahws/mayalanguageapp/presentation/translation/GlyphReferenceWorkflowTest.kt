@@ -83,9 +83,10 @@ class GlyphReferenceWorkflowTest {
         val ref = catalogue.references.first()
         val score = mutableStateOf(.84f)
         var dictionaryOpened = false
+        var retryRequested = false
         compose.setContent { MayaTranslateTheme {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                GlyphReferenceResults(listOf(GlyphEnglishMatch(ref, score.value)), onOpenDictionary = { dictionaryOpened = true })
+                GlyphReferenceResults(listOf(GlyphEnglishMatch(ref, score.value)), onOpenDictionary = { dictionaryOpened = true }, onTryAnother = { retryRequested = true })
             }
         } }
         listOf(.84f, .85f).forEach { value ->
@@ -94,12 +95,14 @@ class GlyphReferenceWorkflowTest {
             compose.onAllNodes(numericSimilarity).assertCountEquals(0)
             compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}").assertCountEquals(0)
         }
+        compose.onNodeWithText("Try another photo").performScrollTo().performClick()
         compose.onNodeWithText("Browse dictionary").performScrollTo().performClick()
         compose.runOnIdle {
-            check(dictionaryOpened)
+            check(dictionaryOpened && retryRequested)
             score.value = .95f
         }
         compose.onNodeWithText("Browse dictionary").assertDoesNotExist()
+        compose.onNodeWithText("Try another photo").assertDoesNotExist()
         compose.onNodeWithText("Visual similarity 95.00%").assertExists()
         compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         compose.waitUntil(20_000) {

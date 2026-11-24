@@ -12,7 +12,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMatch
 
 /** Exact drawing equality is not a verified historical identification. */
 @Composable
-internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints: List<String> = emptyList(), onOpenDictionary: (() -> Unit)? = null) {
+internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints: List<String> = emptyList(), onOpenDictionary: (() -> Unit)? = null, onTryAnother: (() -> Unit)? = null) {
     val context=LocalContext.current
     val catalogue=remember(context) { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }
     val eligible = matches.take(1).filter { GlyphDisplayPolicy.accepts(it.visualOverlap) }
@@ -60,10 +60,22 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints:
                 }
             }
         }
-        if (eligible.isEmpty() && onOpenDictionary != null) {
-            OutlinedButton(onClick = onOpenDictionary, modifier = Modifier.fillMaxWidth()) {
-                Text("Browse dictionary")
-            }
+        if (eligible.isEmpty()) ScanRecoveryActions(onTryAnother, onOpenDictionary)
+    }
+}
+
+@Composable
+internal fun ScanRecoveryActions(onTryAnother: (() -> Unit)?, onOpenDictionary: (() -> Unit)?) {
+    if (onTryAnother != null) {
+        Button(onClick = onTryAnother, modifier = Modifier.fillMaxWidth()) {
+            Text("Try another photo")
         }
+    }
+    if (onOpenDictionary != null) {
+        OutlinedButton(onClick = onOpenDictionary, modifier = Modifier.fillMaxWidth()) {
+            Text("Browse dictionary")
+        }
+        Text("In Word signs, use Find by visible clues to search by shape.",
+            style = MaterialTheme.typography.bodySmall)
     }
 }
