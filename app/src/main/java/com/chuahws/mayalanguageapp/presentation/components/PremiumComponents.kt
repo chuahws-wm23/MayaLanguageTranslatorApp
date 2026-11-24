@@ -32,10 +32,12 @@ fun AppGradientBackground(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    val colors = MaterialTheme.colorScheme
     Box(
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        modifier = modifier.fillMaxSize().background(
+            Brush.verticalGradient(listOf(colors.surfaceContainerLow, colors.background)),
+        ),
     ) {
-        // A quiet archive canvas gives the artwork and typography priority.
         content()
     }
 }

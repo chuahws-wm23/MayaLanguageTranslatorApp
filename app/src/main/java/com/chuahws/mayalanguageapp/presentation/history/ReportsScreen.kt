@@ -26,20 +26,28 @@ internal fun ReportsScreen(history: List<TranslationRecord>, analytics: UsageAna
     var selection by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
     var preview by rememberSaveable { mutableStateOf(false) }
     val selected = scans.filter { it.translationId in selection }
+    val days = remember(scans) { weeklyScanActivity(scans) }
     val activity = listOf(
         "All recorded lookups: ${analytics.totalTranslations}",
         "Image lookups: ${analytics.imageTranslations}",
         "Saved items: ${analytics.savedWords}",
+        "Saved scans in the last 7 days: ${days.sumOf { it.total }}",
         "Glyph scans in available history: ${scans.size}",
         "Scans with a suggested reference in available history: ${scans.count { GlyphDisplayPolicy.visible(it.glyphCandidates).isNotEmpty() }}",
         "Activity totals reflect the account. Scan breakdown covers the History entries available in the app.",
     )
     if (preview && (activityMode || selected.isNotEmpty())) {
-        ReportPreview(selected, activity = activity.takeIf { activityMode }) { preview = false }
+        ReportPreview(selected, activity = activity.takeIf { activityMode }, activityDays = days.takeIf { activityMode }.orEmpty()) { preview = false }
     }
     AppGradientBackground {
         Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("Create a PDF", style = MaterialTheme.typography.headlineSmall)
+            Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.extraLarge) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Research reports", style = MaterialTheme.typography.headlineSmall)
+                    Text("Export selected glyph scans or an activity summary.",
+                        style = MaterialTheme.typography.bodyMedium)
+                }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(!activityMode, { activityMode = false }, { Text("Scan history") })
                 FilterChip(activityMode, { activityMode = true }, { Text("Overall activity") })
@@ -47,17 +55,20 @@ internal fun ReportsScreen(history: List<TranslationRecord>, analytics: UsageAna
             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (activityMode) {
                     item {
-                        Card(Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                activity.forEach { Text(it) }
-                            }
+                        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ReportOverviewMetric(analytics.totalTranslations.toString(), "Lookups", Modifier.weight(1f).fillMaxHeight())
+                            ReportOverviewMetric(analytics.imageTranslations.toString(), "Image lookups", Modifier.weight(1f).fillMaxHeight())
+                            ReportOverviewMetric(analytics.savedWords.toString(), "Saved items", Modifier.weight(1f).fillMaxHeight())
                         }
                     }
+                    item { ReportActivityChart(days) }
+                    item { Text(activity.last(), style = MaterialTheme.typography.bodySmall) }
                 } else {
                     item {
                         if (scans.isEmpty()) Text("Saved scans will appear here after you scan a glyph.")
                         else {
-                            Text("Choose which saved scans to include.")
+                            Text("Saved scans", style = MaterialTheme.typography.titleLarge)
+                            Text("${selected.size} of ${scans.size} selected", style = MaterialTheme.typography.bodyMedium)
                             TextButton(onClick = {
                                 selection = if (selected.size == scans.size) arrayListOf()
                                 else ArrayList(scans.map { it.translationId })
@@ -78,6 +89,8 @@ internal fun ReportsScreen(history: List<TranslationRecord>, analytics: UsageAna
                                 Column(Modifier.weight(1f)) {
                                     Text(best?.reading ?: "Unidentified glyph", style = MaterialTheme.typography.titleSmall)
                                     Text(reportScanDate(scan), style = MaterialTheme.typography.bodySmall)
+                                    Text(if (best == null) "No suggestion" else "TWKM #${best.twkmSign}",
+                                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                                 }
                                 Checkbox(checked, onCheckedChange = null)
                             }

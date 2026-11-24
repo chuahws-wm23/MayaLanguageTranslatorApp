@@ -66,10 +66,10 @@ internal fun reportScanDate(scan: TranslationRecord): String =
     else "Date unavailable"
 
 internal fun writeScanReport(context: Context, scan: TranslationRecord, note: String, output: OutputStream) {
-    writeReport(context, listOf(scan), null, note, output)
+    writeReport(context, listOf(scan), null, emptyList(), note, output)
 }
 
-private fun writeReport(context: Context, scans: List<TranslationRecord>, activity: List<String>?, note: String, output: OutputStream) {
+private fun writeReport(context: Context, scans: List<TranslationRecord>, activity: List<String>?, activityDays: List<ScanDay>, note: String, output: OutputStream) {
     val document = PdfDocument()
     val catalogue = runCatching { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }.getOrNull()
     var pageNumber = 0
@@ -147,6 +147,27 @@ private fun writeReport(context: Context, scans: List<TranslationRecord>, activi
             section("Activity at a glance")
             paragraph("Generated ${DateFormat.getDateTimeInstance().format(Date())}")
             activity.forEach { paragraph(it) }
+            if (activityDays.isNotEmpty()) {
+                reserve(166f)
+                section("Saved scans · last 7 days")
+                val peak = activityDays.maxOf { it.total }.coerceAtLeast(1)
+                val interval = 515f / activityDays.size
+                val bottom = y + 66f
+                val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.DKGRAY; textSize = 9f }
+                activityDays.forEachIndexed { index, day ->
+                    val x = 46f + index * interval
+                    val topSuggested = bottom - 52f * day.suggested / peak
+                    val topTotal = bottom - 52f * day.total / peak
+                    designPaint.color = Color.rgb(140, 102, 48)
+                    page.canvas.drawRect(x, topTotal, x + 24f, topSuggested, designPaint)
+                    designPaint.color = green
+                    page.canvas.drawRect(x, topSuggested, x + 24f, bottom, designPaint)
+                    page.canvas.drawText(day.total.toString(), x, topTotal - 4f, labelPaint)
+                    page.canvas.drawText(day.date, x, bottom + 13f, labelPaint)
+                }
+                y = bottom + 23f
+                paragraph("Green: suggested reference    Ochre: no suggestion", 10f)
+            }
         } else {
             paragraph("${scans.size} selected ${if (scans.size == 1) "scan" else "scans"}")
             paragraph(SCORE_NOTE)
@@ -200,6 +221,7 @@ internal fun ScanReportDialog(scan: TranslationRecord, onClose: () -> Unit) =
 internal fun ReportPreview(
     scans: List<TranslationRecord>,
     activity: List<String>? = null,
+    activityDays: List<ScanDay> = emptyList(),
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -218,13 +240,13 @@ internal fun ReportPreview(
                 val sharedUri = withContext(Dispatchers.IO) {
                     if (uri != null) {
                         requireNotNull(context.contentResolver.openOutputStream(uri, "wt")).use {
-                            writeReport(context, scans, activity, reportNote, it)
+                            writeReport(context, scans, activity, activityDays, reportNote, it)
                         }
                         null
                     } else {
                         val directory = File(context.cacheDir, "reports").apply { mkdirs() }
                         val file = File(directory, "glyph-${java.util.UUID.randomUUID()}.pdf")
-                        file.outputStream().use { writeReport(context, scans, activity, reportNote, it) }
+                        file.outputStream().use { writeReport(context, scans, activity, activityDays, reportNote, it) }
                         FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file, fileName)
                     }
                 }
@@ -279,7 +301,7 @@ internal fun ReportPreview(
                 ) {
                     if (activity != null) {
                         item {
-                            Text("Activity at a glance", style = MaterialTheme.typography.headlineSmall)
+                            ReportActivityChart(activityDays)
                         }
                         itemsIndexed(activity) { _, metric ->
                             val label = metric.substringBefore(": ")
