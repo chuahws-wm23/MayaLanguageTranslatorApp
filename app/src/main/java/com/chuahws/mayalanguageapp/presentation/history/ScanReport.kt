@@ -14,12 +14,15 @@ import android.text.TextPaint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -71,10 +74,18 @@ private fun writeReport(context: Context, scans: List<TranslationRecord>, activi
     val catalogue = runCatching { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }.getOrNull()
     var pageNumber = 0
     var page = document.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNumber).create())
-    var y = 40f
+    var y = 45f
     val green = Color.rgb(21, 70, 56)
+    val designPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    fun drawPageAccent() {
+        designPaint.color = green
+        page.canvas.drawRect(0f, 0f, 595f, 9f, designPaint)
+    }
+    drawPageAccent()
     val imagePaint = Paint(Paint.FILTER_BITMAP_FLAG)
     fun finishPage() {
+        designPaint.color = Color.rgb(205, 218, 210)
+        page.canvas.drawRect(40f, 792f, 555f, 793f, designPaint)
         page.canvas.drawText("Maya Translate  •  $pageNumber", 40f, 810f,
             Paint(Paint.ANTI_ALIAS_FLAG).apply { color = green; textSize = 10f })
         document.finishPage(page)
@@ -83,7 +94,8 @@ private fun writeReport(context: Context, scans: List<TranslationRecord>, activi
         if (y + height <= 780f) return
         finishPage()
         page = document.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNumber).create())
-        y = 40f
+        drawPageAccent()
+        y = 45f
     }
     fun paragraph(value: String, size: Float = 12f, heading: Boolean = false) {
         val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -102,13 +114,28 @@ private fun writeReport(context: Context, scans: List<TranslationRecord>, activi
         }
         y += 8
     }
+    fun section(label: String) {
+        reserve(46f)
+        designPaint.color = Color.rgb(225, 236, 228)
+        val band = RectF(40f, y, 555f, y + 29f)
+        page.canvas.drawRoundRect(band, 6f, 6f, designPaint)
+        page.canvas.drawText(label, 51f, y + 19f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = green
+            textSize = 13f
+            isFakeBoldText = true
+        })
+        y += 39f
+    }
     fun image(bitmap: Bitmap, maxWidth: Float, maxHeight: Float) {
         try {
             val scale = minOf(maxWidth / bitmap.width, maxHeight / bitmap.height)
             val width = bitmap.width * scale
             val height = bitmap.height * scale
             reserve(height)
-            page.canvas.drawBitmap(bitmap, null, RectF(40f, y, 40f + width, y + height), imagePaint)
+            designPaint.color = Color.rgb(244, 247, 244)
+            page.canvas.drawRect(40f, y, 40f + maxWidth, y + height, designPaint)
+            val x = 40f + (maxWidth - width) / 2f
+            page.canvas.drawBitmap(bitmap, null, RectF(x, y, x + width, y + height), imagePaint)
             y += height + 10
         } finally {
             bitmap.recycle()
@@ -117,16 +144,15 @@ private fun writeReport(context: Context, scans: List<TranslationRecord>, activi
     try {
         paragraph(if (activity != null) "Maya Glyph Activity Report" else "Maya Glyph Scan Report", 26f, true)
         if (activity != null) {
+            section("Activity at a glance")
             paragraph("Generated ${DateFormat.getDateTimeInstance().format(Date())}")
             activity.forEach { paragraph(it) }
         } else {
             paragraph("${scans.size} selected ${if (scans.size == 1) "scan" else "scans"}")
             paragraph(SCORE_NOTE)
             scans.forEachIndexed { index, scan ->
-                if (scans.size > 1) {
-                    reserve(80f)
-                    paragraph("Scan ${index + 1}", 18f, true)
-                }
+                reserve(110f)
+                section(if (scans.size > 1) "Scan ${index + 1} of ${scans.size}" else "Scan details")
                 val regions = scan.reportRegions()
                 paragraph("Scanned ${reportScanDate(scan)}")
                 paragraph(if (regions.first().first == "Glyph result") "Single-glyph scan" else "Multi-glyph scan")
@@ -149,13 +175,13 @@ private fun writeReport(context: Context, scans: List<TranslationRecord>, activi
             }
         }
         if (note.isNotBlank()) {
-            reserve(50f)
-            paragraph("Research note", 16f, true)
+            reserve(64f)
+            section("Research note")
             paragraph(note.trim().take(2000))
         }
         if (activity == null) {
-            reserve(75f)
-            paragraph("Reference source", 16f, true)
+            reserve(85f)
+            section("Reference source")
             paragraph(SOURCE)
             paragraph(CATALOGUE)
         }
@@ -223,40 +249,142 @@ internal fun ReportPreview(
     val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
         if (uri != null) export(uri)
     }
-    AlertDialog(
+    val summaries = remember(scans) { scans.map { it.reportRegions() } }
+    val matched = summaries.sumOf { regions -> regions.count { it.second != null } }
+    val unmatched = summaries.sumOf { it.size } - matched
+
+    Dialog(
         onDismissRequest = { if (!busy) onClose() },
-        title = { Text(if (activity != null) "Activity report preview" else "Scan report preview") },
-        text = {
-            Column(Modifier.fillMaxWidth().heightIn(max = 460.dp).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (activity != null) {
-                    activity.forEach { Text(it) }
-                } else if (scan != null) {
-                    Text(reportScanDate(scan))
-                    GlyphScanThumbnail(scan.glyphImageBase64, side = 112.dp)
-                    Text("Saved scan preview")
-                    scan.reportRegions().forEach { (label, candidate) ->
-                        Text(label, style = MaterialTheme.typography.titleSmall)
-                        Text(candidate?.reportText() ?: "No match found in the saved results.")
-                    }
-                    Text(SCORE_NOTE, style = MaterialTheme.typography.bodySmall)
-                    Text(SOURCE, style = MaterialTheme.typography.bodySmall)
-                } else {
-                    Text("${scans.size} scans · includes saved images and results by region")
-                    scans.forEach { Text(reportScanDate(it)) }
-                    Text(SCORE_NOTE, style = MaterialTheme.typography.bodySmall)
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+    ) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        if (activity != null) "Activity report preview" else "Scan report preview",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    TextButton(onClick = onClose, enabled = !busy) { Text("Close") }
                 }
-                if (activity == null) Text("Record the site, object ID, photo source, or what you want to verify.", style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(note, { note = it.take(2000) }, enabled = !busy,
-                    label = { Text("Research note (optional)") }, minLines = 2, modifier = Modifier.fillMaxWidth())
-                if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-                status?.let { Text(it) }
+                HorizontalDivider()
+                LazyColumn(
+                    Modifier.weight(1f).fillMaxWidth(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    if (activity != null) {
+                        item {
+                            Text("Activity at a glance", style = MaterialTheme.typography.headlineSmall)
+                        }
+                        itemsIndexed(activity) { _, metric ->
+                            val label = metric.substringBefore(": ")
+                            val value = metric.substringAfter(": ", "")
+                            if (value.toIntOrNull() != null) {
+                                ElevatedCard(Modifier.fillMaxWidth()) {
+                                    Row(Modifier.fillMaxWidth().padding(16.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically) {
+                                        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                                        Text(value, style = MaterialTheme.typography.headlineSmall,
+                                            color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                            } else Text(metric, style = MaterialTheme.typography.bodySmall)
+                        }
+                    } else {
+                        item {
+                            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ReportMetric(scans.size, "Scans", Modifier.weight(1f))
+                                ReportMetric(matched, "Suggested matches", Modifier.weight(1f))
+                                ReportMetric(unmatched, "Without match", Modifier.weight(1f))
+                            }
+                        }
+                        itemsIndexed(scans, key = { _, record -> record.translationId }) { index, record ->
+                            ScanPreviewCard(record, index + 1, summaries[index], initiallyExpanded = scans.size == 1)
+                        }
+                        item {
+                            Text(SCORE_NOTE, style = MaterialTheme.typography.bodySmall)
+                            Spacer(Modifier.height(6.dp))
+                            Text(SOURCE, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    item {
+                        OutlinedTextField(
+                            note, { note = it.take(2000) }, enabled = !busy,
+                            label = { Text("Research note (optional)") },
+                            supportingText = {
+                                Text(if (activity == null) "Add an object ID, photo source, or detail to verify."
+                                else "Add context for this activity summary.")
+                            },
+                            minLines = 2, maxLines = 5, modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+                HorizontalDivider()
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+                    status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(onClick = { export(null) }, enabled = !busy, modifier = Modifier.weight(1f)) {
+                            Text("Share PDF")
+                        }
+                        Button(onClick = { save.launch(fileName) }, enabled = !busy, modifier = Modifier.weight(1f)) {
+                            Text("Save PDF")
+                        }
+                    }
+                }
             }
-        },
-        confirmButton = { TextButton(onClick = { save.launch(fileName) }, enabled = !busy) { Text("Save PDF") } },
-        dismissButton = {
-            TextButton(onClick = onClose, enabled = !busy) { Text("Close") }
-            TextButton(onClick = { export(null) }, enabled = !busy) { Text("Share PDF") }
-        },
-    )
+        }
+    }
+}
+
+@Composable
+private fun ReportMetric(count: Int, label: String, modifier: Modifier) {
+    Card(modifier.fillMaxHeight(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(count.toString(), style = MaterialTheme.typography.titleLarge)
+            Text(label, style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
+@Composable
+private fun ScanPreviewCard(
+    scan: TranslationRecord,
+    number: Int,
+    regions: List<Pair<String, GlyphScanCandidate?>>,
+    initiallyExpanded: Boolean,
+) {
+    var expanded by rememberSaveable(scan.translationId) { mutableStateOf(initiallyExpanded) }
+    val best = regions.firstNotNullOfOrNull { it.second }
+    ElevatedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                GlyphScanThumbnail(scan.glyphImageBase64, side = 72.dp)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Scan $number · ${reportScanDate(scan)}", style = MaterialTheme.typography.labelMedium)
+                    Text(best?.let { "${it.reading} · ${it.englishGloss}" } ?: "No match found",
+                        style = MaterialTheme.typography.titleMedium, maxLines = 3)
+                    Text("${regions.count { it.second != null }} of ${regions.size} regions with a suggestion",
+                        style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            TextButton(onClick = { expanded = !expanded }) {
+                Text(if (expanded) "Hide region results" else "View region results")
+            }
+            if (expanded) {
+                regions.forEach { (label, candidate) ->
+                    HorizontalDivider()
+                    Text(label, style = MaterialTheme.typography.titleSmall)
+                    Text(candidate?.reportText() ?: "No match found in the saved results.",
+                        style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+    }
 }
