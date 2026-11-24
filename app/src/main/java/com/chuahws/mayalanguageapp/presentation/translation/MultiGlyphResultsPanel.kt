@@ -1,5 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
+import com.chuahws.mayalanguageapp.integration.glyph.displayableReference
 import android.graphics.Bitmap
 import android.graphics.Paint as AndroidPaint
 import androidx.compose.foundation.Canvas
@@ -72,9 +73,7 @@ internal fun MultiGlyphResultsPanel(
                 if (resized !== cropped && cropped !== bitmap) cropped.recycle()
                 resized
             }
-            val showsComparison = item.englishMatches.firstOrNull()?.let {
-                com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy.accepts(it.visualOverlap)
-            } == true
+            val showsComparison = item.englishMatches.displayableReference() != null
             if (!showsComparison) Surface(shape = MaterialTheme.shapes.large, color = Color.White) {
                 Image(preview.asImageBitmap(), contentDescription = "Detected glyph region ${item.number}",
                     modifier = Modifier.fillMaxWidth().height(176.dp).padding(12.dp), contentScale = ContentScale.Fit)

@@ -1,5 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
+import com.chuahws.mayalanguageapp.integration.glyph.displayableReference
 import androidx.compose.ui.geometry.Offset
 import com.chuahws.mayalanguageapp.presentation.profile.ProfileScreen
 import com.chuahws.mayalanguageapp.domain.model.UserProfile
@@ -115,12 +116,14 @@ class GlyphReferenceWorkflowTest {
     @Test fun similarityFilterHidesCandidatesAtOrBelow85AndShowsPercentageAboveIt() {
         val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val ref = catalogue.references.first()
+        val alternative = catalogue.references.first { it.twkmSign != ref.twkmSign }
+        val runnerUp = mutableStateOf(.80f)
         val score = mutableStateOf(.84f)
         var dictionaryOpened = false
         var retryRequested = false
         compose.setContent { MayaTranslateTheme {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                GlyphReferenceResults(listOf(GlyphEnglishMatch(ref, score.value)), onOpenDictionary = { dictionaryOpened = true }, onTryAnother = { retryRequested = true })
+                GlyphReferenceResults(listOf(GlyphEnglishMatch(ref, score.value), GlyphEnglishMatch(alternative, runnerUp.value)), onOpenDictionary = { dictionaryOpened = true }, onTryAnother = { retryRequested = true })
             }
         } }
         listOf(.84f, .85f).forEach { value ->
@@ -142,7 +145,10 @@ class GlyphReferenceWorkflowTest {
         compose.waitUntil(20_000) {
             compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}").fetchSemanticsNodes().size == 1
         }
-        compose.runOnIdle { score.value = .5f }
+        compose.runOnIdle { runnerUp.value = .94f }
+        compose.onNodeWithText("Several references look too similar to suggest one reliably.").assertExists()
+        compose.onAllNodes(numericSimilarity).assertCountEquals(0)
+        compose.runOnIdle { score.value = .5f; runnerUp.value = .49f }
         compose.onNodeWithText("No match found").assertExists()
         compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}").assertCountEquals(0)
     }
@@ -672,18 +678,20 @@ class GlyphReferenceWorkflowTest {
         screenshot("scanner-photo-mode-selection")
         compose.onNodeWithText("Scan picture").performScrollTo().performClick()
         compose.waitUntil(60_000) { (model.state.value.referenceMatches != null || model.state.value.multiple.isNotEmpty()) && !model.state.value.busy }
-        compose.onNodeWithText("Closest reference found").performScrollTo().assertExists()
-        compose.onNodeWithText("Nearest reference").assertExists()
-        compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         compose.onAllNodesWithText("Frame your glyph").assertCountEquals(0)
         compose.onAllNodesWithText("Reset crop").assertCountEquals(0)
         compose.onAllNodesWithText("Advanced AI models & research settings").assertCountEquals(0)
         val result = model.state.value
-        val reading = (result.referenceMatches ?: result.multiple.first().englishMatches).first().reference.reading
-        compose.waitUntil(20_000) {
-            compose.onAllNodesWithContentDescription("Reference drawing for $reading").fetchSemanticsNodes().isNotEmpty()
+        val matches = result.referenceMatches ?: result.multiple.first().englishMatches
+        val reference = matches.displayableReference()
+        if (reference != null) {
+            compose.onNodeWithText("Closest reference found").performScrollTo().assertExists()
+            compose.onAllNodes(numericSimilarity).assertCountEquals(1)
+        } else {
+            compose.onNodeWithText(if (matches.isEmpty()) "No readable glyph found" else "No match found")
+                .performScrollTo().assertExists()
+            compose.onAllNodes(numericSimilarity).assertCountEquals(0)
         }
-        compose.onAllNodesWithContentDescription("Reference drawing for $reading")[0].performScrollTo()
         screenshot("scanner-simple-nearest-results")
         compose.waitUntil(20_000) { recorded.get()==1 }
         val exactPhoto=words.imageFor(words.references.first { it.twkmSign==32 })

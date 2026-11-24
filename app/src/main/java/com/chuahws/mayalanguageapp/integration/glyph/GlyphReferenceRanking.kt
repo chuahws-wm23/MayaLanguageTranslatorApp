@@ -17,3 +17,12 @@ internal object GlyphReferenceRanking {
         return scores.indices.sortedWith(order).distinctBy { identities[it] }.take(limit)
     }
 }
+
+/** The leading reference needs separation from the next distinct sign. */
+internal fun List<GlyphEnglishMatch>.displayableReference(): GlyphEnglishMatch? {
+    val best = firstOrNull() ?: return null
+    if (!com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy.accepts(best.visualOverlap)) return null
+    if (best.identicalNormalizedDrawing) return best
+    val runnerUp = firstOrNull { it.reference.twkmSign != best.reference.twkmSign }
+    return best.takeIf { runnerUp == null || best.visualOverlap - runnerUp.visualOverlap >= .02f }
+}

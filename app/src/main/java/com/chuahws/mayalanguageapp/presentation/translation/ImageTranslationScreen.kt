@@ -1,5 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
+import com.chuahws.mayalanguageapp.integration.glyph.displayableReference
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
@@ -111,8 +112,8 @@ internal fun GlyphPhotoScreen(
         try {
             val capture=withContext(Dispatchers.Default) {
                 val candidates=if(mode=="multiple")state.multiple.flatMap { region ->
-                    region.englishMatches.take(1).map { it to region.number }
-                } else state.referenceMatches.orEmpty().map { it to 0 }
+                    listOfNotNull(region.englishMatches.displayableReference()).map { it to region.number }
+                } else listOfNotNull(state.referenceMatches.orEmpty().displayableReference()).map { it to 0 }
                 GlyphScanCapture(previewBase64=GlyphScanPreviewCodec.encode(image,GlyphCrop()),
                     candidates=candidates.take(10).map { (match,number) -> GlyphScanCandidate(
                         twkmSign=match.reference.twkmSign,reading=match.reference.reading,

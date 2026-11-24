@@ -85,3 +85,11 @@ A replay of the six stored production candidate lists gives the following displa
 The one suggestion above 85% comes from an unlabelled photo. The source-described AJAW originals and close-up had top scores of 78.91%, 72.92%, and 84.26%, respectively. The gap between first and second candidates ranged from 0.18 to 4.25 percentage points across the six photos. The cutoff and gap cannot be validated with these cases because there are no expert sign labels or verified unknown examples. The three AJAW cases also lacked an AJAW-compatible reference in their top five, so a lower cutoff cannot recover that reading from these rankings.
 
 For the next training dataset, have a reviewer label exact sign IDs and visible glyph boundaries, and record explicit out-of-catalogue examples separately. Keep all views and crops of each object together in the split. Use the validation objects to compare additional variants, field-photo training, and acceptance rules, then report performance on held-out objects.
+
+## Check for close alternatives
+
+The scanner now requires a two-point similarity lead over the next distinct sign when proposing a ranked reference. Exact drawing matches still use the existing display cutoff. The rule also applies when saving new scan results for History and PDF export.
+
+In a development diagnostic using the bundled logogram embeddings, each drawing was queried after excluding byte-identical masks from the gallery. Across 366 queries with a same-sign drawing remaining, the 85% rule displayed 346 suggestions, including 104 correct sign IDs. Adding the two-point gap displayed 131 suggestions, including 66 correct sign IDs. The gap withheld 177 of the previously displayed wrong suggestions and 38 of the previously displayed correct suggestions. All five held-out TWKM #122 drawings had the wrong sign at rank one and a gap below two points.
+
+These are same-catalogue drawing results. The exact fire redraw reported by the user and independently labelled photographs still need evaluation. Weights and gallery contents were kept at the baseline after a simple bitmap-overlap blend reduced overall ranking accuracy in this diagnostic.
