@@ -303,6 +303,7 @@ internal fun EnglishMeaningMatchRow(
     catalogue: GlyphEnglishMeaningCatalogue,
     match: GlyphEnglishMatch,
     rank: Int? = null,
+    showArtwork: Boolean = true,
 ) {
     val ref=match.reference
 
@@ -323,7 +324,7 @@ internal fun EnglishMeaningMatchRow(
                 Text("Visual similarity ${GlyphDisplayPolicy.percent(match.visualOverlap)}",
                     style = MaterialTheme.typography.labelMedium)
             }
-            ReferenceDrawing(ref.graph,"Reference drawing for ${ref.reading}",
+            if (showArtwork) ReferenceDrawing(ref.graph,"Reference drawing for ${ref.reading}",
                 modifier = Modifier.fillMaxWidth().heightIn(min = 160.dp, max = 200.dp)
                     .background(Color.White, RoundedCornerShape(12.dp)).padding(12.dp),
                 fallback = { catalogue.imageFor(ref) })

@@ -49,6 +49,7 @@ fun ImageTranslationScreen(
     onOpenHistory: () -> Unit = {},
     onOpenFavourites: () -> Unit = {},
     onOpenDictionary: (() -> Unit)? = null,
+    onOpenSign: ((Int, String) -> Unit)? = null,
 ) {
     var legacy by remember(replay?.requestId) { mutableStateOf(replay != null) }
     if (legacy && replay != null) {
@@ -62,6 +63,7 @@ fun ImageTranslationScreen(
         onOpenHistory = onOpenHistory,
         onOpenFavourites = onOpenFavourites,
         onOpenDictionary = onOpenDictionary,
+        onOpenSign = onOpenSign,
     )
 }
 
@@ -74,6 +76,7 @@ internal fun GlyphPhotoScreen(
     onOpenFavourites: () -> Unit,
     glyphModel: GlyphRecognitionViewModel = viewModel(key = "glyph-photo-v1"),
     onOpenDictionary: (() -> Unit)? = null,
+    onOpenSign: ((Int, String) -> Unit)? = null,
 ) {
     val context=LocalContext.current
     val state by glyphModel.state.collectAsStateWithLifecycle()
@@ -197,11 +200,11 @@ internal fun GlyphPhotoScreen(
             if (!state.busy && state.message != null && state.referenceMatches == null && state.multiple.isEmpty()) {
                 ScanRecoveryActions({ gallery.launch("image/*") }, onOpenDictionary)
             }
-            if(!state.busy && mode=="single")state.referenceMatches?.let { GlyphReferenceResults(it, photoHints = state.referenceHints, onOpenDictionary = onOpenDictionary, onTryAnother = { gallery.launch("image/*") }) }
+            if(!state.busy && mode=="single")state.referenceMatches?.let { GlyphReferenceResults(it, photoHints = state.referenceHints, onOpenDictionary = onOpenDictionary, onTryAnother = { gallery.launch("image/*") }, photo = state.bitmap, onOpenSign = onOpenSign) }
             if(!state.busy && mode=="multiple" && state.multiple.isNotEmpty())state.bitmap?.let {
                 MultiGlyphResultsPanel(bitmap=it,results=state.multiple,showOverview=false,
                     selectedIndex=selectedRegion,onRegionSelected={ selectedRegion=it },
-                    onTryAnother = { gallery.launch("image/*") }, onOpenDictionary = onOpenDictionary)
+                    onTryAnother = { gallery.launch("image/*") }, onOpenDictionary = onOpenDictionary, onOpenSign = onOpenSign)
             }
             saveError?.let { Text(it,color=MaterialTheme.colorScheme.error) }
             savedScan?.let { record ->

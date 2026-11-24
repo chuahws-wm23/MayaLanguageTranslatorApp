@@ -43,6 +43,7 @@ internal fun MultiGlyphResultsPanel(
     onRegionSelected: ((Int) -> Unit)? = null,
     onTryAnother: (() -> Unit)? = null,
     onOpenDictionary: (() -> Unit)? = null,
+    onOpenSign: ((Int, String) -> Unit)? = null,
 ) {
     if (results.isEmpty()) return
     var localSelection by rememberSaveable(bitmap, results) { mutableIntStateOf(0) }
@@ -71,7 +72,10 @@ internal fun MultiGlyphResultsPanel(
                 if (resized !== cropped && cropped !== bitmap) cropped.recycle()
                 resized
             }
-            Surface(shape = MaterialTheme.shapes.large, color = Color.White) {
+            val showsComparison = item.englishMatches.firstOrNull()?.let {
+                com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy.accepts(it.visualOverlap)
+            } == true
+            if (!showsComparison) Surface(shape = MaterialTheme.shapes.large, color = Color.White) {
                 Image(preview.asImageBitmap(), contentDescription = "Detected glyph region ${item.number}",
                     modifier = Modifier.fillMaxWidth().height(176.dp).padding(12.dp), contentScale = ContentScale.Fit)
             }
@@ -81,7 +85,8 @@ internal fun MultiGlyphResultsPanel(
                     "No readable reference comparison is available for this region. Try a clearer photo with separated glyphs."
                 }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 ScanRecoveryActions(onTryAnother, onOpenDictionary)
-            } else GlyphReferenceResults(item.englishMatches, onOpenDictionary = onOpenDictionary, onTryAnother = onTryAnother)
+            } else GlyphReferenceResults(item.englishMatches, onOpenDictionary = onOpenDictionary, onTryAnother = onTryAnother,
+                photo = preview, photoDescription = "Detected glyph region ${item.number}", onOpenSign = onOpenSign)
         }
     }
 }

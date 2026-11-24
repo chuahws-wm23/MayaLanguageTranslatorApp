@@ -530,6 +530,35 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("Review complete").assertExists()
     }
 
+    @Test fun scannerReferenceOpensTheSameDictionaryDrawing() {
+        val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val sign = catalogue.references.groupBy { it.twkmSign }.values.first { it.size > 1 }
+        val drawing = sign[1]
+        val opened = mutableStateOf(false)
+        val photo = catalogue.imageFor(drawing)
+        compose.setContent {
+            MayaTranslateTheme {
+                if (opened.value) GlyphDictionaryHubScreen(requestedSign = drawing.twkmSign, requestedDrawing = drawing.graph)
+                else Column(Modifier.verticalScroll(rememberScrollState())) {
+                    GlyphReferenceResults(
+                        listOf(GlyphEnglishMatch(drawing, .95f)),
+                        photo = photo,
+                        onOpenSign = { id, graph ->
+                            check(id == drawing.twkmSign && graph == drawing.graph)
+                            opened.value = true
+                        },
+                    )
+                }
+            }
+        }
+        compose.onNodeWithContentDescription("Uploaded scan image").assertExists()
+        compose.onNodeWithText("Open reference in dictionary").performScrollTo().performClick()
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithText("Drawing 2 of ${sign.size}").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("TWKM #${drawing.twkmSign} · ${drawing.graph}").assertExists()
+    }
+
     @Test fun dictionaryUsesLargeDrawingsAndOpensAlternateReferenceViews() {
         val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))

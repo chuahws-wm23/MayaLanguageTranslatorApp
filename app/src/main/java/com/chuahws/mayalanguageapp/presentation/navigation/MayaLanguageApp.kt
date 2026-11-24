@@ -282,6 +282,8 @@ private fun MainShell(
     )
     val scope = rememberCoroutineScope()
 
+    var dictionarySign by rememberSaveable { mutableStateOf<Int?>(null) }
+    var dictionaryDrawing by rememberSaveable { mutableStateOf<String?>(null) }
     var page by rememberSaveable {
         mutableStateOf(AppPage.HOME)
     }
@@ -851,11 +853,21 @@ private fun MainShell(
                             onOpenHistory = { goTo(AppPage.HISTORY) },
                             onOpenFavourites = { goTo(AppPage.SAVED) },
                             onOpenDictionary = { goTo(AppPage.DICTIONARY) },
+                            onOpenSign = { sign, drawing ->
+                                dictionarySign = sign
+                                dictionaryDrawing = drawing
+                                goTo(AppPage.DICTIONARY)
+                            },
                         )
 
                     AppPage.ASSEMBLY -> researchState.SaveableStateProvider("assembly-${state.userId}") { com.chuahws.mayalanguageapp.presentation.research.GlyphWorkspaceScreen() }
                     AppPage.DICTIONARY ->
-                        GlyphDictionaryHubScreen(accountId = state.userId ?: "local")
+                        GlyphDictionaryHubScreen(
+                            accountId = state.userId ?: "local",
+                            requestedSign = dictionarySign,
+                            requestedDrawing = dictionaryDrawing,
+                            onReferenceOpened = { dictionarySign = null; dictionaryDrawing = null },
+                        )
 
                     AppPage.SAVED ->
                         SavedScreen(

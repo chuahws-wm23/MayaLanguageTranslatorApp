@@ -93,7 +93,12 @@ internal data class ArchiveEntry(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun GlyphDictionaryHubScreen(accountId: String = "local") {
+fun GlyphDictionaryHubScreen(
+    accountId: String = "local",
+    requestedSign: Int? = null,
+    requestedDrawing: String? = null,
+    onReferenceOpened: () -> Unit = {},
+) {
     val context = LocalContext.current
     val store = remember(context, accountId) { DictionaryNotebookStore(context, accountId) }
     var notebook by remember(store) { mutableStateOf(store.load()) }
@@ -106,6 +111,13 @@ fun GlyphDictionaryHubScreen(accountId: String = "local") {
     var compareFirst by rememberSaveable { mutableStateOf<String?>(null) }
     var activeSet by rememberSaveable { mutableStateOf<String?>(null) }
     var setName by rememberSaveable { mutableStateOf("") }
+    val uri = LocalUriHandler.current
+    var onlineSources by rememberSaveable { mutableStateOf(false) }
+    if (onlineSources) DictionaryToolDialog("Online glyph references", { onlineSources = false }) {
+        Text("The Learner’s Maya Glyph Guide includes readings, catalogue cross-references, and examples from inscriptions.")
+        TextButton(onClick = { uri.openUri("https://mayaglyphs.org/") }) { Text("Open MayaGlyphs.org") }
+        TextButton(onClick = { uri.openUri("https://www.mayaglyphs.org/concordances.html") }) { Text("Browse catalogue concordances") }
+    }
     val listState = rememberLazyListState()
     val focus = LocalFocusManager.current
     var selected by rememberSaveable { mutableStateOf(DictionarySection.WORD_SIGNS) }
@@ -115,6 +127,7 @@ fun GlyphDictionaryHubScreen(accountId: String = "local") {
     val clues = VisualClue.entries.filter { it.name in clueNames }
     val guiding = guided && selected == DictionarySection.WORD_SIGNS
     var page by rememberSaveable(selected, query, guiding, clueNames) { mutableIntStateOf(1) }
+    var openedDrawing by rememberSaveable { mutableStateOf<String?>(null) }
     var opened by rememberSaveable { mutableStateOf<String?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     val loaded by produceState<Result<Archive>?>(null, context, reload) {
@@ -148,6 +161,16 @@ fun GlyphDictionaryHubScreen(accountId: String = "local") {
     }
     val entries = archiveEntries[selected].orEmpty()
     val byKey = remember(archiveEntries) { archiveEntries.values.flatten().associateBy { it.key } }
+    LaunchedEffect(archive, requestedSign, requestedDrawing) {
+        if (archive == null || requestedSign == null) return@LaunchedEffect
+        val entry = byKey["word-$requestedSign"]
+        if (entry != null) {
+            selected = DictionarySection.WORD_SIGNS
+            openedDrawing = requestedDrawing
+            opened = entry.key
+        }
+        onReferenceOpened()
+    }
     val chosen = byKey[activeEntry]
     val first = byKey[compareFirst]
     fun closeTool() { tool = null; activeEntry = null }
@@ -243,7 +266,8 @@ fun GlyphDictionaryHubScreen(accountId: String = "local") {
         if (listState.firstVisibleItemIndex > 2) listState.scrollToItem(1)
     }
     entries.firstOrNull { it.key == opened }?.let { entry ->
-        ArchiveEntryDialog(entry, initialIndex = matchingDrawings[entry.key] ?: 0,
+        val requestedIndex = openedDrawing?.let { graph -> (0 until entry.count).firstOrNull { entry.graph(it) == graph } }
+        ArchiveEntryDialog(entry, initialIndex = requestedIndex ?: matchingDrawings[entry.key] ?: 0,
             compareLabel = if (compareFirst == null || compareFirst == entry.key) "Select for comparison" else "Compare with ${first?.reading().orEmpty()}",
             onCompare = {
                 opened = null
@@ -252,7 +276,7 @@ fun GlyphDictionaryHubScreen(accountId: String = "local") {
             },
             onStudy = { opened = null; activeEntry = entry.key; setName = ""; tool = "add" },
             onNote = { opened = null; activeEntry = entry.key; tool = "note" },
-            onDismiss = { opened = null })
+            onDismiss = { opened = null; openedDrawing = null })
     }
     AppGradientBackground {
         LazyColumn(
@@ -273,6 +297,7 @@ fun GlyphDictionaryHubScreen(accountId: String = "local") {
                         Text("THE REFERENCE ARCHIVE", style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary)
                         Text("Maya dictionary", style = MaterialTheme.typography.headlineLarge)
+                        TextButton(onClick = { onlineSources = true }) { Text("Online references") }
                     }
                 }
             }
@@ -386,7 +411,7 @@ fun GlyphDictionaryHubScreen(accountId: String = "local") {
                     }
                 }
                 items(visibleEntries, key = { it.key }) { entry ->
-                    Card(onClick = { opened = entry.key }, modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                    Card(onClick = { openedDrawing = null; opened = entry.key }, modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                         shape = MaterialTheme.shapes.extraLarge,
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -474,6 +499,9 @@ private fun ArchiveEntryDialog(
                 TextButton(onClick = onNote) { Text("Write research note") }
                 TextButton(onClick = { uri.openUri(CATALOGUE_URL) }) {
                     Text("View catalogue source")
+                }
+                TextButton(onClick = { uri.openUri("https://www.mayaglyphs.org/concordances.html") }) {
+                    Text("Cross-check catalogue IDs online")
                 }
             }
         },

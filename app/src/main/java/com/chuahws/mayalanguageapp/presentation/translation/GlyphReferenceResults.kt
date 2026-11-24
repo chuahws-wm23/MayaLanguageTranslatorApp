@@ -10,9 +10,20 @@ import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMeaningCatalogue
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMatch
 
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import com.chuahws.mayalanguageapp.presentation.components.ReferenceDrawing
+
 /** Exact drawing equality is not a verified historical identification. */
 @Composable
-internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints: List<String> = emptyList(), onOpenDictionary: (() -> Unit)? = null, onTryAnother: (() -> Unit)? = null) {
+internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints: List<String> = emptyList(), onOpenDictionary: (() -> Unit)? = null, onTryAnother: (() -> Unit)? = null,
+    photo: Bitmap? = null,
+    photoDescription: String = "Uploaded scan image",
+    onOpenSign: ((Int, String) -> Unit)? = null,
+) {
     val context=LocalContext.current
     val catalogue=remember(context) { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }
     val eligible = matches.take(1).filter { GlyphDisplayPolicy.accepts(it.visualOverlap) }
@@ -44,7 +55,10 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints:
                 Text("Reference drawing matched",style=MaterialTheme.typography.headlineSmall)
                 Text("Same reference drawing. Meaning depends on context.",
                     style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                if(catalogue!=null)EnglishMeaningMatchRow(catalogue,exact)
+                if (catalogue != null) {
+                    if (photo != null) ReferenceComparison(photo, photoDescription, catalogue, exact)
+                    EnglishMeaningMatchRow(catalogue, exact, showArtwork = photo == null)
+                }
             }
             else -> {
                 Surface(color=MaterialTheme.colorScheme.tertiaryContainer,shape=MaterialTheme.shapes.large) {
@@ -56,11 +70,40 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints:
                 }
                 Text("Nearest reference",style=MaterialTheme.typography.titleLarge)
                 if(catalogue!=null)eligible.take(MAX_CLOSEST_REFERENCES).forEachIndexed { rank,match ->
-                    EnglishMeaningMatchRow(catalogue,match,rank+1)
+                    if (photo != null) ReferenceComparison(photo, photoDescription, catalogue, match)
+                    EnglishMeaningMatchRow(catalogue, match, rank + 1, showArtwork = photo == null)
                 }
             }
         }
         if (eligible.isEmpty()) ScanRecoveryActions(onTryAnother, onOpenDictionary)
+        eligible.firstOrNull()?.reference?.let { reference ->
+            if (onOpenSign != null) {
+                OutlinedButton(onClick = { onOpenSign(reference.twkmSign, reference.graph) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Open reference in dictionary")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReferenceComparison(photo: Bitmap, photoDescription: String, catalogue: GlyphEnglishMeaningCatalogue, match: GlyphEnglishMatch) {
+    val reference = match.reference
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Your scan", style = MaterialTheme.typography.labelLarge)
+            Surface(shape = MaterialTheme.shapes.medium, color = Color.White) {
+                Image(photo.asImageBitmap(), photoDescription,
+                    Modifier.fillMaxWidth().height(124.dp).padding(8.dp), contentScale = ContentScale.Fit)
+            }
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("TWKM #${reference.twkmSign}", style = MaterialTheme.typography.labelLarge)
+            Surface(shape = MaterialTheme.shapes.medium, color = Color.White) {
+                ReferenceDrawing(reference.graph, "Reference drawing for ${reference.reading}",
+                    Modifier.fillMaxWidth().height(124.dp).padding(8.dp)) { catalogue.imageFor(reference) }
+            }
+        }
     }
 }
 
