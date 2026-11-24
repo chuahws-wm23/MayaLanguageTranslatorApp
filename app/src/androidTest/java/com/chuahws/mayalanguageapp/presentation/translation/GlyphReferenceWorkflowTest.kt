@@ -78,6 +78,40 @@ class GlyphReferenceWorkflowTest {
         }
     }
 
+    @Test fun captionCropPreservesFireGlyphAndRejectsAnotherFullSizeSign() {
+        val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))
+        val reference = words.references.first { it.graph == "122hp" }
+        val artwork = words.imageFor(reference)
+        val labelled = android.graphics.Bitmap.createBitmap(180, 125, android.graphics.Bitmap.Config.ARGB_8888)
+        val cropper = com.chuahws.mayalanguageapp.integration.glyph.GlyphCaptionCrop
+        try {
+            val canvas = android.graphics.Canvas(labelled)
+            canvas.drawColor(android.graphics.Color.WHITE)
+            canvas.drawBitmap(artwork, 58f, 8f, null)
+            check(cropper.find(labelled) == null)
+            val paint = android.graphics.Paint().apply { color = android.graphics.Color.BLACK; textSize = 10f }
+            canvas.drawText("fire", 81f, 88f, paint)
+            canvas.drawText("sample catalogue caption", 28f, 115f, paint)
+            val crop = requireNotNull(cropper.find(labelled))
+            val (x, y, width, height) = crop.pixels(labelled.width, labelled.height)
+            val isolated = android.graphics.Bitmap.createBitmap(labelled, x, y, width, height)
+            try {
+                val best = words.search(isolated, sounds, 5).first()
+                check(best.reference.twkmSign == 122 && best.visualOverlap > .85f)
+            } finally {
+                isolated.recycle()
+            }
+            canvas.drawColor(android.graphics.Color.WHITE)
+            canvas.drawBitmap(artwork, 58f, 1f, null)
+            canvas.drawBitmap(artwork, 58f, 62f, null)
+            check(cropper.find(labelled) == null)
+        } finally {
+            artwork.recycle()
+            labelled.recycle()
+        }
+    }
+
     @Test fun similarityFilterHidesCandidatesAtOrBelow85AndShowsPercentageAboveIt() {
         val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val ref = catalogue.references.first()

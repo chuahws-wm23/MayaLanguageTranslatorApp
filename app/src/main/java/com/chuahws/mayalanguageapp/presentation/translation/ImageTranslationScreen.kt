@@ -200,7 +200,8 @@ internal fun GlyphPhotoScreen(
             if (!state.busy && state.message != null && state.referenceMatches == null && state.multiple.isEmpty()) {
                 ScanRecoveryActions({ gallery.launch("image/*") }, onOpenDictionary)
             }
-            if(!state.busy && mode=="single")state.referenceMatches?.let { GlyphReferenceResults(it, photoHints = state.referenceHints, onOpenDictionary = onOpenDictionary, onTryAnother = { gallery.launch("image/*") }, photo = state.bitmap, onOpenSign = onOpenSign) }
+            if(!state.busy && mode=="single")state.referenceMatches?.let { GlyphReferenceResults(it, photoHints = state.referenceHints, onOpenDictionary = onOpenDictionary, onTryAnother = { gallery.launch("image/*") }, photo = state.referenceComparisonImage ?: state.bitmap,
+                photoDescription = if (state.referenceComparisonImage != null) "Glyph area with caption excluded" else "Uploaded scan image", onOpenSign = onOpenSign) }
             if(!state.busy && mode=="multiple" && state.multiple.isNotEmpty())state.bitmap?.let {
                 MultiGlyphResultsPanel(bitmap=it,results=state.multiple,showOverview=false,
                     selectedIndex=selectedRegion,onRegionSelected={ selectedRegion=it },

@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphWhitespaceDetector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphRegionMatcher
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphCaptionCrop
+import com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGrid
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGuard
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageLoader
@@ -63,6 +65,7 @@ internal data class GlyphUiState(
     val activeMode: String? = null,
     val resultRevision: Int = 0,
     val referenceMatches: List<GlyphEnglishMatch>? = null,
+    val referenceComparisonImage: Bitmap? = null,
     val referenceHints: List<String> = emptyList(),
     val crop: GlyphCrop = GlyphCrop(),
     val result: GlyphNetwork.Result? = null,
@@ -454,7 +457,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         val request=++version
         work?.cancel()
         mutable.value=snapshot.copy(busy=true,activeMode="single",referenceMatches=null,referenceHints=emptyList(),
-            multiple=emptyList(),message=null,detectorNote=null)
+            multiple=emptyList(),message=null,detectorNote=null,referenceComparisonImage=null)
         work=viewModelScope.launch {
             try {
                 val result=withContext(Dispatchers.Default) {
@@ -463,11 +466,33 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                     }
                     val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(getApplication()))
                     val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(getApplication()))
-                    words.search(image,sounds,5) to
-                        com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality.hints(image)
+                    val original = words.search(image, sounds, 5)
+                    val hints = com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality.hints(image)
+                    if (original.firstOrNull()?.let { GlyphDisplayPolicy.accepts(it.visualOverlap) } == true) {
+                        return@withContext Triple(original, hints, null)
+                    }
+                    val crop = GlyphCaptionCrop.find(image) ?: return@withContext Triple(original, hints, null)
+                    val (x, y, width, height) = crop.pixels(image.width, image.height)
+                    val glyph = Bitmap.createBitmap(image, x, y, width, height)
+                    var retained = false
+                    try {
+                        val retry = words.search(glyph, sounds, 5)
+                        val best = retry.firstOrNull()
+                        val second = retry.getOrNull(1)
+                        if (best != null && GlyphDisplayPolicy.accepts(best.visualOverlap) &&
+                            (best.identicalNormalizedDrawing || second != null && best.visualOverlap - second.visualOverlap >= .02f)
+                        ) {
+                            retained = true
+                            Triple(retry, hints, glyph)
+                        } else Triple(original, hints, null)
+                    } finally {
+                        if (!retained && glyph !== image) glyph.recycle()
+                    }
                 }
-                if(request==version)mutable.value=mutable.value.copy(busy=false,
-                    referenceMatches=result.first,referenceHints=result.second,resultRevision=request)
+                if (request == version) mutable.value = mutable.value.copy(
+                    busy = false, referenceMatches = result.first, referenceHints = result.second,
+                    referenceComparisonImage = result.third, resultRevision = request,
+                ) else result.third?.takeUnless { it === image }?.recycle()
             } catch(cancelled: CancellationException) { throw cancelled }
             catch(invalid: IllegalArgumentException) {
                 if(request==version)mutable.value=mutable.value.copy(busy=false,
