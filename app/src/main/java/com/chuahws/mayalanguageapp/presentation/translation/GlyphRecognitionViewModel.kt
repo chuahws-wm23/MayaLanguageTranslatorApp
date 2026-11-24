@@ -158,6 +158,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
      */
     fun scanAll() = scanPanel(null)
 
+    fun scanPicture() = scanPanel(grid = null, allowSingleFallback = true)
+
     /**
      * Scan graphic COMPONENTS with the separately installed v11 mask model.
      * Never apply a TWKM recognizer or propose a reading for these shapes:
@@ -268,7 +270,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
      * seam detector cannot separate densely carved or uneven blocks. */
     fun scanGrid(rows: Int, columns: Int) = scanPanel(rows to columns)
 
-    private fun scanPanel(grid: Pair<Int, Int>?) {
+    private fun scanPanel(grid: Pair<Int, Int>?, allowSingleFallback: Boolean = false) {
         val snapshot = mutable.value
         val image = snapshot.bitmap ?: return
         if (snapshot.busy) return
@@ -278,7 +280,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         mutable.value = snapshot.copy(
             busy = true, activeMode = "multiple", referenceMatches = null, result = null, resultV2 = null, resultV3 = null,
             resultV4 = null, resultV25 = null, multiple = emptyList(), individualComponents = false,
-            assistedGrid = false, detectorNote = null,
+            assistedGrid = false, detectorNote = null, referenceComparisonImage = null,
             multipleProgress = if (grid == null) "Finding glyph blocks…" else "Preparing grid…",
             message = null,
         )
@@ -334,10 +336,11 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                 }
                 if (request != version) return@launch
                 if (regions.isEmpty()) {
+                    if (allowSingleFallback && tryIsolatedPicture(image, request)) return@launch
                     mutable.value = mutable.value.copy(
                         busy = false, multipleProgress = null,
                         message = "The glyph regions could not be separated. Try a clearer photo with space " +
-                            "between glyphs, or choose Single glyph for one isolated sign.",
+                            "between glyphs.",
                     )
                     return@launch
                 }
@@ -429,6 +432,10 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                         }
                     }
                 }
+                if (allowSingleFallback && request == version && results.size == 1 &&
+                    results.single().englishMatches.firstOrNull()?.let { GlyphDisplayPolicy.accepts(it.visualOverlap) } != true &&
+                    tryIsolatedPicture(image, request)
+                ) return@launch
                 if (request == version) {
                     mutable.value = mutable.value.copy(
                         busy = false, multiple = results, multipleProgress = null, resultRevision = request,
@@ -462,32 +469,9 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
             try {
                 val result=withContext(Dispatchers.Default) {
                     require(!GlyphPanelGuard.looksLikeDensePanel(image)) {
-                        "This photo appears to contain several glyphs. Choose Multiple glyphs to compare its regions."
+                        "This picture looks like a dense panel. Try a clearer picture with space around each glyph."
                     }
-                    val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(getApplication()))
-                    val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(getApplication()))
-                    val original = words.search(image, sounds, 5)
-                    val hints = com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality.hints(image)
-                    if (original.firstOrNull()?.let { GlyphDisplayPolicy.accepts(it.visualOverlap) } == true) {
-                        return@withContext Triple(original, hints, null)
-                    }
-                    val crop = GlyphCaptionCrop.find(image) ?: return@withContext Triple(original, hints, null)
-                    val (x, y, width, height) = crop.pixels(image.width, image.height)
-                    val glyph = Bitmap.createBitmap(image, x, y, width, height)
-                    var retained = false
-                    try {
-                        val retry = words.search(glyph, sounds, 5)
-                        val best = retry.firstOrNull()
-                        val second = retry.getOrNull(1)
-                        if (best != null && GlyphDisplayPolicy.accepts(best.visualOverlap) &&
-                            (best.identicalNormalizedDrawing || second != null && best.visualOverlap - second.visualOverlap >= .02f)
-                        ) {
-                            retained = true
-                            Triple(retry, hints, glyph)
-                        } else Triple(original, hints, null)
-                    } finally {
-                        if (!retained && glyph !== image) glyph.recycle()
-                    }
+                    compareIsolatedPicture(image)
                 }
                 if (request == version) mutable.value = mutable.value.copy(
                     busy = false, referenceMatches = result.first, referenceHints = result.second,
@@ -503,6 +487,47 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                     message="This photo could not be compared. Choose another clear photo and try again.")
             }
         }
+    }
+
+    private fun compareIsolatedPicture(image: Bitmap): Triple<List<GlyphEnglishMatch>, List<String>, Bitmap?> {
+        val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(getApplication()))
+        val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(getApplication()))
+        val original = words.search(image, sounds, 5)
+        val hints = com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality.hints(image)
+        if (original.firstOrNull()?.let { GlyphDisplayPolicy.accepts(it.visualOverlap) } == true) {
+            return Triple(original, hints, null)
+        }
+        val crop = GlyphCaptionCrop.find(image) ?: return Triple(original, hints, null)
+        val (x, y, width, height) = crop.pixels(image.width, image.height)
+        val glyph = Bitmap.createBitmap(image, x, y, width, height)
+        var retained = false
+        return try {
+            val retry = words.search(glyph, sounds, 5)
+            val best = retry.firstOrNull()
+            val second = retry.getOrNull(1)
+            if (best != null && GlyphDisplayPolicy.accepts(best.visualOverlap) &&
+                (best.identicalNormalizedDrawing || second != null && best.visualOverlap - second.visualOverlap >= .02f)
+            ) {
+                retained = true
+                Triple(retry, hints, glyph)
+            } else Triple(original, hints, null)
+        } finally {
+            if (!retained && glyph !== image) glyph.recycle()
+        }
+    }
+
+    private suspend fun tryIsolatedPicture(image: Bitmap, request: Int): Boolean {
+        val result = withContext(Dispatchers.Default) {
+            if (GlyphPanelGuard.looksLikeDensePanel(image)) null else compareIsolatedPicture(image)
+        } ?: return false
+        if (request == version) {
+            mutable.value = mutable.value.copy(
+                activeMode = "single", busy = false, multipleProgress = null,
+                referenceMatches = result.first, referenceHints = result.second,
+                referenceComparisonImage = result.third, resultRevision = request,
+            )
+        } else result.third?.takeUnless { it === image }?.recycle()
+        return true
     }
 
     fun recognize() {

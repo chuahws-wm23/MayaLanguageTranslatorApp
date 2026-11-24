@@ -418,7 +418,7 @@ class GlyphReferenceWorkflowTest {
             val uri=FileProvider.getUriForFile(context,"${context.packageName}.fileprovider",file)
             compose.runOnIdle { model.load(uri) }
             compose.waitUntil(30_000) { model.state.value.bitmap!=null && !model.state.value.busy }
-            compose.onNodeWithText("Multiple glyphs").performScrollTo().performClick()
+            compose.onNodeWithText("Scan picture").performScrollTo().performClick()
             compose.waitUntil(60_000) { model.state.value.multiple.size==2 && !model.state.value.busy }
             val overlay=compose.onNodeWithContentDescription("Scan image with 2 numbered glyph boxes")
             overlay.performScrollTo()
@@ -648,7 +648,7 @@ class GlyphReferenceWorkflowTest {
         assertTrue(scanned)
     }
 
-    @Test fun scannerOnlyOffersSingleOrMultipleAfterPhotoAndShowsNearestBelowNoMatch() {
+    @Test fun scannerOffersOneActionAfterPhotoAndShowsResults() {
         val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val original=words.imageFor(words.references.first { it.twkmSign==32 })
         val rotated=Bitmap.createBitmap(original,0,0,original.width,original.height,
@@ -662,21 +662,24 @@ class GlyphReferenceWorkflowTest {
         compose.setContent { MayaTranslateTheme { GlyphPhotoScreen(
             onRecordGlyphScan={_,_->recorded.incrementAndGet()},onToggleGlyphFavorite={},savedGlyphIds=emptySet(),
             onOpenHistory={},onOpenFavourites={},glyphModel=model) } }
-        compose.onAllNodesWithText("Single glyph").assertCountEquals(0)
+        compose.onAllNodesWithText("Scan picture").assertCountEquals(0)
         val uri=FileProvider.getUriForFile(context,"${context.packageName}.fileprovider",file)
         compose.runOnIdle { model.load(uri) }
         compose.waitUntil(30_000) { model.state.value.bitmap!=null && !model.state.value.busy }
-        compose.onNodeWithText("Multiple glyphs").assertExists()
+        compose.onNodeWithText("Scan picture").assertExists()
+        compose.onAllNodesWithText("Single glyph").assertCountEquals(0)
+        compose.onAllNodesWithText("Multiple glyphs").assertCountEquals(0)
         screenshot("scanner-photo-mode-selection")
-        compose.onNodeWithText("Single glyph").performScrollTo().performClick()
-        compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
+        compose.onNodeWithText("Scan picture").performScrollTo().performClick()
+        compose.waitUntil(60_000) { (model.state.value.referenceMatches != null || model.state.value.multiple.isNotEmpty()) && !model.state.value.busy }
         compose.onNodeWithText("Closest reference found").performScrollTo().assertExists()
         compose.onNodeWithText("Nearest reference").assertExists()
         compose.onAllNodes(numericSimilarity).assertCountEquals(1)
         compose.onAllNodesWithText("Frame your glyph").assertCountEquals(0)
         compose.onAllNodesWithText("Reset crop").assertCountEquals(0)
         compose.onAllNodesWithText("Advanced AI models & research settings").assertCountEquals(0)
-        val reading=model.state.value.referenceMatches!!.first().reference.reading
+        val result = model.state.value
+        val reading = (result.referenceMatches ?: result.multiple.first().englishMatches).first().reference.reading
         compose.waitUntil(20_000) {
             compose.onAllNodesWithContentDescription("Reference drawing for $reading").fetchSemanticsNodes().isNotEmpty()
         }
@@ -689,8 +692,8 @@ class GlyphReferenceWorkflowTest {
         compose.runOnIdle { model.load(uri) }
         compose.waitUntil(30_000) { model.state.value.bitmap!=null && !model.state.value.busy }
         compose.onAllNodes(numericSimilarity).assertCountEquals(0)
-        compose.onNodeWithText("Single glyph").performScrollTo().performClick()
-        compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
+        compose.onNodeWithText("Scan picture").performScrollTo().performClick()
+        compose.waitUntil(60_000) { (model.state.value.referenceMatches != null || model.state.value.multiple.isNotEmpty()) && !model.state.value.busy }
         compose.onNodeWithText("Reference drawing matched").performScrollTo().assertExists()
         compose.onAllNodesWithText("Closest reference found").assertCountEquals(0)
         compose.onAllNodesWithText("Nearest reference").assertCountEquals(0)
@@ -702,8 +705,8 @@ class GlyphReferenceWorkflowTest {
         finally { blank.recycle() }
         compose.runOnIdle { model.load(uri) }
         compose.waitUntil(30_000) { model.state.value.bitmap!=null && !model.state.value.busy }
-        compose.onNodeWithText("Single glyph").performScrollTo().performClick()
-        compose.waitUntil(60_000) { model.state.value.referenceMatches!=null && !model.state.value.busy }
+        compose.onNodeWithText("Scan picture").performScrollTo().performClick()
+        compose.waitUntil(60_000) { (model.state.value.referenceMatches != null || model.state.value.multiple.isNotEmpty()) && !model.state.value.busy }
         compose.onNodeWithText("No readable glyph found").assertExists()
         compose.onNodeWithText("Photo tips").performScrollTo().assertExists()
         compose.onNodeWithText("Contrast is low.",substring=true).assertExists()

@@ -1,6 +1,5 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
-import androidx.compose.ui.text.style.TextAlign
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
@@ -139,7 +138,7 @@ internal fun GlyphPhotoScreen(
             verticalArrangement=Arrangement.spacedBy(16.dp)) {
             Text("THE GLYPH STUDIO",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)
             Text("Discover a glyph",style=MaterialTheme.typography.headlineLarge)
-            Text(if(state.bitmap==null)"Choose a photo to begin." else "Choose single or multiple glyphs to compare your photo.",
+            Text(if(state.bitmap==null)"Choose a photo to begin." else "Scan the picture to find and compare glyphs automatically.",
                 style=MaterialTheme.typography.bodyLarge,color=MaterialTheme.colorScheme.onSurfaceVariant)
             Card(Modifier.fillMaxWidth(),shape=MaterialTheme.shapes.extraLarge,
                 colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
@@ -171,20 +170,11 @@ internal fun GlyphPhotoScreen(
                         }
                     }
                     if(state.bitmap!=null) {
-                        Text("HOW MANY GLYPHS?",style=MaterialTheme.typography.labelMedium,
-                            color=MaterialTheme.colorScheme.primary)
-                        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                            FilledTonalButton(onClick={savedScan=null;saveError=null;glyphModel.compareReference()},
-                                enabled=!state.busy,modifier=Modifier.weight(1f).fillMaxHeight().heightIn(min=56.dp),
-                                colors=ButtonDefaults.filledTonalButtonColors(
-                                    containerColor=if(mode=="single")MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor=if(mode=="single")MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer)) { Text("Single glyph", textAlign = TextAlign.Center) }
-                            FilledTonalButton(onClick={savedScan=null;saveError=null;glyphModel.scanAll()},
-                                enabled=!state.busy,modifier=Modifier.weight(1f).fillMaxHeight().heightIn(min=56.dp),
-                                colors=ButtonDefaults.filledTonalButtonColors(
-                                    containerColor=if(mode=="multiple")MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor=if(mode=="multiple")MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer)) { Text("Multiple glyphs", textAlign = TextAlign.Center) }
-                        }
+                        Button(
+                            onClick = { savedScan = null; saveError = null; glyphModel.scanPicture() },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                        ) { Text("Scan picture") }
                     }
                 }
             }

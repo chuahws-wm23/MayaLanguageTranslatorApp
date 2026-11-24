@@ -100,7 +100,7 @@ class UserJourneyTest {
             shot("home")
             tab("Scan").performClick()
             button("Gallery").performScrollTo().performClick()
-            compose.onNodeWithText("Single glyph").performScrollTo().performClick()
+            compose.onNodeWithText("Scan picture").performScrollTo().performClick()
             compose.waitUntil(60_000) { app.uiState.value.history.size==1 }
             assertEquals(1,pickerCalls)
             compose.onNodeWithText("Reference drawing matched").performScrollTo().assertExists()
