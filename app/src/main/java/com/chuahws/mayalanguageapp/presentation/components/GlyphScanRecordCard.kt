@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -90,6 +91,7 @@ fun GlyphScanDetailsDialog(
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
+    onExport: (() -> Unit)? = null,
 ) {
     val uri = LocalUriHandler.current
     AlertDialog(
@@ -102,6 +104,9 @@ fun GlyphScanDetailsDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                if (onExport != null) {
+                    OutlinedButton(onClick = onExport, modifier = Modifier.fillMaxWidth()) { Text("Export PDF") }
+                }
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,

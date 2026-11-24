@@ -44,6 +44,40 @@ class GlyphReferenceWorkflowTest {
     @get:Rule val compose = createComposeRule()
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
+    @Test fun savedScanReportExportsReadablePaginatedPdf() {
+        val scan = TranslationRecord(
+            glyphScanRecord = true,
+            glyphScanKind = "BLOCKS",
+            glyphRegionCount = 28,
+            glyphCandidates = listOf(GlyphScanCandidate(
+                twkmSign = 32, reading = "K'UH", englishGloss = "god",
+                visualOverlap = .96, regionIndex = 2,
+            )),
+        )
+        val file = java.io.File.createTempFile("scan-report-", ".pdf", context.cacheDir)
+        try {
+            file.outputStream().use {
+                com.chuahws.mayalanguageapp.presentation.history.writeScanReport(context, scan, "Museum reference", it)
+            }
+            android.os.ParcelFileDescriptor.open(file, android.os.ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
+                android.graphics.pdf.PdfRenderer(descriptor).use { pdf ->
+                    check(pdf.pageCount > 1)
+                    pdf.openPage(0).use { page ->
+                        val image = android.graphics.Bitmap.createBitmap(page.width, page.height, android.graphics.Bitmap.Config.ARGB_8888)
+                        try {
+                            page.render(image, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                            check(image.width == 595)
+                        } finally {
+                            image.recycle()
+                        }
+                    }
+                }
+            }
+        } finally {
+            file.delete()
+        }
+    }
+
     @Test fun similarityFilterHidesCandidatesAtOrBelow85AndShowsPercentageAboveIt() {
         val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val ref = catalogue.references.first()
@@ -397,6 +431,10 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("Search meaning, reading or sign number").performImeAction()
         compose.onNodeWithText(reference.english).performClick()
         compose.onNodeWithText("Scan details").assertExists()
+        compose.onNodeWithText("Export PDF").performScrollTo().performClick()
+        compose.onNodeWithText("Scan report preview").assertExists()
+        compose.onNodeWithText("Save PDF").assertIsEnabled()
+        compose.onNodeWithText("Share PDF").assertIsEnabled()
     }
 
     @Test fun historyPaginatesTenEntriesResetsSearchAndClampsAfterDeletion() {

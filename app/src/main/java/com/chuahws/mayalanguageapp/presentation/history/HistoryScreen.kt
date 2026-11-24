@@ -46,6 +46,7 @@ fun HistoryScreen(
     var page by rememberSaveable(query) { mutableIntStateOf(1) }
     val listState = rememberLazyListState()
     val focus = LocalFocusManager.current
+    var reportId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
     val scans = remember(history) {
@@ -69,7 +70,8 @@ fun HistoryScreen(
         page = currentPage
         listState.scrollToItem(0)
     }
-    scans.firstOrNull { it.translationId == selectedId }?.let { scan ->
+    scans.firstOrNull { it.translationId == reportId }?.let { ScanReportDialog(it) { reportId = null } }
+    scans.firstOrNull { reportId == null && it.translationId == selectedId }?.let { scan ->
         val saved = GlyphScanRecords.favoriteId(scan.userId,scan.translationId) in savedGlyphIds
         GlyphScanDetailsDialog(
             title = "Scan details", imageBase64 = scan.glyphImageBase64,
@@ -77,6 +79,7 @@ fun HistoryScreen(
             scanKind = scan.glyphScanKind, onDismiss = { selectedId = null },
             actionLabel = if (saved) "Remove favourite" else "Save to favourites",
             onAction = { onToggleGlyphFavorite(scan) },
+            onExport = { reportId = scan.translationId },
             onDelete = { selectedId = null; pendingDeleteId = scan.translationId },
         )
     }

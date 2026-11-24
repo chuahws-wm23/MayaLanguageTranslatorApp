@@ -3,4 +3,5 @@
     <cache-path
         name="captured_images"
         path="images/" />
+    <cache-path name="scan_reports" path="reports/" />
 </paths>
