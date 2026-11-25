@@ -1,6 +1,9 @@
 package com.chuahws.mayalanguageapp.presentation.history
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
@@ -42,10 +45,15 @@ internal fun ReportsScreen(history: List<TranslationRecord>, analytics: UsageAna
     AppGradientBackground {
         Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.extraLarge) {
-                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Research reports", style = MaterialTheme.typography.headlineSmall)
+                Column(
+                    Modifier.fillMaxWidth()
+                        .background(Brush.horizontalGradient(listOf(Color(0xFF0D191C), Color(0xFF21594A))))
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text("Research reports", style = MaterialTheme.typography.headlineSmall, color = Color.White)
                     Text("Export selected glyph scans or an activity summary.",
-                        style = MaterialTheme.typography.bodyMedium)
+                        style = MaterialTheme.typography.bodyMedium, color = Color(0xFFD9EDE2))
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

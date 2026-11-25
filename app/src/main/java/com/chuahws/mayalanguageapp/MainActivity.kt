@@ -1,5 +1,13 @@
 package com.chuahws.mayalanguageapp
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
+import androidx.core.view.WindowCompat
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import com.chuahws.mayalanguageapp.presentation.theme.LocalMayaAppearance
+import com.chuahws.mayalanguageapp.presentation.theme.MayaAppearance
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -67,15 +75,27 @@ class MainActivity : ComponentActivity() {
             },
         )[TranslationViewModel::class.java]
 
+        val appearance = getSharedPreferences("maya_appearance", MODE_PRIVATE)
         setContent {
-            MayaTranslateTheme {
-                MayaLanguageApp(
-                    authViewModel = authViewModel,
-                    appDataViewModel = appDataViewModel,
-                    translationViewModel = translationViewModel,
-                    firebaseConfigured =
-                        dependencies.firebaseConfigured,
-                )
+            val dark = remember { mutableStateOf(appearance.getBoolean("dark_theme", false)) }
+            SideEffect {
+                WindowCompat.getInsetsController(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = !dark.value
+                    isAppearanceLightNavigationBars = !dark.value
+                }
+            }
+            CompositionLocalProvider(LocalMayaAppearance provides MayaAppearance(dark.value) { enabled ->
+                dark.value = enabled
+                appearance.edit().putBoolean("dark_theme", enabled).apply()
+            }) {
+                MayaTranslateTheme(darkTheme = dark.value) {
+                    MayaLanguageApp(
+                        authViewModel = authViewModel,
+                        appDataViewModel = appDataViewModel,
+                        translationViewModel = translationViewModel,
+                        firebaseConfigured = dependencies.firebaseConfigured,
+                    )
+                }
             }
         }
     }

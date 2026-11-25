@@ -233,9 +233,9 @@ private fun HeroCard(
 ) {
     val gradient = Brush.linearGradient(
         listOf(
-            Color(0xFF12271F),
-            Color(0xFF1D3E31),
-            Color(0xFF345A46),
+            Color(0xFF0D191C),
+            Color(0xFF112B26),
+            Color(0xFF21594A),
         )
     )
 
@@ -258,24 +258,13 @@ private fun HeroCard(
                 .background(gradient)
                 .padding(22.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(118.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Color.White.copy(alpha = 0.09f)
-                    ),
-            )
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .size(72.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Color.White.copy(alpha = 0.07f)
-                    ),
+            // AJAW drawing from TWKM / University of Bonn, Christian Prager (CC BY 4.0).
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(com.chuahws.mayalanguageapp.R.drawable.obsidian_ajaw_art),
+                contentDescription = null,
+                modifier = Modifier.align(Alignment.CenterEnd).size(150.dp),
+                alpha = .23f,
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF91F1BB)),
             )
 
             Column(
@@ -308,7 +297,7 @@ private fun HeroCard(
                 }
 
                 Text(
-                    text = "A window into\nancient writing",
+                    text = "Explore\nMaya glyphs",
                     color = Color.White,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,

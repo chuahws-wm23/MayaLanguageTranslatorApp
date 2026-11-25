@@ -1,14 +1,14 @@
 package com.chuahws.mayalanguageapp.presentation.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 // Archive palette. Legacy token names remain to preserve existing screen APIs.
-val MayaPurple = Color(0xFF285B4B)
+val MayaPurple = Color(0xFF245744)
 val MayaPurpleDark = Color(0xFF193D33)
 val MayaLavender = Color(0xFFDCE8DE)
 val MayaBlue = Color(0xFF4A6664)
@@ -18,7 +18,7 @@ val MayaPink = Color(0xFF8C6555)
 val MayaCyan = Color(0xFF476F70)
 val MayaRed = Color(0xFFAF5545)
 
-val MayaBackground = Color(0xFFF4EFE5)
+val MayaBackground = Color(0xFFF7F5EC)
 val MayaSurfaceSoft = Color(0xFFEAE5DA)
 val MayaInk = Color(0xFF1D2824)
 
@@ -41,7 +41,7 @@ private val LightColors = lightColorScheme(
     background = MayaBackground,
     onBackground = MayaInk,
 
-    surface = Color(0xFFFCF8F0),
+    surface = Color(0xFFFFFCF5),
     surfaceDim = Color(0xFFDED9CC),
     surfaceBright = Color(0xFFFFFCF5),
     surfaceContainerLowest = Color(0xFFFFFCF5),
@@ -50,9 +50,9 @@ private val LightColors = lightColorScheme(
     surfaceContainerHigh = Color(0xFFEAE5DA),
     surfaceContainerHighest = Color(0xFFE3DFD2),
     surfaceTint = MayaPurple,
-    inverseSurface = Color(0xFF24312A),
-    inverseOnSurface = Color(0xFFF4EFE5),
-    inversePrimary = Color(0xFFABD1BC),
+    inverseSurface = Color(0xFF213533),
+    inverseOnSurface = Color(0xFFF7F5EC),
+    inversePrimary = Color(0xFF91F1BB),
     onSurface = MayaInk,
     surfaceVariant = MayaSurfaceSoft,
     onSurfaceVariant = Color(0xFF646A60),
@@ -65,10 +65,13 @@ private val LightColors = lightColorScheme(
     onErrorContainer = Color(0xFF410002),
 )
 
+internal data class MayaAppearance(val dark: Boolean = false, val onChange: (Boolean) -> Unit = {})
+internal val LocalMayaAppearance = staticCompositionLocalOf { MayaAppearance() }
+
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFABD1BC),
+    primary = Color(0xFF91F1BB),
     onPrimary = Color(0xFF11382A),
-    primaryContainer = Color(0xFF294D3D),
+    primaryContainer = Color(0xFF203E35),
     onPrimaryContainer = Color(0xFFD0EAD9),
 
     secondary = Color(0xFFB7CDB4),
@@ -76,32 +79,32 @@ private val DarkColors = darkColorScheme(
     secondaryContainer = Color(0xFF3A513B),
     onSecondaryContainer = Color(0xFFD2E7CC),
 
-    tertiary = Color(0xFFDFC18A),
+    tertiary = Color(0xFFFFB487),
     onTertiary = Color(0xFF3F2E0C),
     tertiaryContainer = Color(0xFF5A431D),
     onTertiaryContainer = Color(0xFFF7E1B3),
 
-    background = Color(0xFF101B17),
-    onBackground = Color(0xFFEBE8DC),
+    background = Color(0xFF0D1516),
+    onBackground = Color(0xFFEFFAF1),
 
-    surface = Color(0xFF19251F),
-    surfaceDim = Color(0xFF101B17),
+    surface = Color(0xFF162223),
+    surfaceDim = Color(0xFF0D1516),
     surfaceBright = Color(0xFF344138),
     surfaceContainerLowest = Color(0xFF0C1511),
     surfaceContainerLow = Color(0xFF15221B),
-    surfaceContainer = Color(0xFF19251F),
-    surfaceContainerHigh = Color(0xFF24312A),
+    surfaceContainer = Color(0xFF162223),
+    surfaceContainerHigh = Color(0xFF213533),
     surfaceContainerHighest = Color(0xFF2D3A32),
-    surfaceTint = Color(0xFFABD1BC),
-    inverseSurface = Color(0xFFEBE8DC),
-    inverseOnSurface = Color(0xFF19251F),
+    surfaceTint = Color(0xFF91F1BB),
+    inverseSurface = Color(0xFFEFFAF1),
+    inverseOnSurface = Color(0xFF162223),
     inversePrimary = MayaPurple,
-    onSurface = Color(0xFFEBE8DC),
-    surfaceVariant = Color(0xFF24312A),
-    onSurfaceVariant = Color(0xFFC3C9BC),
+    onSurface = Color(0xFFEFFAF1),
+    surfaceVariant = Color(0xFF213533),
+    onSurfaceVariant = Color(0xFFA8C0B5),
 
     outline = Color(0xFF8D9B8E),
-    outlineVariant = Color(0xFF3B4A3F),
+    outlineVariant = Color(0xFF314843),
 
     error = Color(0xFFFFB4AB),
     errorContainer = Color(0xFF93000A),
@@ -110,7 +113,7 @@ private val DarkColors = darkColorScheme(
 
 @Composable
 fun MayaTranslateTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     MaterialTheme(

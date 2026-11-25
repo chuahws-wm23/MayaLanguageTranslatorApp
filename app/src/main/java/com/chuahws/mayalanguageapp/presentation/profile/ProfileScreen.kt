@@ -1,5 +1,10 @@
 package com.chuahws.mayalanguageapp.presentation.profile
 
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Switch
+import androidx.compose.ui.semantics.Role
+import com.chuahws.mayalanguageapp.presentation.theme.LocalMayaAppearance
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -316,7 +321,22 @@ private fun ProfileOverview(
                     ProfileAction(Icons.Rounded.PhotoCamera, "Profile photo", "Choose or change your picture", onOpenPhoto)
                     ProfileAction(Icons.Rounded.LockReset, "Password recovery", "Send a reset link to your email", onOpenPassword)
                 }
-                ProfileSection("PREFERENCES & HELP") {
+                ProfileSection("SETTINGS") {
+                    val appearance = LocalMayaAppearance.current
+                    Row(
+                        Modifier.fillMaxWidth().toggleable(
+                            value = appearance.dark,
+                            role = Role.Switch,
+                            onValueChange = appearance.onChange,
+                        ).padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Dark appearance", style = MaterialTheme.typography.titleSmall)
+                            Text(if (appearance.dark) "Dark" else "Light", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Switch(checked = appearance.dark, onCheckedChange = null)
+                    }
                     ProfileAction(Icons.Rounded.Language, "App language", "English", onOpenLanguage)
                     ProfileAction(Icons.Rounded.Info, "About the archive", "Features, sources and recognition limits", onOpenAbout)
                 }

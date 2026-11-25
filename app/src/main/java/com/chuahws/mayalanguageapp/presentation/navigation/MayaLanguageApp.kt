@@ -1,5 +1,7 @@
 package com.chuahws.mayalanguageapp.presentation.navigation
 
+import androidx.compose.ui.draw.clip
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.rememberScrollState
@@ -708,10 +710,11 @@ private fun MainShell(
             },
             bottomBar = {
                 NavigationBar(
+                    modifier = Modifier.padding(horizontal = 10.dp).clip(MaterialTheme.shapes.large),
                     containerColor =
                         MaterialTheme
                             .colorScheme.surface,
-                    tonalElevation = 4.dp,
+                    tonalElevation = 2.dp,
                 ) {
                     BottomItem.entries.forEach { item ->
                         val itemPage =
