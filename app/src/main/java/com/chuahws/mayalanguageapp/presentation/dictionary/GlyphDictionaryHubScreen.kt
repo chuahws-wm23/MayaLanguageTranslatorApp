@@ -3,7 +3,6 @@ package com.chuahws.mayalanguageapp.presentation.dictionary
 import com.chuahws.mayalanguageapp.presentation.components.ClearSearchButton
 import com.chuahws.mayalanguageapp.presentation.components.ReferenceDrawing
 import android.graphics.Bitmap
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
@@ -12,7 +11,6 @@ import com.chuahws.mayalanguageapp.domain.service.MayaReadingOrder
 import com.chuahws.mayalanguageapp.domain.service.ListPaging
 import com.chuahws.mayalanguageapp.presentation.components.ListPaginationControls
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -23,7 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,10 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMeaningCatalogue
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishReference
@@ -91,13 +87,13 @@ internal data class ArchiveEntry(
     val word: GlyphEnglishReference? = null,
 )
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GlyphDictionaryHubScreen(
     accountId: String = "local",
     requestedSign: Int? = null,
     requestedDrawing: String? = null,
     onReferenceOpened: () -> Unit = {},
+    onBackToScan: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val store = remember(context, accountId) { DictionaryNotebookStore(context, accountId) }
@@ -121,12 +117,24 @@ fun GlyphDictionaryHubScreen(
     val listState = rememberLazyListState()
     val focus = LocalFocusManager.current
     var selected by rememberSaveable { mutableStateOf(DictionarySection.WORD_SIGNS) }
-    var query by rememberSaveable(selected) { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf("") }
     var guided by rememberSaveable { mutableStateOf(false) }
     var clueNames by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
     val clues = VisualClue.entries.filter { it.name in clueNames }
     val guiding = guided && selected == DictionarySection.WORD_SIGNS
-    var page by rememberSaveable(selected, query, guiding, clueNames) { mutableIntStateOf(1) }
+    var page by rememberSaveable { mutableIntStateOf(1) }
+    var showTools by remember { mutableStateOf(false) }
+    fun resetResults() {
+        page = 1
+        listState.requestScrollToItem(0)
+    }
+    fun search(term: String) {
+        if (query != term) {
+            query = term
+            resetResults()
+        }
+    }
+    var openedFromScan by rememberSaveable { mutableStateOf(false) }
     var openedDrawing by rememberSaveable { mutableStateOf<String?>(null) }
     var opened by rememberSaveable { mutableStateOf<String?>(null) }
     var reload by remember { mutableIntStateOf(0) }
@@ -165,7 +173,7 @@ fun GlyphDictionaryHubScreen(
         if (archive == null || requestedSign == null) return@LaunchedEffect
         val entry = byKey["word-$requestedSign"]
         if (entry != null) {
-            selected = DictionarySection.WORD_SIGNS
+            openedFromScan = true
             openedDrawing = requestedDrawing
             opened = entry.key
         }
@@ -262,99 +270,142 @@ fun GlyphDictionaryHubScreen(
     }
     val currentPage=ListPaging.safePage(page,filtered.size)
     val visibleEntries=ListPaging.pageItems(filtered,currentPage)
-    LaunchedEffect(selected, query, currentPage, guiding, clueNames) {
-        if (listState.firstVisibleItemIndex > 2) listState.scrollToItem(1)
-    }
-    entries.firstOrNull { it.key == opened }?.let { entry ->
+    byKey[opened]?.let { entry ->
+        val returnToScan = onBackToScan.takeIf { openedFromScan }
+        fun closeEntry() {
+            opened = null
+            openedDrawing = null
+            openedFromScan = false
+        }
         val requestedIndex = openedDrawing?.let { graph -> (0 until entry.count).firstOrNull { entry.graph(it) == graph } }
         ArchiveEntryDialog(entry, initialIndex = requestedIndex ?: matchingDrawings[entry.key] ?: 0,
             compareLabel = if (compareFirst == null || compareFirst == entry.key) "Select for comparison" else "Compare with ${first?.reading().orEmpty()}",
             onCompare = {
-                opened = null
+                closeEntry()
                 if (compareFirst == null || compareFirst == entry.key) compareFirst = entry.key
                 else { activeEntry = entry.key; tool = "compare" }
             },
-            onStudy = { opened = null; activeEntry = entry.key; setName = ""; tool = "add" },
-            onNote = { opened = null; activeEntry = entry.key; tool = "note" },
-            onDismiss = { opened = null; openedDrawing = null })
+            onStudy = { closeEntry(); activeEntry = entry.key; setName = ""; tool = "add" },
+            onNote = { closeEntry(); activeEntry = entry.key; tool = "note" },
+            closeLabel = if (returnToScan != null) "Back to scan" else "Close",
+            onDismiss = {
+                closeEntry()
+                returnToScan?.invoke()
+            })
     }
     AppGradientBackground {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(), state = listState,
-            contentPadding = PaddingValues(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            item {
-                Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 22.dp),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer) {
-                        Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Rounded.MenuBook, contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-                        }
-                    }
-                    Column {
-                        Text("THE REFERENCE ARCHIVE", style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary)
-                        Text("Maya dictionary", style = MaterialTheme.typography.headlineLarge)
-                        TextButton(onClick = { onlineSources = true }) { Text("Online references") }
-                    }
-                }
-            }
-            stickyHeader {
-                Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(value = query, onValueChange = { query = it },
-                        modifier = Modifier.fillMaxWidth(), singleLine = true,
+        Column(Modifier.fillMaxSize()) {
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = ::search,
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                         keyboardActions = KeyboardActions(onSearch = {
                             query.trim().takeIf { it.isNotEmpty() }?.let { term ->
                                 updateNotebook(notebook.copy(searches = (listOf(term) + notebook.searches.filterNot { it.equals(term, true) }).take(5)))
                             }
+                            listState.requestScrollToItem(0)
                             focus.clearFocus()
                         }),
                         shape = MaterialTheme.shapes.large,
                         leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                        trailingIcon = { ClearSearchButton(query) { query = "" } },
-                        label = { Text(if (selected == DictionarySection.WORD_SIGNS) "Search meaning, reading or number" else "Search syllable or sign number") })
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        DictionarySection.entries.forEach { section ->
-                            FilterChip(selected = selected == section,
-                                onClick = { selected = section; opened = null },
-                                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                                shape = MaterialTheme.shapes.medium,
-                                label = { Text(section.title, style = MaterialTheme.typography.titleSmall) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary))
+                        trailingIcon = { ClearSearchButton(query) { search("") } },
+                        label = { Text(if (selected == DictionarySection.WORD_SIGNS) "Meaning, reading or ID" else "Search syllable or sign number") },
+                    )
+                    Box {
+                        IconButton(onClick = { focus.clearFocus(); showTools = true }) {
+                            Icon(Icons.Rounded.MoreVert, contentDescription = "Dictionary tools")
+                        }
+                        DropdownMenu(expanded = showTools, onDismissRequest = { showTools = false }) {
+                            if (archive != null) {
+                                if (selected == DictionarySection.WORD_SIGNS) {
+                                    DropdownMenuItem(
+                                        text = { Text(if (guiding) "Return to all word signs" else "Find by visible clues") },
+                                        onClick = {
+                                            showTools = false
+                                            guided = !guided
+                                            resetResults()
+                                        },
+                                    )
+                                }
+                                DropdownMenuItem(text = { Text("Study sets") }, onClick = { showTools = false; tool = "sets" })
+                                DropdownMenuItem(text = { Text("Research notes") }, onClick = { showTools = false; tool = "notes" })
+                            }
+                            DropdownMenuItem(text = { Text("Online references") }, onClick = { showTools = false; onlineSources = true })
+                            if (notebook.searches.isNotEmpty()) {
+                                HorizontalDivider()
+                                Text("Recent searches", Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.labelMedium)
+                                notebook.searches.forEach { term ->
+                                    DropdownMenuItem(text = { Text(term) }, onClick = { showTools = false; search(term) })
+                                }
+                                DropdownMenuItem(
+                                    text = { Text("Clear recent searches") },
+                                    onClick = { updateNotebook(notebook.copy(searches = emptyList())) },
+                                )
+                            }
                         }
                     }
-                    ListPaginationControls(filtered.size,currentPage,{ page=it })
                 }
-            }
-            if (archive != null) item {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { tool = "sets" }, modifier = Modifier.weight(1f)) { Text("Study sets") }
-                        OutlinedButton(onClick = { tool = "notes" }, modifier = Modifier.weight(1f)) { Text("Research notes") }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    DictionarySection.entries.forEach { section ->
+                        FilterChip(
+                            selected = selected == section,
+                            onClick = {
+                                if (selected != section) {
+                                    selected = section
+                                    query = ""
+                                    resetResults()
+                                }
+                            },
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            label = { Text(section.title, style = MaterialTheme.typography.titleSmall) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                        )
                     }
-                    if (first != null) {
-                        Text("Selected ${first.reading()}. Open another entry to compare.")
+                }
+                ListPaginationControls(filtered.size, currentPage, { nextPage ->
+                    if (page != nextPage) {
+                        page = nextPage
+                        listState.requestScrollToItem(0)
+                    }
+                })
+            }
+            if (loaded == null) {
+                Column(Modifier.fillMaxWidth().padding(40.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    CircularProgressIndicator()
+                    Text("Opening the archive…")
+                }
+            } else if (archive == null) {
+                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Archive unavailable", style = MaterialTheme.typography.titleLarge)
+                    Text("The reference drawings could not be opened. Please try again.")
+                    Button(onClick = { reload++ }) { Text("Retry") }
+                }
+            } else LazyColumn(
+                modifier = Modifier.weight(1f), state = listState,
+                contentPadding = PaddingValues(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                if (first != null) item {
+                    Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Selected ${first.reading()}. Open another entry to compare.", Modifier.weight(1f))
                         TextButton(onClick = { compareFirst = null }) { Text("Clear selection") }
                     }
-                    if (query.isEmpty() && notebook.searches.isNotEmpty()) {
-                        Text("Recent searches", style = MaterialTheme.typography.labelLarge)
-                        notebook.searches.forEach { term -> TextButton(onClick = { query = term }) { Text(term) } }
-                        TextButton(onClick = { updateNotebook(notebook.copy(searches = emptyList())) }) { Text("Clear recent searches") }
-                    }
                 }
-            }
-            if (archive != null && selected == DictionarySection.WORD_SIGNS) item {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { focus.clearFocus(); guided = !guided }, modifier = Modifier.fillMaxWidth()) {
-                        Text(if (guiding) "Return to all word signs" else "Find by visible clues")
-                    }
-                    if (guiding) {
+                if (guiding) item {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Guided Glyph Lookup", style = MaterialTheme.typography.titleLarge)
                         Text("Choose visible features to find drawings that share every selected clue. Covers ${drawingClues.size} curated drawings.")
                         VisualClue.entries.chunked(2).forEach { row ->
@@ -366,6 +417,7 @@ fun GlyphDictionaryHubScreen(
                                             clueNames = ArrayList(clueNames).apply {
                                                 if (!remove(clue.name)) add(clue.name)
                                             }
+                                            resetResults()
                                         },
                                         label = {
                                             Column(Modifier.padding(vertical = 6.dp)) {
@@ -382,23 +434,9 @@ fun GlyphDictionaryHubScreen(
                                 }
                             }
                         }
-                        TextButton(onClick = { clueNames = arrayListOf() }, enabled = clues.isNotEmpty()) { Text("Clear clues") }
+                        TextButton(onClick = { clueNames = arrayListOf(); resetResults() }, enabled = clues.isNotEmpty()) { Text("Clear clues") }
                     }
                 }
-            }
-            if (loaded == null) item {
-                Column(Modifier.fillMaxWidth().padding(40.dp), horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    CircularProgressIndicator()
-                    Text("Opening the archive…")
-                }
-            } else if (archive == null) item {
-                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Archive unavailable", style = MaterialTheme.typography.titleLarge)
-                    Text("The reference drawings could not be opened. Please try again.")
-                    Button(onClick = { reload++ }) { Text("Retry") }
-                }
-            } else {
                 item {
                     Text("${ListPaging.firstVisibleIndex(currentPage,filtered.size)}–${ListPaging.lastVisibleIndex(currentPage,filtered.size)} of ${filtered.size} · Maya reading A–Y", Modifier.padding(horizontal = 20.dp),
                         style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
@@ -407,7 +445,7 @@ fun GlyphDictionaryHubScreen(
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("No matching glyphs", style = MaterialTheme.typography.titleLarge)
                         Text(if (guiding) "Remove a clue or clear your text search to see more drawings." else "Try a different meaning, reading or sign number.")
-                        TextButton(onClick = { query = "" }) { Text("Clear search") }
+                        TextButton(onClick = { search("") }) { Text("Clear search") }
                     }
                 }
                 items(visibleEntries, key = { it.key }) { entry ->
@@ -417,15 +455,15 @@ fun GlyphDictionaryHubScreen(
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(if (entry.word != null) "WORD SIGN · TWKM #${entry.word.twkmSign}" else "SYLLABLE REFERENCE",
                                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                            Text(entry.word?.reading ?: entry.title, style = MaterialTheme.typography.headlineSmall)
+                            Text(if(entry.word!=null)entry.title else entry.subtitle, style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
                             val drawing = matchingDrawings[entry.key] ?: 0
                             ArchiveDrawing(entry, drawing, 168)
                             if (guiding) {
                                 val labels = drawingClues[entry.graph(drawing)].orEmpty().joinToString(" · ") { it.label }
                                 Text(labels, style = MaterialTheme.typography.labelMedium)
                             }
-                            Text(entry.word?.reading ?: entry.title, style = MaterialTheme.typography.headlineSmall)
-                            Text(if(entry.word!=null)entry.title else entry.subtitle, style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("${entry.count} drawings · explore", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge,
@@ -463,6 +501,7 @@ private fun ArchiveEntryDialog(
     onCompare: () -> Unit,
     onStudy: () -> Unit,
     onNote: () -> Unit,
+    closeLabel: String,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -505,5 +544,5 @@ private fun ArchiveEntryDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } })
+        confirmButton = { TextButton(onClick = onDismiss) { Text(closeLabel) } })
 }

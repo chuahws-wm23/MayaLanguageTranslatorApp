@@ -121,7 +121,7 @@ internal fun ScanRecoveryActions(onTryAnother: (() -> Unit)?, onOpenDictionary: 
         OutlinedButton(onClick = onOpenDictionary, modifier = Modifier.fillMaxWidth()) {
             Text("Browse dictionary")
         }
-        Text("In Word signs, use Find by visible clues to search by shape.",
+        Text("Open Dictionary tools and choose Find by visible clues to search by shape.",
             style = MaterialTheme.typography.bodySmall)
     }
 }

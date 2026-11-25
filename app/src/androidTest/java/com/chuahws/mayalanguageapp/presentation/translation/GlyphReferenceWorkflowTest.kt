@@ -578,8 +578,8 @@ class GlyphReferenceWorkflowTest {
         compose.setContent {
             MayaTranslateTheme { androidx.compose.runtime.key(dictionarySession.value) { GlyphDictionaryHubScreen(accountId = account) } }
         }
-        compose.onNodeWithText("Search meaning, reading or number").performTextReplacement(sign.twkmSign.toString())
-        compose.onNodeWithText("Search meaning, reading or number").performImeAction()
+        compose.onNodeWithText("Meaning, reading or ID").performTextReplacement(sign.twkmSign.toString())
+        compose.onNodeWithText("Meaning, reading or ID").performImeAction()
         compose.waitUntil(20_000) { compose.onAllNodesWithText(sign.english).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText(sign.english).performScrollTo().performClick()
         compose.onNodeWithText("Add to study set").performScrollTo().performClick()
@@ -587,7 +587,11 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("New set name").performImeAction()
         compose.onNodeWithText("Review set").assertExists()
         compose.runOnIdle { dictionarySession.value++ }
-        compose.onNodeWithText("Study sets").performScrollTo().performClick()
+        compose.waitUntil(20_000) {
+            compose.onAllNodesWithContentDescription("Next page").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("Dictionary tools").performClick()
+        compose.onNodeWithText("Study sets").performClick()
         compose.onNodeWithText("Reading practice · 1 glyph").performClick()
         compose.onNodeWithText("Review set").performClick()
         compose.onNodeWithText("Reveal reading").performClick()
@@ -636,8 +640,8 @@ class GlyphReferenceWorkflowTest {
         }
         compose.onNodeWithContentDescription("Next page").performClick()
         compose.onNodeWithText("2").assertExists()
-        compose.onNodeWithText("Search meaning, reading or number").performTextInput(ref.twkmSign.toString())
-        compose.onNodeWithText("Search meaning, reading or number").performImeAction()
+        compose.onNodeWithText("Meaning, reading or ID").performTextInput(ref.twkmSign.toString())
+        compose.onNodeWithText("Meaning, reading or ID").performImeAction()
         compose.waitUntil(20_000) {
             compose.onAllNodesWithContentDescription("Reference drawing for ${ref.english}")
                 .fetchSemanticsNodes().isNotEmpty()

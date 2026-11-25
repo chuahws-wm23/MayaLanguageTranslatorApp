@@ -15,6 +15,7 @@ import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -39,7 +40,7 @@ import com.chuahws.mayalanguageapp.presentation.components.TranslationResultCard
 
 /** Photo entry point: new images use glyph recognition, not Latin-script OCR. */
 @Composable
-fun ImageTranslationScreen(
+internal fun ImageTranslationScreen(
     viewModel: TranslationViewModel,
     onSaveEntry: (DictionaryEntry) -> Unit,
     replay: TranslationReplay? = null,
@@ -50,6 +51,7 @@ fun ImageTranslationScreen(
     onOpenFavourites: () -> Unit = {},
     onOpenDictionary: (() -> Unit)? = null,
     onOpenSign: ((Int, String) -> Unit)? = null,
+    glyphModel: GlyphRecognitionViewModel = viewModel(key = "glyph-photo-v1"),
 ) {
     var legacy by remember(replay?.requestId) { mutableStateOf(replay != null) }
     if (legacy && replay != null) {
@@ -64,6 +66,7 @@ fun ImageTranslationScreen(
         onOpenFavourites = onOpenFavourites,
         onOpenDictionary = onOpenDictionary,
         onOpenSign = onOpenSign,
+        glyphModel = glyphModel,
     )
 }
 
@@ -81,15 +84,11 @@ internal fun GlyphPhotoScreen(
     val context=LocalContext.current
     val state by glyphModel.state.collectAsStateWithLifecycle()
     val mode=state.activeMode
-    var selectedRegion by remember(state.bitmap,state.resultRevision) { mutableIntStateOf(0) }
-    var savedScan by remember { mutableStateOf<TranslationRecord?>(null) }
-    var saveError by remember { mutableStateOf<String?>(null) }
+    var selectedRegion by rememberSaveable(state.resultRevision) { mutableIntStateOf(0) }
     var showCamera by remember { mutableStateOf(false) }
     var permissionMessage by remember { mutableStateOf<String?>(null) }
     val hasCamera=remember(context) { context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY) }
     val scroll=rememberScrollState()
-    DisposableEffect(glyphModel) { onDispose { glyphModel.clear() } }
-    LaunchedEffect(state.bitmap,state.resultRevision) { savedScan=null;saveError=null }
     val gallery=rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if(uri!=null) { permissionMessage=null;glyphModel.load(uri) }
     }
@@ -125,14 +124,17 @@ internal fun GlyphPhotoScreen(
             if(request==glyphModel.state.value.resultRevision && !glyphModel.state.value.busy) {
                 glyphModel.recordedResultRevision=request
                 onRecordGlyphScan(capture) { record ->
-                    if(request==glyphModel.state.value.resultRevision && !glyphModel.state.value.busy) {
-                        savedScan=record
-                        if(record==null)saveError="The result is ready, but it could not be saved to history."
-                    }
+                    glyphModel.updateHistoryStatus(
+                        request, record,
+                        error = if (record == null) "The result is ready, but it could not be saved to history." else null,
+                    )
                 }
             }
-        } catch(cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-        catch(_: Exception) { if(request==glyphModel.state.value.resultRevision && !glyphModel.state.value.busy)saveError="The photo preview could not be saved to history." }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            glyphModel.updateHistoryStatus(request, error = "The photo preview could not be saved to history.")
+        }
     }
     AppGradientBackground {
         Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(20.dp),
@@ -172,7 +174,7 @@ internal fun GlyphPhotoScreen(
                     }
                     if(state.bitmap!=null) {
                         Button(
-                            onClick = { savedScan = null; saveError = null; glyphModel.scanPicture() },
+                            onClick = glyphModel::scanPicture,
                             enabled = !state.busy,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                         ) { Text("Scan picture") }
@@ -198,8 +200,8 @@ internal fun GlyphPhotoScreen(
                     selectedIndex=selectedRegion,onRegionSelected={ selectedRegion=it },
                     onTryAnother = { gallery.launch("image/*") }, onOpenDictionary = onOpenDictionary, onOpenSign = onOpenSign)
             }
-            saveError?.let { Text(it,color=MaterialTheme.colorScheme.error) }
-            savedScan?.let { record ->
+            state.saveError?.let { Text(it,color=MaterialTheme.colorScheme.error) }
+            state.savedScan?.let { record ->
                 val favorite=GlyphScanRecords.favoriteId(record.userId,record.translationId) in savedGlyphIds
                 Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.secondaryContainer)) {
                     Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {

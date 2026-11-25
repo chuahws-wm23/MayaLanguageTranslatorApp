@@ -10,6 +10,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphWhitespaceDetector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphRegionMatcher
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCaptionCrop
+import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGrid
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGuard
@@ -65,6 +66,8 @@ internal data class GlyphUiState(
     val bitmap: Bitmap? = null,
     val activeMode: String? = null,
     val resultRevision: Int = 0,
+    val savedScan: TranslationRecord? = null,
+    val saveError: String? = null,
     val referenceMatches: List<GlyphEnglishMatch>? = null,
     val referenceComparisonImage: Bitmap? = null,
     val referenceHints: List<String> = emptyList(),
@@ -100,6 +103,13 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
     private var version = 0
     // Inference revisions belong to this model instance, including after rotation.
     var recordedResultRevision: Int = -1
+
+    fun updateHistoryStatus(revision: Int, record: TranslationRecord? = null, error: String? = null) {
+        val current = mutable.value
+        if (revision == current.resultRevision && !current.busy) {
+            mutable.value = current.copy(savedScan = record, saveError = error)
+        }
+    }
 
     fun clear() {
         version++
@@ -159,7 +169,12 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
      */
     fun scanAll() = scanPanel(null)
 
-    fun scanPicture() = scanPanel(grid = null, allowSingleFallback = true)
+    fun scanPicture() {
+        val current = mutable.value
+        if (current.bitmap == null || current.busy) return
+        mutable.value = current.copy(savedScan = null, saveError = null)
+        scanPanel(grid = null, allowSingleFallback = true)
+    }
 
     /**
      * Scan graphic COMPONENTS with the separately installed v11 mask model.

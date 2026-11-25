@@ -3,6 +3,7 @@ package com.chuahws.mayalanguageapp.presentation.navigation
 import androidx.compose.ui.draw.clip
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -49,8 +50,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
@@ -66,6 +69,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -86,6 +90,7 @@ import com.chuahws.mayalanguageapp.presentation.history.ReportsScreen
 import com.chuahws.mayalanguageapp.presentation.home.HomeScreen
 import com.chuahws.mayalanguageapp.presentation.profile.ProfileScreen
 import com.chuahws.mayalanguageapp.presentation.saved.SavedScreen
+import com.chuahws.mayalanguageapp.presentation.translation.GlyphRecognitionViewModel
 import com.chuahws.mayalanguageapp.presentation.translation.ImageTranslationScreen
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationReplay
 import com.chuahws.mayalanguageapp.presentation.translation.TranslationViewModel
@@ -190,12 +195,15 @@ fun MayaLanguageApp(
             appDataViewModel.loadForUser(user.userId)
         }
 
-        MainShell(
-            email = user.email,
-            authViewModel = authViewModel,
-            appDataViewModel = appDataViewModel,
-            translationViewModel = translationViewModel,
-        )
+        key(user.userId) {
+            MainShell(
+                userId = user.userId,
+                email = user.email,
+                authViewModel = authViewModel,
+                appDataViewModel = appDataViewModel,
+                translationViewModel = translationViewModel,
+            )
+        }
     }
 }
 
@@ -273,6 +281,7 @@ private fun AuthFlow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainShell(
+    userId: String,
     email: String,
     authViewModel: AuthViewModel,
     appDataViewModel: AppDataViewModel,
@@ -286,7 +295,15 @@ private fun MainShell(
         initialValue = DrawerValue.Closed,
     )
     val scope = rememberCoroutineScope()
+    val glyphModel: GlyphRecognitionViewModel = viewModel(key = "glyph-photo-$userId")
+    val activity = LocalActivity.current
+    DisposableEffect(glyphModel, activity) {
+        onDispose {
+            if (activity?.isChangingConfigurations != true) glyphModel.clear()
+        }
+    }
 
+    var dictionaryFromScan by rememberSaveable { mutableStateOf(false) }
     var reportsStartWithActivity by rememberSaveable { mutableStateOf(false) }
     var dictionarySign by rememberSaveable { mutableStateOf<Int?>(null) }
     var dictionaryDrawing by rememberSaveable { mutableStateOf<String?>(null) }
@@ -321,6 +338,9 @@ private fun MainShell(
     }
 
     fun goTo(destination: AppPage) {
+        dictionaryFromScan = false
+        dictionarySign = null
+        dictionaryDrawing = null
         if (destination == AppPage.REPORTS) reportsStartWithActivity = false
         replayRequest = null
         replayReturnPage = null
@@ -328,6 +348,13 @@ private fun MainShell(
         scope.launch {
             drawerState.close()
         }
+    }
+
+    fun openDictionaryFromScan(sign: Int? = null, drawing: String? = null) {
+        goTo(AppPage.DICTIONARY)
+        dictionaryFromScan = true
+        dictionarySign = sign
+        dictionaryDrawing = drawing
     }
 
     LaunchedEffect(state.message) {
@@ -486,10 +513,9 @@ private fun MainShell(
         }
     }
 
-    fun returnFromTranslation() {
-        page = replayReturnPage ?: AppPage.HOME
-        replayRequest = null
-        replayReturnPage = null
+    val backToScan = page == AppPage.DICTIONARY && dictionaryFromScan
+    fun navigateBack() {
+        goTo(if (backToScan) AppPage.IMAGE_TRANSLATION else replayReturnPage ?: AppPage.HOME)
     }
 
     BackHandler(
@@ -497,7 +523,7 @@ private fun MainShell(
             drawerState.isClosed &&
                 page != AppPage.HOME,
     ) {
-        returnFromTranslation()
+        navigateBack()
     }
 
     val pageTitle = when (page) {
@@ -658,8 +684,8 @@ private fun MainShell(
                             navigationIcon = {
                                 IconButton(
                                     onClick = {
-                                        if (replayReturnPage != null) {
-                                            returnFromTranslation()
+                                        if (backToScan || replayReturnPage != null) {
+                                            navigateBack()
                                         } else {
                                             openDrawer()
                                         }
@@ -667,16 +693,16 @@ private fun MainShell(
                                 ) {
                                     Icon(
                                         imageVector =
-                                            if (replayReturnPage != null) {
+                                            if (backToScan || replayReturnPage != null) {
                                                 Icons.Rounded.ArrowBack
                                             } else {
                                                 Icons.Rounded.Menu
                                             },
                                         contentDescription =
-                                            if (replayReturnPage != null) {
-                                                "Back to saved or history"
-                                            } else {
-                                                "Open menu"
+                                            when {
+                                                backToScan -> "Back to scan"
+                                                replayReturnPage != null -> "Back to saved or history"
+                                                else -> "Open menu"
                                             },
                                     )
                                 }
@@ -739,11 +765,7 @@ private fun MainShell(
                             modifier = Modifier.testTag("main-tab-${item.label}"),
                             selected =
                                 page == itemPage,
-                            onClick = {
-                                replayRequest = null
-                                replayReturnPage = null
-                                page = itemPage
-                            },
+                            onClick = { if (page != itemPage) goTo(itemPage) },
                             icon = {
                                 Icon(
                                     imageVector =
@@ -861,12 +883,9 @@ private fun MainShell(
                                 .toSet(),
                             onOpenHistory = { goTo(AppPage.HISTORY) },
                             onOpenFavourites = { goTo(AppPage.SAVED) },
-                            onOpenDictionary = { goTo(AppPage.DICTIONARY) },
-                            onOpenSign = { sign, drawing ->
-                                dictionarySign = sign
-                                dictionaryDrawing = drawing
-                                goTo(AppPage.DICTIONARY)
-                            },
+                            onOpenDictionary = { openDictionaryFromScan() },
+                            onOpenSign = ::openDictionaryFromScan,
+                            glyphModel = glyphModel,
                         )
 
                     AppPage.ASSEMBLY -> researchState.SaveableStateProvider("assembly-${state.userId}") { com.chuahws.mayalanguageapp.presentation.research.GlyphWorkspaceScreen() }
@@ -876,6 +895,7 @@ private fun MainShell(
                             requestedSign = dictionarySign,
                             requestedDrawing = dictionaryDrawing,
                             onReferenceOpened = { dictionarySign = null; dictionaryDrawing = null },
+                            onBackToScan = if (backToScan) ::navigateBack else null,
                         )
 
                     AppPage.SAVED ->
