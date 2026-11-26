@@ -22,6 +22,29 @@ class GlyphReferenceRankingTest {
     @Test fun emptyGalleryHasNoFabricatedResult() {
         assertTrue(GlyphReferenceRanking.bestRows(floatArrayOf(), emptyList(), booleanArrayOf(), 5).isEmpty())
     }
+    @Test fun aHighSimilarityDoesNotOverrideMismatchedStrokes() {
+        val best = GlyphEnglishMatch(reference(10), .94f, strokeAgreement = .72f)
+        val runnerUp = GlyphEnglishMatch(reference(11), .89f)
+        val matches = listOf(best, runnerUp)
+        assertEquals(GlyphReferenceDecision.STROKES_DIFFER, matches.referenceDecision())
+        assertNull(matches.displayableReference())
+        val aligned = best.copy(strokeAgreement = .85f)
+        assertEquals(aligned, listOf(aligned, runnerUp).displayableReference())
+        assertNull(listOf(aligned, runnerUp.copy(visualOverlap = .93f)).displayableReference())
+        assertNull(listOf(best.copy(strokeAgreement = null), runnerUp).displayableReference())
+    }
+
+    @Test fun identicalDrawingIsAcceptedOnlyIfItPointsToOneSign() {
+        val exact = GlyphEnglishMatch(reference(10), 1f, identicalNormalizedDrawing = true)
+        assertEquals(exact, listOf(exact, GlyphEnglishMatch(reference(11), .99f)).displayableReference())
+        assertNull(listOf(exact, exact.copy(reference = reference(11))).displayableReference())
+    }
+
+    private fun reference(sign: Int) = GlyphEnglishReference(
+        offset = 0, twkmSign = sign, reading = "Reading", english = "Meaning", kind = "Word sign",
+        scholarlyLevel = 1, graph = "${sign}st",
+    )
+
     @Test(expected = IllegalArgumentException::class)
     fun nonFiniteSimilarityIsRejected() {
         GlyphReferenceRanking.bestRows(floatArrayOf(Float.NaN), listOf("A"), booleanArrayOf(false), 1)

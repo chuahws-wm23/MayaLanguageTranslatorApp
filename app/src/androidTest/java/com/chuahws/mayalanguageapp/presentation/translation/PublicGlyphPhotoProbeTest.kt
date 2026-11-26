@@ -75,6 +75,8 @@ class PublicGlyphPhotoProbeTest {
                 outcome.put("production_elapsed_ms",(System.nanoTime()-start)/1_000_000.0)
                     .put("production_message",state.message ?: JSONObject.NULL)
                     .put("production_candidates",candidates(matches))
+                    .put("production_decision", matches.referenceDecision().name)
+                    .put("production_visible_sign", matches.displayableReference()?.reference?.twkmSign ?: JSONObject.NULL)
                     .put("photo_hints",JSONArray(state.referenceHints))
                 addReadingCompatibility(outcome,"production",matches,row)
                 val mask=sounds.canonicalBitplane(loaded)
@@ -92,7 +94,18 @@ class PublicGlyphPhotoProbeTest {
                         Base64.encodeToString(it,Base64.NO_WRAP)
                     } ?: JSONObject.NULL)
                 } finally { corrected.recycle() }
-                // Same detector order as Multiple mode; box ground truth is unavailable.
+                instrumentation.runOnMainSync { model.scanPicture() }
+                awaitIdle(model)
+                val automatic = model.state.value
+                val visibleReferenceLists = if (automatic.activeMode == "multiple") {
+                    automatic.multiple.map { it.englishMatches }
+                } else listOf(automatic.referenceMatches.orEmpty())
+                outcome.put("automatic_visible_signs", JSONArray(visibleReferenceLists.mapNotNull {
+                    it.displayableReference()?.reference?.twkmSign
+                })).put("automatic_decisions", JSONArray(visibleReferenceLists.map { it.referenceDecision().name }))
+                    .put("automatic_region_count", automatic.multiple.size)
+                    .put("automatic_message", automatic.message ?: JSONObject.NULL)
+                // This diagnostic also records the experimental detector fallbacks.
                 val trained=GlyphV18Detector.fromAssetsOrNull(context)?.detect(loaded).orEmpty()
                 val whitespace=if(trained.isEmpty())GlyphWhitespaceDetector.detect(loaded) else emptyList()
                 val regions=when {
@@ -141,7 +154,8 @@ class PublicGlyphPhotoProbeTest {
         matches.forEach { match -> put(JSONObject().put("sign",match.reference.twkmSign)
             .put("reading",match.reference.reading).put("english",match.reference.english)
             .put("graph",match.reference.graph).put("similarity",match.visualOverlap.toDouble())
-            .put("identical_normalized_drawing",match.identicalNormalizedDrawing)) }
+            .put("identical_normalized_drawing",match.identicalNormalizedDrawing)
+            .put("stroke_agreement", match.strokeAgreement?.toDouble() ?: JSONObject.NULL)) }
     }
 
     private fun addReadingCompatibility(outcome: JSONObject,prefix: String,matches: List<GlyphEnglishMatch>,row: JSONObject) {

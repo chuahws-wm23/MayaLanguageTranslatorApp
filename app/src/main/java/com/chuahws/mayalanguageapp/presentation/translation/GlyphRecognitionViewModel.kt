@@ -12,7 +12,6 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphRegionMatcher
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCaptionCrop
 import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
-import com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGrid
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGuard
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageLoader
@@ -529,11 +528,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         var retained = false
         return try {
             val retry = words.search(glyph, sounds, 5)
-            val best = retry.firstOrNull()
-            val second = retry.getOrNull(1)
-            if (best != null && GlyphDisplayPolicy.accepts(best.visualOverlap) &&
-                (best.identicalNormalizedDrawing || second != null && best.visualOverlap - second.visualOverlap >= .02f)
-            ) {
+            if (retry.displayableReference() != null) {
                 retained = true
                 Triple(retry, hints, glyph)
             } else Triple(original, hints, null)

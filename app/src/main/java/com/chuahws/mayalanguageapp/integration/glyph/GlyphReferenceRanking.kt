@@ -1,5 +1,7 @@
 package com.chuahws.mayalanguageapp.integration.glyph
 
+import com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy
+
 /** Rank reference ROWS, preserving the best artwork for each catalogue identity. */
 internal object GlyphReferenceRanking {
     fun bestRows(
@@ -18,11 +20,25 @@ internal object GlyphReferenceRanking {
     }
 }
 
-/** The leading reference needs separation from the next distinct sign. */
-internal fun List<GlyphEnglishMatch>.displayableReference(): GlyphEnglishMatch? {
-    val best = firstOrNull() ?: return null
-    if (!com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy.accepts(best.visualOverlap)) return null
-    if (best.identicalNormalizedDrawing) return best
-    val runnerUp = firstOrNull { it.reference.twkmSign != best.reference.twkmSign }
-    return best.takeIf { runnerUp == null || best.visualOverlap - runnerUp.visualOverlap >= .02f }
+internal enum class GlyphReferenceDecision {
+    UNREADABLE, LOW_SIMILARITY, AMBIGUOUS, STROKES_DIFFER, SHOW_REFERENCE,
 }
+
+internal fun List<GlyphEnglishMatch>.referenceDecision(): GlyphReferenceDecision {
+    val best = firstOrNull() ?: return GlyphReferenceDecision.UNREADABLE
+    if (!GlyphDisplayPolicy.accepts(best.visualOverlap)) return GlyphReferenceDecision.LOW_SIMILARITY
+    val runnerUp = firstOrNull { it.reference.twkmSign != best.reference.twkmSign }
+    if (best.identicalNormalizedDrawing) {
+        return if (runnerUp?.identicalNormalizedDrawing == true) GlyphReferenceDecision.AMBIGUOUS
+        else GlyphReferenceDecision.SHOW_REFERENCE
+    }
+    if (runnerUp != null && best.visualOverlap - runnerUp.visualOverlap < .02f) {
+        return GlyphReferenceDecision.AMBIGUOUS
+    }
+    // Use agreement as a separate check. The displayed percentage is still embedding similarity.
+    return if (best.strokeAgreement?.let { it >= .85f } == true) GlyphReferenceDecision.SHOW_REFERENCE
+    else GlyphReferenceDecision.STROKES_DIFFER
+}
+
+internal fun List<GlyphEnglishMatch>.displayableReference(): GlyphEnglishMatch? =
+    firstOrNull().takeIf { referenceDecision() == GlyphReferenceDecision.SHOW_REFERENCE }

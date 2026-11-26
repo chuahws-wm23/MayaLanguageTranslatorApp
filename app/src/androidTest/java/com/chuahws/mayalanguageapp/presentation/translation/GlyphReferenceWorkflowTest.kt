@@ -119,11 +119,12 @@ class GlyphReferenceWorkflowTest {
         val alternative = catalogue.references.first { it.twkmSign != ref.twkmSign }
         val runnerUp = mutableStateOf(.80f)
         val score = mutableStateOf(.84f)
+        val strokeAgreement = mutableStateOf(.96f)
         var dictionaryOpened = false
         var retryRequested = false
         compose.setContent { MayaTranslateTheme {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                GlyphReferenceResults(listOf(GlyphEnglishMatch(ref, score.value), GlyphEnglishMatch(alternative, runnerUp.value)), onOpenDictionary = { dictionaryOpened = true }, onTryAnother = { retryRequested = true })
+                GlyphReferenceResults(listOf(GlyphEnglishMatch(ref, score.value, strokeAgreement = strokeAgreement.value), GlyphEnglishMatch(alternative, runnerUp.value)), onOpenDictionary = { dictionaryOpened = true }, onTryAnother = { retryRequested = true })
             }
         } }
         listOf(.84f, .85f).forEach { value ->
@@ -148,6 +149,10 @@ class GlyphReferenceWorkflowTest {
         compose.runOnIdle { runnerUp.value = .94f }
         compose.onNodeWithText("Several references look too similar to suggest one reliably.").assertExists()
         compose.onAllNodes(numericSimilarity).assertCountEquals(0)
+        compose.runOnIdle { runnerUp.value = .80f; strokeAgreement.value = .58f }
+        compose.onNodeWithText("The outline and strokes differ from the nearest drawing.").assertExists()
+        compose.onAllNodes(numericSimilarity).assertCountEquals(0)
+        compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}").assertCountEquals(0)
         compose.runOnIdle { score.value = .5f; runnerUp.value = .49f }
         compose.onNodeWithText("No match found").assertExists()
         compose.onAllNodesWithContentDescription("Reference drawing for ${ref.reading}").assertCountEquals(0)
@@ -611,7 +616,7 @@ class GlyphReferenceWorkflowTest {
                 if (opened.value) GlyphDictionaryHubScreen(requestedSign = drawing.twkmSign, requestedDrawing = drawing.graph)
                 else Column(Modifier.verticalScroll(rememberScrollState())) {
                     GlyphReferenceResults(
-                        listOf(GlyphEnglishMatch(drawing, .95f)),
+                        listOf(GlyphEnglishMatch(drawing, .95f, strokeAgreement = .94f)),
                         photo = photo,
                         onOpenSign = { id, graph ->
                             check(id == drawing.twkmSign && graph == drawing.graph)

@@ -2,7 +2,8 @@ package com.chuahws.mayalanguageapp.presentation.translation
 
 import com.chuahws.mayalanguageapp.integration.glyph.displayableReference
 import androidx.compose.foundation.layout.*
-import com.chuahws.mayalanguageapp.domain.service.GlyphDisplayPolicy
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphReferenceDecision
+import com.chuahws.mayalanguageapp.integration.glyph.referenceDecision
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -27,6 +28,7 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints:
 ) {
     val context=LocalContext.current
     val catalogue=remember(context) { GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context) }
+    val decision = matches.referenceDecision()
     val eligible = listOfNotNull(matches.displayableReference())
     val exact=eligible.filter { it.identicalNormalizedDrawing }.singleOrNull()
     Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(12.dp)) {
@@ -48,9 +50,13 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints:
                 Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.large) {
                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("No match found", style = MaterialTheme.typography.titleLarge)
-                        if (GlyphDisplayPolicy.accepts(matches.first().visualOverlap)) {
-                            Text("Several references look too similar to suggest one reliably.", style = MaterialTheme.typography.bodyMedium)
-                        } else Text("No reference exceeded 85% visual similarity.", style = MaterialTheme.typography.bodyMedium)
+                        val reason = when (decision) {
+                            GlyphReferenceDecision.AMBIGUOUS -> "Several references look too similar to suggest one reliably."
+                            GlyphReferenceDecision.STROKES_DIFFER -> "The outline and strokes differ from the nearest drawing."
+                            else -> "No reference exceeded 85% visual similarity."
+                        }
+                        Text(reason, style = MaterialTheme.typography.bodyMedium)
+                        photoHints.firstOrNull()?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                     }
                 }
             }

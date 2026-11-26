@@ -102,8 +102,13 @@ internal class GlyphEnglishMeaningCatalogue private constructor(
             query.indices.all { query[it] == bits[row * REF_BYTES + it] }
         }
         // Return distinct sign identities with their actual best reference artwork.
-        return GlyphReferenceRanking.bestRows(scores, references.map { it.twkmSign.toString() }, identical, top)
-            .map { row -> GlyphEnglishMatch(references[row], scores[row], identical[row]) }
+        val ranked = GlyphReferenceRanking.bestRows(scores, references.map { it.twkmSign.toString() }, identical, top)
+        return ranked.mapIndexed { rank, row ->
+            val strokeAgreement = if (rank == 0 && !identical[row]) {
+                GlyphStrokeAgreement.compare(query, bits, row * REF_BYTES)
+            } else null
+            GlyphEnglishMatch(references[row], scores[row], identical[row], strokeAgreement)
+        }
     }
 }
 
@@ -124,4 +129,6 @@ internal data class GlyphEnglishMatch(
     /** Embedding cosine resemblance; NOT historical or model confidence. */
     val visualOverlap: Float,
     val identicalNormalizedDrawing: Boolean = false,
+    /** Fraction of strokes supported in both directions, computed for the leading drawing only. */
+    val strokeAgreement: Float? = null,
 )
