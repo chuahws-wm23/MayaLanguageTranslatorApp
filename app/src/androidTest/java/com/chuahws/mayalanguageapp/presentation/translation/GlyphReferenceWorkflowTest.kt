@@ -712,6 +712,95 @@ class GlyphReferenceWorkflowTest {
         }
     }
 
+    @Test fun scanPictureIgnoresDisplayGridAndLabelsWhileKeepingSeparateGlyphs() {
+        val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val directory = File(context.cacheDir, "images").apply { mkdirs() }
+        val file = File.createTempFile("photographed-display-", ".jpg", directory)
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val model = GlyphRecognitionViewModel(context.applicationContext as Application)
+
+        fun scan(drawings: List<GlyphEnglishReference>) {
+            val photo = displayPhoto(catalogue, drawings)
+            try {
+                file.outputStream().use { photo.compress(Bitmap.CompressFormat.JPEG, 94, it) }
+            } finally {
+                photo.recycle()
+            }
+            compose.runOnIdle { model.load(uri) }
+            compose.waitUntil(30_000) { model.state.value.bitmap != null && !model.state.value.busy }
+            compose.onNodeWithText("Scan picture").performScrollTo().performClick()
+            compose.waitUntil(60_000) { !model.state.value.busy }
+        }
+
+        try {
+            compose.setContent {
+                MayaTranslateTheme {
+                    GlyphPhotoScreen(
+                        onRecordGlyphScan = { _, _ -> }, onToggleGlyphFavorite = {}, savedGlyphIds = emptySet(),
+                        onOpenHistory = {}, onOpenFavourites = {}, glyphModel = model,
+                    )
+                }
+            }
+            val night = catalogue.references.first { it.graph == "504st" }
+            scan(listOf(night))
+            val single = model.state.value
+            assertTrue(single.multiple.isEmpty())
+            assertEquals(night.twkmSign, single.referenceMatches.orEmpty().displayableReference()?.reference?.twkmSign)
+            compose.onAllNodesWithText("Glyph by glyph").assertCountEquals(0)
+            screenshot("scanner-display-photo-single")
+
+            val panel = listOf(32, 44, 548, 4).map { sign -> catalogue.references.first { it.twkmSign == sign } }
+            scan(panel)
+            val regions = model.state.value.multiple
+            assertEquals(panel.size, regions.size)
+            assertEquals(panel.map { it.twkmSign }, regions.map { it.englishMatches.firstOrNull()?.reference?.twkmSign })
+            assertEquals(listOf(1 to 1, 1 to 2, 2 to 1, 2 to 2), regions.map { it.region.row to it.region.column })
+            screenshot("scanner-display-photo-panel")
+        } finally {
+            file.delete()
+        }
+    }
+
+    /** Simulates screen texture, surrounding text, dark margins, and uneven brightness. */
+    private fun displayPhoto(catalogue: GlyphEnglishMeaningCatalogue, drawings: List<GlyphEnglishReference>): Bitmap {
+        val width = 600
+        val height = 640
+        val photo = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(photo)
+        canvas.drawColor(Color.WHITE)
+        val caption = android.graphics.Paint().apply { color = Color.BLACK; textSize = 16f }
+        canvas.drawText("Catalogue example · screen photo", 94f, 57f, caption)
+        canvas.drawText("Source label · reading and notes", 100f, 602f, caption)
+        drawings.forEachIndexed { index, reference ->
+            val bounds = if (drawings.size == 1) Rect(95, 99, 505, 509) else {
+                val x = 87 + index % 2 * 240
+                val y = 115 + index / 2 * 235
+                Rect(x, y, x + 180, y + 180)
+            }
+            val artwork = catalogue.imageFor(reference)
+            try {
+                canvas.drawBitmap(artwork, null, bounds, android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG))
+            } finally {
+                artwork.recycle()
+            }
+        }
+        val pixels = IntArray(width * height)
+        photo.getPixels(pixels, 0, width, 0, 0, width, height)
+        for (i in pixels.indices) {
+            val x = i % width
+            val y = i / width
+            val light = 226 - (x + y) / 70
+            val grid = (if (x % 4 == 0) 53 else 0) + (if (y % 3 == 0) 41 else 0)
+            val shade = if (x < 62 || x >= width - 62) 20 else {
+                val ink = Color.red(pixels[i]) / 255f
+                (26 + (light - grid - 26) * ink).toInt()
+            }
+            pixels[i] = Color.rgb(shade, shade, shade)
+        }
+        photo.setPixels(pixels, 0, width, 0, 0, width, height)
+        return photo
+    }
+
     @Test fun scannerOffersOneActionAfterPhotoAndShowsResults() {
         val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val original=words.imageFor(words.references.first { it.twkmSign==32 })

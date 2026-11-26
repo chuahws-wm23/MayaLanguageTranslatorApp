@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphScreenPhoto
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphWhitespaceDetector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphRegionMatcher
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
@@ -301,7 +302,12 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
             message = null,
         )
         work = viewModelScope.launch {
+            var cleaned: Bitmap? = null
             try {
+                if (allowSingleFallback && snapshot.crop == GlyphCrop()) {
+                    withContext(Dispatchers.Default) { cleaned = GlyphScreenPhoto.clean(image) }
+                }
+                val workingImage = cleaned ?: image
                 val (regions, detectorNote) = withContext(Dispatchers.Default) {
                     if (grid != null) {
                         GlyphPanelGrid.regions(snapshot.crop, grid.first, grid.second) to
@@ -309,12 +315,12 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                     } else {
                         // The regular-grid heuristic can mistake strokes inside one
                         // sign for boundaries. Keep it out of the main scanner.
-                        val selected = if (snapshot.crop == GlyphCrop()) image else {
+                        val selected = if (snapshot.crop == GlyphCrop()) workingImage else {
                             val (x, y, w, h) = snapshot.crop.pixels(image.width, image.height)
-                            Bitmap.createBitmap(image, x, y, w, h)
+                            Bitmap.createBitmap(workingImage, x, y, w, h)
                         }
                         try {
-                            val trained = runCatching {
+                            val trained = if (cleaned != null) null else runCatching {
                                 GlyphV18Detector.fromAssetsOrNull(getApplication())?.detect(selected)
                             }.getOrNull()
                             val whitespace = if (trained.isNullOrEmpty())
@@ -348,13 +354,13 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                             }
                             restored to note
                         } finally {
-                            if (selected !== image) selected.recycle()
+                            if (selected !== workingImage) selected.recycle()
                         }
                     }
                 }
                 if (request != version) return@launch
                 if (regions.isEmpty()) {
-                    if (allowSingleFallback && tryIsolatedPicture(image, request)) return@launch
+                    if (allowSingleFallback && tryIsolatedPicture(workingImage, request)) return@launch
                     mutable.value = mutable.value.copy(
                         busy = false, multipleProgress = null,
                         message = "The glyph regions could not be separated. Try a closer photo of one complete glyph " +
@@ -376,10 +382,10 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                                 multipleProgress = "Recognising block ${index + 1} of ${regions.size}…",
                             )
                         }
-                        val (x, y, w, h) = region.crop.pixels(image.width, image.height)
+                        val (x, y, w, h) = region.crop.pixels(workingImage.width, workingImage.height)
                         try {
                             require(w >= 25 && h >= 25)
-                            val cropped = Bitmap.createBitmap(image, x, y, w, h)
+                            val cropped = Bitmap.createBitmap(workingImage, x, y, w, h)
                             try {
                                 when (snapshot.model) {
                                     GlyphModelMode.TINY_V1 -> {
@@ -438,7 +444,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                                     }
                                 }
                             } finally {
-                                if (cropped !== image) cropped.recycle()
+                                if (cropped !== workingImage) cropped.recycle()
                             }
                         } catch (cancelled: CancellationException) {
                             throw cancelled
@@ -452,7 +458,7 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                 }
                 if (allowSingleFallback && request == version && results.size == 1 &&
                     results.single().englishMatches.displayableReference() == null &&
-                    tryIsolatedPicture(image, request)
+                    tryIsolatedPicture(workingImage, request)
                 ) return@launch
                 if (request == version) {
                     mutable.value = mutable.value.copy(
@@ -470,6 +476,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                         message = "Automatic panel scan failed. Try a clearer photo with complete glyph blocks.",
                     )
                 }
+            } finally {
+                cleaned?.recycle()
             }
         }
     }
