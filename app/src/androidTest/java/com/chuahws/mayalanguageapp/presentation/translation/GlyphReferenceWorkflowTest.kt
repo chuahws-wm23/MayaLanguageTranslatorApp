@@ -753,7 +753,7 @@ class GlyphReferenceWorkflowTest {
             scan(panel)
             val regions = model.state.value.multiple
             assertEquals(panel.size, regions.size)
-            assertEquals(panel.map { it.twkmSign }, regions.map { it.englishMatches.firstOrNull()?.reference?.twkmSign })
+            assertEquals(panel.map { it.twkmSign }, regions.map { it.englishMatches.displayableReference()?.reference?.twkmSign })
             assertEquals(listOf(1 to 1, 1 to 2, 2 to 1, 2 to 2), regions.map { it.region.row to it.region.column })
             screenshot("scanner-display-photo-panel")
         } finally {
@@ -784,13 +784,16 @@ class GlyphReferenceWorkflowTest {
                 artwork.recycle()
             }
         }
+        val backdrop = if (drawings.size == 1) 192 else 226
+        val columnTexture = if (drawings.size == 1) 45 else 53
+        val rowTexture = if (drawings.size == 1) 35 else 41
         val pixels = IntArray(width * height)
         photo.getPixels(pixels, 0, width, 0, 0, width, height)
         for (i in pixels.indices) {
             val x = i % width
             val y = i / width
-            val light = 226 - (x + y) / 70
-            val grid = (if (x % 4 == 0) 53 else 0) + (if (y % 3 == 0) 41 else 0)
+            val light = backdrop - (x + y) / 70
+            val grid = (if (x % 4 == 0) columnTexture else 0) + (if (y % 3 == 0) rowTexture else 0)
             val shade = if (x < 62 || x >= width - 62) 20 else {
                 val ink = Color.red(pixels[i]) / 255f
                 (26 + (light - grid - 26) * ink).toInt()

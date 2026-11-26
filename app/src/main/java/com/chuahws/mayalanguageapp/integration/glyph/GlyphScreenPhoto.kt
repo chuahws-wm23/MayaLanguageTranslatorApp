@@ -49,7 +49,7 @@ internal object GlyphScreenPhoto {
             count += histogram[value]
             count >= gray.size * .72
         }
-        if (paper < 165 || !hasBackgroundTexture(gray, blurred, width, height, maxOf(140, paper - 35))) return null
+        if (paper < 145 || !hasBackgroundTexture(gray, blurred, width, height, maxOf(125, paper - 35))) return null
 
         val labels = IntArray(gray.size)
         val strokes = collectStrokes(gray, blurred, width, height, paper - 65, labels)
