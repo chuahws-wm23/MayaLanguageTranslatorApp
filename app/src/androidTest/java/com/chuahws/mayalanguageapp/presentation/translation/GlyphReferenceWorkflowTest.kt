@@ -657,12 +657,13 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("TWKM #${ref.twkmSign} · ${drawings[1].graph}").assertExists()
         compose.onNodeWithContentDescription("Previous drawing").performScrollTo().performClick()
         compose.onNodeWithText("Drawing 1 of ${drawings.size}").assertExists()
-        compose.onNodeWithContentDescription("Show drawing 2, ${drawings[1].graph}").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Show drawing 2, ${drawings[1].graph}").assertIsDisplayed().performClick()
         compose.onNodeWithText("Drawing 2 of ${drawings.size}").assertExists()
         compose.onNodeWithText("Glyph reference").assertIsDisplayed()
         compose.waitUntil(20_000) {
             compose.onAllNodesWithContentDescription("Reference drawing for ${ref.english}").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithText("English meanings").performScrollTo()
         screenshot("dictionary-enlarged-reference", dialog = true)
         compose.runOnIdle { dark.value = true }
         screenshot("dictionary-reference-dark", dialog = true)

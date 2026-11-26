@@ -256,21 +256,7 @@ private fun ReferenceGallery(entry: ArchiveEntry, index: Int, onSelect: (Int) ->
             Text("Reference drawings", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
             Text(entry.caption(index), style = MaterialTheme.typography.labelMedium, color = colors.primary)
         }
-        ArchiveDrawing(entry, index, height = 232, artworkPadding = 12)
         if (entry.count > 1) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                IconButton(onClick = { onSelect(index - 1) }, enabled = index > 0) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Previous drawing")
-                }
-                Text("Drawing ${index + 1} of ${entry.count}", style = MaterialTheme.typography.labelLarge)
-                IconButton(onClick = { onSelect(index + 1) }, enabled = index < entry.count - 1) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, "Next drawing")
-                }
-            }
             val thumbnails = rememberLazyListState(initialFirstVisibleItemIndex = index)
             LaunchedEffect(index) {
                 if (thumbnails.layoutInfo.visibleItemsInfo.none { it.index == index }) thumbnails.scrollToItem(index)
@@ -298,6 +284,22 @@ private fun ReferenceGallery(entry: ArchiveEntry, index: Int, onSelect: (Int) ->
                             contentScale = ContentScale.Fit,
                         )
                     }
+                }
+            }
+        }
+        ArchiveDrawing(entry, index, height = 232, artworkPadding = 12)
+        if (entry.count > 1) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                IconButton(onClick = { onSelect(index - 1) }, enabled = index > 0) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Previous drawing")
+                }
+                Text("Drawing ${index + 1} of ${entry.count}", style = MaterialTheme.typography.labelLarge)
+                IconButton(onClick = { onSelect(index + 1) }, enabled = index < entry.count - 1) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, "Next drawing")
                 }
             }
         }
