@@ -1,7 +1,6 @@
 package com.chuahws.mayalanguageapp.presentation.dictionary
 
 import com.chuahws.mayalanguageapp.presentation.components.ClearSearchButton
-import com.chuahws.mayalanguageapp.presentation.components.ReferenceDrawing
 import android.graphics.Bitmap
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,12 +14,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.FindInPage
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
@@ -28,7 +23,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -37,7 +31,6 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMeaningCatalogu
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishReference
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualCatalogue
 import com.chuahws.mayalanguageapp.presentation.components.AppGradientBackground
-import com.chuahws.mayalanguageapp.presentation.translation.EnglishMeaningLearningDetails
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -74,6 +67,10 @@ private val drawingClues = mapOf(
     "200br" to setOf(VisualClue.ROUNDS),
 )
 
+private val cataloguePrefix = Regex("""^(?:TWKM\s*#?\s*|#\s*)(?=\d)""", RegexOption.IGNORE_CASE)
+private val apostrophes = Regex("['’ʼ‘]")
+private fun searchKey(text: String) = text.trim().replace(cataloguePrefix, "").replace(apostrophes, "")
+
 private data class Archive(val words: GlyphEnglishMeaningCatalogue, val sounds: GlyphVisualCatalogue)
 internal data class ArchiveEntry(
     val key: String,
@@ -85,7 +82,9 @@ internal data class ArchiveEntry(
     val caption: (Int) -> String,
     val graph: (Int) -> String,
     val word: GlyphEnglishReference? = null,
-)
+) {
+    val typeLabel get() = if (word != null) "Word sign" else "Syllable"
+}
 
 @Composable
 fun GlyphDictionaryHubScreen(
@@ -128,6 +127,12 @@ fun GlyphDictionaryHubScreen(
         page = 1
         listState.requestScrollToItem(0)
     }
+    fun toggleClues() {
+        focus.clearFocus()
+        showTools = false
+        guided = !guided
+        resetResults()
+    }
     fun search(term: String) {
         if (query != term) {
             query = term
@@ -153,14 +158,14 @@ fun GlyphDictionaryHubScreen(
             DictionarySection.WORD_SIGNS -> archive.words.distinctSigns.map { sign ->
                 val drawings = archive.words.references.filter { it.twkmSign == sign.twkmSign }
                 ArchiveEntry("word-${sign.twkmSign}", sign.english, sign.reading,
-                    "${sign.english} ${sign.reading} ${sign.twkmSign}", drawings.size,
+                    searchKey("${sign.english} ${sign.reading} ${sign.twkmSign} ${drawings.joinToString(" ") { it.graph }}"), drawings.size,
                     { archive.words.imageFor(drawings[it]) },
                     { "TWKM #${drawings[it].twkmSign} · ${drawings[it].graph}" }, { drawings[it].graph }, sign)
             }
             DictionarySection.SYLLABLES -> archive.sounds.syllables.map { syllable ->
                 val drawings = archive.sounds.forSyllable(syllable)
                 ArchiveEntry("sound-$syllable", syllable, "Syllable sound",
-                    "$syllable ${drawings.joinToString(" ") { it.twkmSign.toString() }}", drawings.size,
+                    searchKey("$syllable ${drawings.joinToString(" ") { "${it.twkmSign} ${it.graph}" }}"), drawings.size,
                     { archive.sounds.referenceBitmap(drawings[it]) },
                     { "TWKM #${drawings[it].twkmSign} · ${drawings[it].graph}" }, { drawings[it].graph })
             }
@@ -261,8 +266,9 @@ fun GlyphDictionaryHubScreen(
             }?.let { entry.key to it }
         }.toMap()
     }
-    val filtered = remember(entries, query, guiding, matchingDrawings) {
-        entries.filter { (!guiding || it.key in matchingDrawings) && it.searchText.contains(query.trim(), ignoreCase = true) }
+    val term = remember(query) { searchKey(query) }
+    val filtered = remember(entries, term, guiding, matchingDrawings) {
+        entries.filter { (!guiding || it.key in matchingDrawings) && it.searchText.contains(term, ignoreCase = true) }
             .sortedWith { a,b ->
                 val result=MayaReadingOrder.compare(a.word?.reading ?: a.title,b.word?.reading ?: b.title)
                 if(result!=0)result else a.key.compareTo(b.key)
@@ -327,11 +333,7 @@ fun GlyphDictionaryHubScreen(
                                 if (selected == DictionarySection.WORD_SIGNS) {
                                     DropdownMenuItem(
                                         text = { Text(if (guiding) "Return to all word signs" else "Find by visible clues") },
-                                        onClick = {
-                                            showTools = false
-                                            guided = !guided
-                                            resetResults()
-                                        },
+                                        onClick = ::toggleClues,
                                     )
                                 }
                                 DropdownMenuItem(text = { Text("Study sets") }, onClick = { showTools = false; tool = "sets" })
@@ -353,9 +355,9 @@ fun GlyphDictionaryHubScreen(
                         }
                     }
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DictionarySection.entries.forEach { section ->
-                        FilterChip(
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    DictionarySection.entries.forEachIndexed { index, section ->
+                        SegmentedButton(
                             selected = selected == section,
                             onClick = {
                                 if (selected != section) {
@@ -364,14 +366,17 @@ fun GlyphDictionaryHubScreen(
                                     resetResults()
                                 }
                             },
-                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                            shape = MaterialTheme.shapes.medium,
-                            label = { Text(section.title, style = MaterialTheme.typography.titleSmall) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            shape = SegmentedButtonDefaults.itemShape(index, DictionarySection.entries.size),
+                            colors = SegmentedButtonDefaults.colors(
+                                activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                inactiveContainerColor = MaterialTheme.colorScheme.surface,
+                                inactiveBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                activeBorderColor = MaterialTheme.colorScheme.primary,
                             ),
-                        )
+                        ) {
+                            Text(section.title, style = MaterialTheme.typography.titleSmall)
+                        }
                     }
                 }
                 ListPaginationControls(filtered.size, currentPage, { nextPage ->
@@ -438,8 +443,27 @@ fun GlyphDictionaryHubScreen(
                     }
                 }
                 item {
-                    Text("${ListPaging.firstVisibleIndex(currentPage,filtered.size)}–${ListPaging.lastVisibleIndex(currentPage,filtered.size)} of ${filtered.size} · Maya reading A–Y", Modifier.padding(horizontal = 20.dp),
-                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        val start = ListPaging.firstVisibleIndex(currentPage, filtered.size)
+                        val end = ListPaging.lastVisibleIndex(currentPage, filtered.size)
+                        Text(
+                            if (filtered.isEmpty()) "0 results" else "$start–$end of ${filtered.size}",
+                            Modifier.weight(1f),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (selected == DictionarySection.WORD_SIGNS && query.isBlank() && !guiding) {
+                            TextButton(onClick = ::toggleClues, contentPadding = PaddingValues(horizontal = 6.dp)) {
+                                Icon(Icons.Rounded.FindInPage, contentDescription = null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Visual clues")
+                            }
+                        }
+                    }
                 }
                 if (filtered.isEmpty()) item {
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -449,30 +473,15 @@ fun GlyphDictionaryHubScreen(
                     }
                 }
                 items(visibleEntries, key = { it.key }) { entry ->
-                    Card(onClick = { openedDrawing = null; opened = entry.key }, modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(if (entry.word != null) "WORD SIGN · TWKM #${entry.word.twkmSign}" else "SYLLABLE REFERENCE",
-                                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                            Text(entry.word?.reading ?: entry.title, style = MaterialTheme.typography.headlineSmall)
-                            Text(if(entry.word!=null)entry.title else entry.subtitle, style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            val drawing = matchingDrawings[entry.key] ?: 0
-                            ArchiveDrawing(entry, drawing, 168)
-                            if (guiding) {
-                                val labels = drawingClues[entry.graph(drawing)].orEmpty().joinToString(" · ") { it.label }
-                                Text(labels, style = MaterialTheme.typography.labelMedium)
-                            }
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("${entry.count} drawings · explore", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary)
-                                Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary)
-                            }
-                        }
-                    }
+                    val drawing = matchingDrawings[entry.key]
+                        ?: (0 until entry.count).firstOrNull { entry.graph(it).equals(term, ignoreCase = true) }
+                        ?: 0
+                    ArchiveEntryCard(
+                        entry = entry,
+                        drawing = drawing,
+                        clues = if (guiding) drawingClues[entry.graph(drawing)].orEmpty().map { it.label } else emptyList(),
+                        onOpen = { openedDrawing = entry.graph(drawing); opened = entry.key },
+                    )
                 }
                 item {
                     Text("TWKM / University of Bonn · Drawings by Christian Prager · CC BY 4.0. Catalogue readings are source-proposed.",
@@ -482,67 +491,4 @@ fun GlyphDictionaryHubScreen(
             }
         }
     }
-}
-
-@Composable
-internal fun ArchiveDrawing(entry: ArchiveEntry, index: Int, height: Int, artworkPadding: Int = 16) {
-    Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
-        ReferenceDrawing(entry.graph(index),"Reference drawing for ${entry.title}",
-            modifier = Modifier.fillMaxWidth().height(height.dp).padding(artworkPadding.dp),
-            fallback = { entry.image(index) })
-    }
-}
-
-@Composable
-private fun ArchiveEntryDialog(
-    entry: ArchiveEntry,
-    initialIndex: Int,
-    compareLabel: String,
-    onCompare: () -> Unit,
-    onStudy: () -> Unit,
-    onNote: () -> Unit,
-    closeLabel: String,
-    onDismiss: () -> Unit,
-) {
-    val context = LocalContext.current
-    var index by rememberSaveable(entry.key, initialIndex) { mutableIntStateOf(initialIndex) }
-    val uri = LocalUriHandler.current
-    AlertDialog(onDismissRequest = onDismiss,
-        title = { Text(entry.word?.reading ?: entry.title, style = MaterialTheme.typography.headlineSmall) },
-        text = {
-            Column(Modifier.fillMaxWidth().heightIn(max = 560.dp).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                ArchiveDrawing(entry, index, 224)
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween) {
-                    IconButton(onClick = { index=maxOf(0,index-1) }, enabled = index > 0) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Previous drawing")
-                    }
-                    Text("Drawing ${index+1} of ${entry.count}", style = MaterialTheme.typography.labelLarge)
-                    IconButton(onClick = { index=minOf(entry.count-1,index+1) }, enabled = index < entry.count-1) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "Next drawing")
-                    }
-                }
-                Text(entry.caption(index), style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary)
-                Text(if(entry.word!=null)entry.title else entry.subtitle, style = MaterialTheme.typography.titleMedium)
-                if (entry.word != null) EnglishMeaningLearningDetails(entry.word)
-                else Text("This reference represents the proposed syllable ${entry.title}. Syllable signs write sounds; they are not English word translations.",
-                    style = MaterialTheme.typography.bodyLarge)
-                TextButton(onClick = {
-                    copyDictionaryText(context, "Glyph details",
-                        listOf(entry.reading(), entry.meaning(), entry.caption(index), CATALOGUE_URL).joinToString("\n"))
-                }) { Text("Copy glyph details") }
-                TextButton(onClick = onCompare) { Text(compareLabel) }
-                TextButton(onClick = onStudy) { Text("Add to study set") }
-                TextButton(onClick = onNote) { Text("Write research note") }
-                TextButton(onClick = { uri.openUri(CATALOGUE_URL) }) {
-                    Text("View catalogue source")
-                }
-                TextButton(onClick = { uri.openUri("https://www.mayaglyphs.org/concordances.html") }) {
-                    Text("Cross-check catalogue IDs online")
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(closeLabel) } })
 }

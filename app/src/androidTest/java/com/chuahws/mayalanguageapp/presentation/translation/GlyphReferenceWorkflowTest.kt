@@ -578,10 +578,10 @@ class GlyphReferenceWorkflowTest {
         compose.setContent {
             MayaTranslateTheme { androidx.compose.runtime.key(dictionarySession.value) { GlyphDictionaryHubScreen(accountId = account) } }
         }
-        compose.onNodeWithText("Meaning, reading or ID").performTextReplacement(sign.twkmSign.toString())
+        compose.onNodeWithText("Meaning, reading or ID").performTextReplacement(sign.graph)
         compose.onNodeWithText("Meaning, reading or ID").performImeAction()
-        compose.waitUntil(20_000) { compose.onAllNodesWithText(sign.english).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText(sign.english).performScrollTo().performClick()
+        compose.waitUntil(20_000) { compose.onAllNodesWithText(sign.reading).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(sign.reading).performScrollTo().performClick()
         compose.onNodeWithText("Add to study set").performScrollTo().performClick()
         compose.onNodeWithText("New set name").performTextReplacement("Reading practice")
         compose.onNodeWithText("New set name").performImeAction()
@@ -633,31 +633,40 @@ class GlyphReferenceWorkflowTest {
         val words=requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))
         val ref=words.distinctSigns.first()
-        val count=words.references.count { it.twkmSign==ref.twkmSign }
-        compose.setContent { MayaTranslateTheme { GlyphDictionaryHubScreen() } }
+        val drawings = words.references.filter { it.twkmSign == ref.twkmSign }
+        val dark = mutableStateOf(false)
+        compose.setContent { MayaTranslateTheme(darkTheme = dark.value) { GlyphDictionaryHubScreen() } }
         compose.waitUntil(20_000) {
             compose.onAllNodesWithContentDescription("Next page").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithContentDescription("Next page").performClick()
         compose.onNodeWithText("2").assertExists()
-        compose.onNodeWithText("Meaning, reading or ID").performTextInput(ref.twkmSign.toString())
+        compose.onNodeWithText("Meaning, reading or ID").performTextInput("TWKM #${drawings[1].graph}")
         compose.onNodeWithText("Meaning, reading or ID").performImeAction()
         compose.waitUntil(20_000) {
             compose.onAllNodesWithContentDescription("Reference drawing for ${ref.english}")
                 .fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText(ref.english).performScrollTo()
+        compose.onNodeWithText(ref.reading).performScrollTo()
         compose.onNodeWithContentDescription("Reference drawing for ${ref.english}", useUnmergedTree = true)
             .assertHeightIsAtLeast(120.dp)
         screenshot("dictionary-large-word-cards")
-        compose.onNodeWithText(ref.english).performClick()
-        compose.onNodeWithText("Drawing 1 of $count").assertExists()
-        compose.onNodeWithContentDescription("Next drawing").performClick()
-        compose.onNodeWithText("Drawing 2 of $count").assertExists()
+        compose.onNodeWithText(ref.reading).performClick()
+        compose.onNodeWithText("English meanings").assertIsDisplayed()
+        compose.onNodeWithText("Drawing 2 of ${drawings.size}").assertExists()
+        compose.onNodeWithText("TWKM #${ref.twkmSign} · ${drawings[1].graph}").assertExists()
+        compose.onNodeWithContentDescription("Previous drawing").performScrollTo().performClick()
+        compose.onNodeWithText("Drawing 1 of ${drawings.size}").assertExists()
+        compose.onNodeWithContentDescription("Show drawing 2, ${drawings[1].graph}").performScrollTo().performClick()
+        compose.onNodeWithText("Drawing 2 of ${drawings.size}").assertExists()
+        compose.onNodeWithText("Glyph reference").assertIsDisplayed()
         compose.waitUntil(20_000) {
             compose.onAllNodesWithContentDescription("Reference drawing for ${ref.english}").fetchSemanticsNodes().isNotEmpty()
         }
         screenshot("dictionary-enlarged-reference", dialog = true)
+        compose.runOnIdle { dark.value = true }
+        screenshot("dictionary-reference-dark", dialog = true)
+        compose.runOnIdle { dark.value = false }
         compose.onNodeWithText("Close").performClick()
         compose.onNodeWithText("Syllables").performClick()
         compose.waitForIdle()
@@ -669,6 +678,10 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithContentDescription("Reference drawing for $syllable", useUnmergedTree = true)
             .assertHeightIsAtLeast(120.dp)
         screenshot("dictionary-large-syllables")
+        compose.onNodeWithText(syllable).performClick()
+        compose.onNodeWithText("Syllable sound").assertIsDisplayed()
+        compose.onNodeWithText("Syllable signs spell sounds.", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Close").performClick()
         compose.onNodeWithText("Search syllable or sign number").performTextInput("zzzzzz-fixture")
         compose.onAllNodesWithText(syllable).assertCountEquals(0)
     }
