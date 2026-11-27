@@ -18,7 +18,30 @@ internal object GlyphReferenceRanking {
             .thenBy { it }
         return scores.indices.sortedWith(order).distinctBy { identities[it] }.take(limit)
     }
+
+    /** Resolve only close embedding ties backed by nearly identical stroke geometry. */
+    fun resolveCloseTie(
+        scores: FloatArray,
+        signs: List<String>,
+        best: Int,
+        runnerUp: Int,
+        strokeAgreement: (Int) -> Float,
+    ): Int? {
+        val leadingScore = scores[best]
+        if (!GlyphDisplayPolicy.accepts(leadingScore) || leadingScore - scores[runnerUp] >= SIMILARITY_GAP) return null
+        val shapeRanks = scores.indices.asSequence()
+            .filter { GlyphDisplayPolicy.accepts(scores[it]) && leadingScore - scores[it] < SIMILARITY_GAP }
+            .map { it to strokeAgreement(it) }
+            .sortedWith(compareByDescending<Pair<Int, Float>> { it.second }.thenByDescending { scores[it.first] })
+            .distinctBy { signs[it.first] }
+            .take(2).toList()
+        if (shapeRanks.size != 2) return null
+        val (row, agreement) = shapeRanks[0]
+        return row.takeIf { agreement >= .98f && agreement - shapeRanks[1].second >= .03f }
+    }
 }
+
+private const val SIMILARITY_GAP = .02f
 
 internal enum class GlyphReferenceDecision {
     UNREADABLE, LOW_SIMILARITY, AMBIGUOUS, STROKES_DIFFER, SHOW_REFERENCE,
@@ -32,7 +55,7 @@ internal fun List<GlyphEnglishMatch>.referenceDecision(): GlyphReferenceDecision
         return if (runnerUp?.identicalNormalizedDrawing == true) GlyphReferenceDecision.AMBIGUOUS
         else GlyphReferenceDecision.SHOW_REFERENCE
     }
-    if (runnerUp != null && best.visualOverlap - runnerUp.visualOverlap < .02f) {
+    if (!best.selectedByStrokes && runnerUp != null && best.visualOverlap - runnerUp.visualOverlap < SIMILARITY_GAP) {
         return GlyphReferenceDecision.AMBIGUOUS
     }
     // Use agreement as a separate check. The displayed percentage is still embedding similarity.

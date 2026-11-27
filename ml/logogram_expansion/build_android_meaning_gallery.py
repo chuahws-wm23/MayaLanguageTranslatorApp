@@ -53,6 +53,31 @@ def classify(english):
         return "Number"
     return "Word meaning"
 
+def supplemental_drawings(rows):
+    """Build catalog-linked artwork with its own source and license."""
+    artwork = OUT / "reference_art"
+    if not (artwork / "index.json").exists():
+        return []
+    source = json.loads((artwork / "index.json").read_text(encoding="utf8"))["entries"]
+    known_signs = {row["sign"]: row for row in rows}
+    used_hashes = {row["sha"] for row in rows}
+    supplemental = []
+    for graph, art in source.items():
+        if "supplemental_sign" not in art:
+            continue
+        sign = known_signs[art["supplemental_sign"]]
+        raw = (artwork / art["file"]).read_bytes()
+        sha = hashlib.sha256(raw).hexdigest()
+        assert sha == art["sha256"] and sha not in used_hashes
+        assert art["license"] in {"CC BY 4.0", "CC BY-SA 4.0"}
+        bits = canonical_bytes(raw)
+        assert bits and len(bits) == IMAGE_BYTES
+        drawing_source = {key: art[key] for key in ("creator", "license", "source_url", "adaptation")}
+        supplemental.append({**sign, "graph": graph, "sha": sha, "bits": bits, "drawing_source": drawing_source})
+        used_hashes.add(sha)
+    return supplemental
+
+
 def run():
     reads=load_dataset(SRC,"decipherments",split="train",revision=REV)
     graphs=load_dataset(SRC,"graphs",split="train",revision=REV)
@@ -125,6 +150,7 @@ def run():
     counts=defaultdict(int)
     for row in rows:counts[row["sign"]]+=1
     rows=[r for r in rows if counts[r["sign"]]>=MIN_GRAPHS]
+    rows += supplemental_drawings(rows)
     image_data=bytearray()
     meta=[]
     for row in rows:

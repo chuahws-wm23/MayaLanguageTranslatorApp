@@ -23,8 +23,17 @@ def main():
             if graph in required:assert required[graph]==sha
             required[graph]=sha
     source={str(r['graph_no']):r for r in pq.read_table(args.parquet).to_pylist()}
+    previous = out / "index.json"
+    previous_entries = json.loads(previous.read_text())["entries"] if previous.exists() else {}
     entries={}
     for graph,expected in sorted(required.items()):
+        supplemental = previous_entries.get(graph, {})
+        if "supplemental_sign" in supplemental:
+            raw = (out / supplemental["file"]).read_bytes()
+            assert hashlib.sha256(raw).hexdigest() == expected == supplemental["sha256"], graph
+            assert supplemental["license"] in {"CC BY 4.0", "CC BY-SA 4.0"}, graph
+            entries[graph] = supplemental
+            continue
         row=source[graph]
         assert row['drawing_license']=='CC BY 4.0',graph
         raw=row['image']['bytes'];actual=hashlib.sha256(raw).hexdigest()

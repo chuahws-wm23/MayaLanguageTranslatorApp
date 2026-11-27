@@ -896,6 +896,14 @@ class GlyphReferenceWorkflowTest {
         val bitmap=requireNotNull(GlyphReferenceArtwork.load(context,"32vb"))
         assertEquals(512,bitmap.width)
         assertEquals(242,bitmap.height)
+        val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val fireDrawings = catalogue.references.filter { it.twkmSign == 122 && it.drawingSource != null }
+        assertEquals(setOf("122-gallet", "122-la-amelia"), fireDrawings.map { it.graph }.toSet())
+        fireDrawings.forEach { drawing ->
+            assertEquals("fire", drawing.english)
+            assertTrue(requireNotNull(drawing.drawingSource).sourceUrl.startsWith("https://"))
+            assertTrue(requireNotNull(GlyphReferenceArtwork.load(context, drawing.graph)).width > 64)
+        }
     }
 
     private val numericSimilarity = SemanticsMatcher("numeric appearance similarity") { node ->

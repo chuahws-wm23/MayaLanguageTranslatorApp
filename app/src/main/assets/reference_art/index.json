@@ -687,6 +687,28 @@
       "license": "CC BY 4.0",
       "source_url": "https://classicmayan.org/portal/sc/client/data/images/graphs/3r4sm.0.jpg"
     },
+    "122-gallet": {
+      "file": "788f8bf248cad9b0bd286b1bc2406f6a0ea0aec213f8181592e73dffa96d490f.png",
+      "sha256": "788f8bf248cad9b0bd286b1bc2406f6a0ea0aec213f8181592e73dffa96d490f",
+      "width": 675,
+      "height": 642,
+      "creator": "Herv\u00e9 Gallet",
+      "license": "CC BY-SA 4.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:K%27AK_Feu.jpg",
+      "adaptation": "Cropped to remove the caption.",
+      "supplemental_sign": 122
+    },
+    "122-la-amelia": {
+      "file": "6e0a6d656b38b5333452964d6a527793afa02bc14a75be1f4aff687dd24a650b.png",
+      "sha256": "6e0a6d656b38b5333452964d6a527793afa02bc14a75be1f4aff687dd24a650b",
+      "width": 156,
+      "height": 65,
+      "creator": "Sergei Vepretskii",
+      "license": "CC BY 4.0",
+      "source_url": "https://doi.org/10.20376/IDIOM-23665556.21.rn022.en",
+      "adaptation": "Cropped from Research Note 22, figure 3b, La Amelia Hieroglyphic Stairway, Step 1.",
+      "supplemental_sign": 122
+    },
     "122bt": {
       "file": "f546aad6c8cbdf7960b6beab8b1f19fa810033dda10505b703aed9e8eb987638.jpg",
       "sha256": "f546aad6c8cbdf7960b6beab8b1f19fa810033dda10505b703aed9e8eb987638",

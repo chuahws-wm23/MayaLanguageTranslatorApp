@@ -219,11 +219,24 @@ internal fun ArchiveEntryDialog(
                             Text("Levels describe the evidence for a reading. Level 1 is the most established and level 8 is the most tentative.",
                                 style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                         }
-                        Text("Text Database and Dictionary of Classic Mayan (TWKM), University of Bonn. Drawing by Christian Prager, CC BY 4.0.",
-                            style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                        val source = entry.drawingSource(index)
+                        val credit = if (source == null) {
+                            "Drawing by Christian Prager, TWKM / University of Bonn. CC BY 4.0."
+                        } else {
+                            "Drawing by ${source.creator}. ${source.license}. ${source.adaptation}"
+                        }
+                        Text(credit, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                        if (source != null) {
+                            TextButton(onClick = { uri.openUri(source.sourceUrl) }) { Text("View drawing source") }
+                            val license = if (source.license == "CC BY-SA 4.0") "by-sa" else "by"
+                            TextButton(onClick = { uri.openUri("https://creativecommons.org/licenses/$license/4.0/") }) {
+                                Text("View artwork license")
+                            }
+                        }
                         TextButton(onClick = {
                             copyDictionaryText(context, "Glyph details",
-                                listOf(entry.reading(), entry.meaning(), entry.caption(index), CATALOGUE_URL).joinToString("\n"))
+                                listOfNotNull(entry.reading(), entry.meaning(), entry.caption(index), credit, source?.sourceUrl, CATALOGUE_URL)
+                                    .joinToString("\n"))
                         }) {
                             Icon(Icons.Rounded.ContentCopy, null, Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))

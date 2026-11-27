@@ -59,6 +59,10 @@ internal class GlyphEnglishMeaningCatalogue private constructor(
                     kind=r.getString("category"),
                     scholarlyLevel=scholarlyLevel,
                     graph=r.getString("graph"),
+                    drawingSource=r.optJSONObject("drawing_source")?.let { source ->
+                        GlyphDrawingSource(source.getString("creator"), source.getString("license"),
+                            source.getString("source_url"), source.getString("adaptation"))
+                    },
                 )
             }
             require(references.map { it.twkmSign }.toSet().size==
@@ -89,6 +93,8 @@ internal class GlyphEnglishMeaningCatalogue private constructor(
         return Bitmap.createBitmap(pixels,SIDE,SIDE,Bitmap.Config.ARGB_8888)
     }
 
+    private val identities = references.map { it.twkmSign.toString() }
+
     fun search(
         singleSignCrop: Bitmap,
         phonograms: GlyphVisualCatalogue,
@@ -101,13 +107,24 @@ internal class GlyphEnglishMeaningCatalogue private constructor(
         val identical = BooleanArray(references.size) { row ->
             query.indices.all { query[it] == bits[row * REF_BYTES + it] }
         }
-        // Return distinct sign identities with their actual best reference artwork.
-        val ranked = GlyphReferenceRanking.bestRows(scores, references.map { it.twkmSign.toString() }, identical, top)
-        return ranked.mapIndexed { rank, row ->
-            val strokeAgreement = if (rank == 0 && !identical[row]) {
-                GlyphStrokeAgreement.compare(query, bits, row * REF_BYTES)
-            } else null
-            GlyphEnglishMatch(references[row], scores[row], identical[row], strokeAgreement)
+        // Examine one extra identity when callers only request the top reference.
+        val ranked = GlyphReferenceRanking.bestRows(scores, identities, identical, maxOf(top, 2))
+        val strokeScores = mutableMapOf<Int, Float>()
+        fun strokes(row: Int) = strokeScores.getOrPut(row) {
+            GlyphStrokeAgreement.compare(query, bits, row * REF_BYTES)
+        }
+        val resolved = if (ranked.size >= 2 && !identical[ranked.first()]) {
+            GlyphReferenceRanking.resolveCloseTie(scores, identities, ranked[0], ranked[1], ::strokes)
+        } else null
+        val resultRows = if (resolved != null) {
+            listOf(resolved) + ranked.filter { identities[it] != identities[resolved] }
+        } else ranked
+        return resultRows.take(top).mapIndexed { rank, row ->
+            GlyphEnglishMatch(
+                references[row], scores[row], identical[row],
+                strokeAgreement = if (rank == 0 && !identical[row]) strokes(row) else null,
+                selectedByStrokes = rank == 0 && resolved != null,
+            )
         }
     }
 }
@@ -122,6 +139,14 @@ internal data class GlyphEnglishReference(
     /** TWKM reading-evidence scale 1=most established; 8=most speculative. */
     val scholarlyLevel: Int,
     val graph: String,
+    val drawingSource: GlyphDrawingSource? = null,
+)
+
+internal data class GlyphDrawingSource(
+    val creator: String,
+    val license: String,
+    val sourceUrl: String,
+    val adaptation: String,
 )
 
 internal data class GlyphEnglishMatch(
@@ -131,4 +156,5 @@ internal data class GlyphEnglishMatch(
     val identicalNormalizedDrawing: Boolean = false,
     /** Fraction of strokes supported in both directions, computed for the leading drawing only. */
     val strokeAgreement: Float? = null,
+    val selectedByStrokes: Boolean = false,
 )

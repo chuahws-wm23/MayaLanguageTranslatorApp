@@ -7,7 +7,7 @@ import android.util.LruCache
 import org.json.JSONObject
 import java.security.MessageDigest
 
-/** Original CC BY 4.0 artwork for display only. Inference bitplanes stay unchanged. */
+/** Source-attributed artwork for display. Inference uses normalized bitplanes. */
 internal object GlyphReferenceArtwork {
     private data class Entry(val file: String,val sha: String,val width: Int,val height: Int)
     private val images=object:LruCache<String,Bitmap>(12*1024*1024) {
@@ -21,7 +21,7 @@ internal object GlyphReferenceArtwork {
             val rows=root.getJSONObject("entries")
             val result=rows.keys().asSequence().associateWith { graph ->
                 val row=rows.getJSONObject(graph)
-                require(row.getString("license")=="CC BY 4.0")
+                require(row.getString("license") in setOf("CC BY 4.0", "CC BY-SA 4.0"))
                 val file=row.getString("file")
                 require(file.matches(Regex("[a-f0-9]{64}\\.(jpg|png|webp)")))
                 val w=row.getInt("width");val h=row.getInt("height")

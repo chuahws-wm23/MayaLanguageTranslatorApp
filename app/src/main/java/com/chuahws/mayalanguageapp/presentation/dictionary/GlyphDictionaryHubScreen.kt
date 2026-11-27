@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphDrawingSource
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishMeaningCatalogue
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphEnglishReference
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphVisualCatalogue
@@ -82,6 +83,7 @@ internal data class ArchiveEntry(
     val caption: (Int) -> String,
     val graph: (Int) -> String,
     val word: GlyphEnglishReference? = null,
+    val drawingSource: (Int) -> GlyphDrawingSource? = { null },
 ) {
     val typeLabel get() = if (word != null) "Word sign" else "Syllable"
 }
@@ -160,7 +162,11 @@ fun GlyphDictionaryHubScreen(
                 ArchiveEntry("word-${sign.twkmSign}", sign.english, sign.reading,
                     searchKey("${sign.english} ${sign.reading} ${sign.twkmSign} ${drawings.joinToString(" ") { it.graph }}"), drawings.size,
                     { archive.words.imageFor(drawings[it]) },
-                    { "TWKM #${drawings[it].twkmSign} · ${drawings[it].graph}" }, { drawings[it].graph }, sign)
+                    { index ->
+                        val drawing = drawings[index]
+                        val label = drawing.drawingSource?.let { "Supplemental drawing" } ?: drawing.graph
+                        "TWKM #${drawing.twkmSign} · $label"
+                    }, { drawings[it].graph }, sign, { drawings[it].drawingSource })
             }
             DictionarySection.SYLLABLES -> archive.sounds.syllables.map { syllable ->
                 val drawings = archive.sounds.forSyllable(syllable)
@@ -484,7 +490,7 @@ fun GlyphDictionaryHubScreen(
                     )
                 }
                 item {
-                    Text("TWKM / University of Bonn · Drawings by Christian Prager · CC BY 4.0. Catalogue readings are source-proposed.",
+                    Text("TWKM / University of Bonn · Catalogue readings are source-proposed. See each drawing for its attribution.",
                         Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

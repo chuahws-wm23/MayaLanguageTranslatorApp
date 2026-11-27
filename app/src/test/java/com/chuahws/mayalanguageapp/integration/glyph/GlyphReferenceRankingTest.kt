@@ -40,6 +40,26 @@ class GlyphReferenceRankingTest {
         assertNull(listOf(exact, exact.copy(reference = reference(11))).displayableReference())
     }
 
+    @Test fun aCloseTieResolvesOnlyWithADistinctNearExactStrokeMatch() {
+        val scores = floatArrayOf(.916f, .907f, .906f, .905f, .88f)
+        val identities = listOf("WITZ", "TI", "KAK", "KAK", "EK")
+        val strokes = floatArrayOf(.957f, .949f, .992f, .999f, 1f)
+        val chosen = GlyphReferenceRanking.resolveCloseTie(scores, identities, 0, 1) { strokes[it] }
+        assertEquals(3, chosen)
+        strokes[0] = .985f
+        assertNull(GlyphReferenceRanking.resolveCloseTie(scores, identities, 0, 1) { strokes[it] })
+        scores[0] = .95f
+        assertNull(GlyphReferenceRanking.resolveCloseTie(scores, identities, 0, 1) { strokes[it] })
+    }
+
+    @Test fun aResolvedTieUsesItsOwnValidSimilarityAndStrokeEvidence() {
+        val fire = GlyphEnglishMatch(reference(122), .906f, strokeAgreement = .992f, selectedByStrokes = true)
+        val waterlily = GlyphEnglishMatch(reference(1031), .916f)
+        assertEquals(fire, listOf(fire, waterlily).displayableReference())
+        assertNull(listOf(fire.copy(visualOverlap = .85f), waterlily).displayableReference())
+        assertNull(listOf(fire.copy(strokeAgreement = .7f), waterlily).displayableReference())
+    }
+
     private fun reference(sign: Int) = GlyphEnglishReference(
         offset = 0, twkmSign = sign, reading = "Reading", english = "Meaning", kind = "Word sign",
         scholarlyLevel = 1, graph = "${sign}st",

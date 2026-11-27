@@ -342,6 +342,10 @@ internal fun EnglishMeaningMatchRow(
             }
             Text("TWKM #${ref.twkmSign} · Reference drawing", style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+            ref.drawingSource?.let { source ->
+                Text("Drawing by ${source.creator} · ${source.license}",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             var expanded by remember(ref.twkmSign) { mutableStateOf(false) }
             TextButton(onClick = { expanded = !expanded }) {
                 Text(if (expanded) "Close reference notes" else "Reference details")
