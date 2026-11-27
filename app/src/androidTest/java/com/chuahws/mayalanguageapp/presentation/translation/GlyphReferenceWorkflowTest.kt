@@ -731,6 +731,50 @@ class GlyphReferenceWorkflowTest {
         }
     }
 
+    @Test fun scanPictureChecksTheWholeLayoutWhenTheDetectorReturnsOneBox() {
+        val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val drawing = words.references.first { it.graph == "44bb" }
+        val sign = words.imageFor(drawing)
+        val panel = Bitmap.createBitmap(184, 64, Bitmap.Config.ARGB_8888)
+        Canvas(panel).apply {
+            drawColor(Color.WHITE)
+            drawBitmap(sign, 0f, 0f, null)
+            drawBitmap(sign, 120f, 0f, null)
+        }
+        val folder = File(context.cacheDir, "images").apply { mkdirs() }
+        val file = File.createTempFile("singleton-proposal-", ".png", folder)
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val model = GlyphRecognitionViewModel(context.applicationContext as Application) { image ->
+            listOf(GlyphDetectedRegion(GlyphCrop(right = 64f / image.width, bottom = .95f), 1, 1))
+        }
+        try {
+            compose.setContent { MayaTranslateTheme { GlyphPhotoScreen(
+                onRecordGlyphScan = { _, _ -> }, onToggleGlyphFavorite = {}, savedGlyphIds = emptySet(),
+                onOpenHistory = {}, onOpenFavourites = {}, glyphModel = model,
+            ) } }
+            fun scan(image: Bitmap): GlyphUiState {
+                file.outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                compose.runOnIdle { model.load(uri) }
+                compose.waitUntil(30_000) { model.state.value.bitmap?.width == image.width && !model.state.value.busy }
+                compose.onNodeWithText("Scan picture").performScrollTo().performClick()
+                compose.waitUntil(60_000) { !model.state.value.busy }
+                return model.state.value
+            }
+            val single = scan(sign)
+            assertEquals("single", single.activeMode)
+            assertTrue(single.multiple.isEmpty())
+            assertEquals(drawing.twkmSign, single.referenceMatches.orEmpty().displayableReference()?.reference?.twkmSign)
+
+            val multiple = scan(panel)
+            assertEquals("multiple", multiple.activeMode)
+            assertEquals(listOf(1 to 1, 1 to 2), multiple.multiple.map { it.region.row to it.region.column })
+        } finally {
+            sign.recycle()
+            panel.recycle()
+            file.delete()
+        }
+    }
+
     @Test fun syllableDrawingsDoNotPassAsTheFireLogogram() {
         val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))

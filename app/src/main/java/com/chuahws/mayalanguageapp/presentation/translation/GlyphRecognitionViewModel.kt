@@ -98,7 +98,14 @@ private data class GlyphInferenceResult(
 )
 
 /** Keeps unverified glyph predictions out of the modern-Yucatec dictionary/history pipeline. */
-internal class GlyphRecognitionViewModel(application: Application) : AndroidViewModel(application) {
+internal class GlyphRecognitionViewModel(
+    application: Application,
+    private val detectTrainedRegions: (Bitmap) -> List<GlyphDetectedRegion>?,
+) : AndroidViewModel(application) {
+    constructor(application: Application) : this(application, { image ->
+        GlyphV18Detector.fromAssetsOrNull(application)?.detect(image)
+    })
+
     private val mutable = MutableStateFlow(GlyphUiState())
     val state = mutable.asStateFlow()
     private var work: Job? = null
@@ -322,18 +329,23 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                         }
                         try {
                             val trained = if (cleaned != null) null else runCatching {
-                                GlyphV18Detector.fromAssetsOrNull(getApplication())?.detect(selected)
+                                detectTrainedRegions(selected)
                             }.getOrNull()
-                            val whitespace = if (trained.isNullOrEmpty())
+                            // One proposal can be a curl or another part of a larger sign.
+                            // Require two regions for automatic panel mode.
+                            val trainedPanel = trained.orEmpty().takeIf {
+                                it.size >= if (allowSingleFallback) 2 else 1
+                            }.orEmpty()
+                            val whitespace = if (trainedPanel.isEmpty())
                                 GlyphWhitespaceDetector.detect(selected) else emptyList()
                             val separated = when {
-                                !trained.isNullOrEmpty() -> trained
+                                trainedPanel.isNotEmpty() -> trainedPanel
                                 whitespace.isNotEmpty() -> whitespace
                                 allowSingleFallback -> emptyList()
                                 else -> GlyphMultiDetector.detect(selected)
                             }
                             val note = when {
-                                !trained.isNullOrEmpty() ->
+                                trainedPanel.isNotEmpty() ->
                                     "Trained offline YOLO11n v18 detected these block candidates. " +
                                         "Boxes and reading order are provisional, not translations."
                                 whitespace.isNotEmpty() ->
@@ -457,10 +469,6 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
                         }
                     }
                 }
-                if (allowSingleFallback && request == version && results.size == 1 &&
-                    results.single().englishMatches.displayableReference() == null &&
-                    tryIsolatedPicture(workingImage, request)
-                ) return@launch
                 if (request == version) {
                     mutable.value = mutable.value.copy(
                         busy = false, multiple = results, multipleProgress = null, resultRevision = request,
