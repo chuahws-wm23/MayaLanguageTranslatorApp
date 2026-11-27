@@ -44,6 +44,7 @@ jobs:
           api-level: 29
           arch: x86_64
           target: default
+          heap-size: 256M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: python ml/logogram_expansion/public_photo_probe.py --run-android
