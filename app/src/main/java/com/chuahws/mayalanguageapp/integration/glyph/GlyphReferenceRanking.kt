@@ -44,11 +44,12 @@ internal object GlyphReferenceRanking {
 private const val SIMILARITY_GAP = .02f
 
 internal enum class GlyphReferenceDecision {
-    UNREADABLE, LOW_SIMILARITY, AMBIGUOUS, STROKES_DIFFER, SHOW_REFERENCE,
+    UNREADABLE, LOW_SIMILARITY, AMBIGUOUS, STROKES_DIFFER, SYLLABLE_REFERENCE, SHOW_REFERENCE,
 }
 
 internal fun List<GlyphEnglishMatch>.referenceDecision(): GlyphReferenceDecision {
     val best = firstOrNull() ?: return GlyphReferenceDecision.UNREADABLE
+    if (best.syllableConflict) return GlyphReferenceDecision.SYLLABLE_REFERENCE
     if (!GlyphDisplayPolicy.accepts(best.visualOverlap)) return GlyphReferenceDecision.LOW_SIMILARITY
     val runnerUp = firstOrNull { it.reference.twkmSign != best.reference.twkmSign }
     if (best.identicalNormalizedDrawing) {

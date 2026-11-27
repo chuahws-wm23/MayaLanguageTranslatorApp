@@ -102,7 +102,9 @@ internal class GlyphEnglishMeaningCatalogue private constructor(
     ): List<GlyphEnglishMatch> {
         require(top in 1..10)
         val query=phonograms.canonicalBitplane(singleSignCrop) ?: return emptyList()
-        val scores = embeddings().similarities(query, "logogram")
+        val index = embeddings()
+        val vector = index.embed(query)
+        val scores = index.similarities(vector, "logogram")
         require(scores.size == references.size)
         val identical = BooleanArray(references.size) { row ->
             query.indices.all { query[it] == bits[row * REF_BYTES + it] }
@@ -119,13 +121,20 @@ internal class GlyphEnglishMeaningCatalogue private constructor(
         val resultRows = if (resolved != null) {
             listOf(resolved) + ranked.filter { identities[it] != identities[resolved] }
         } else ranked
-        return resultRows.take(top).mapIndexed { rank, row ->
+        val matches = resultRows.take(maxOf(top, 2)).mapIndexed { rank, row ->
             GlyphEnglishMatch(
                 references[row], scores[row], identical[row],
                 strokeAgreement = if (rank == 0 && !identical[row]) strokes(row) else null,
                 selectedByStrokes = rank == 0 && resolved != null,
+                syllableConflict = rank == 0 &&
+                    phonograms.hasIdenticalDrawingForDifferentSign(query, references[row].twkmSign),
             )
         }
+        val word = matches.displayableReference()
+        if (word != null && !word.identicalNormalizedDrawing &&
+            phonograms.hasStrongerSyllableReference(query, index.similarities(vector, "phonogram"), word)
+        ) return (listOf(word.copy(syllableConflict = true)) + matches.drop(1)).take(top)
+        return matches.take(top)
     }
 }
 
@@ -157,4 +166,5 @@ internal data class GlyphEnglishMatch(
     /** Fraction of strokes supported in both directions, computed for the leading drawing only. */
     val strokeAgreement: Float? = null,
     val selectedByStrokes: Boolean = false,
+    val syllableConflict: Boolean = false,
 )

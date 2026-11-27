@@ -113,13 +113,15 @@ internal class GlyphEmbeddingIndex private constructor(
         }
     }
 
-    /** Worker thread only. A query runs once, then all reference rows are dot products. */
-    fun similarities(queryBits: ByteArray, kind: String): FloatArray {
-        val gallery = vectors.getValue(kind)
+    fun similarities(queryBits: ByteArray, kind: String): FloatArray =
+        similarities(embed(queryBits), kind)
+
+    /** Worker thread only. Share this vector when comparing more than one gallery. */
+    fun embed(queryBits: ByteArray): FloatArray {
         val input = GlyphEmbeddingMath.tensor(queryBits)
         val buffer = ByteBuffer.allocateDirect(input.size * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
         buffer.put(input); buffer.flip()
-        val query = OnnxTensor.createTensor(env, buffer, longArrayOf(1, 3, 224, 224)).use { tensor ->
+        return OnnxTensor.createTensor(env, buffer, longArrayOf(1, 3, 224, 224)).use { tensor ->
             session.run(mapOf("image" to tensor)).use { result ->
                 val batch = result[0].value as? Array<*> ?: error("Invalid visual feature output")
                 val features = batch.firstOrNull() as? FloatArray ?: error("Invalid visual features")
@@ -127,6 +129,10 @@ internal class GlyphEmbeddingIndex private constructor(
                 GlyphEmbeddingMath.normalize(features)
             }
         }
-        return FloatArray(gallery.size / 576) { GlyphEmbeddingMath.cosine(query, gallery, it * 576) }
+    }
+
+    fun similarities(unitQuery: FloatArray, kind: String): FloatArray {
+        val gallery = vectors.getValue(kind)
+        return FloatArray(gallery.size / 576) { GlyphEmbeddingMath.cosine(unitQuery, gallery, it * 576) }
     }
 }

@@ -174,6 +174,22 @@ internal class GlyphVisualCatalogue private constructor(
     fun forSyllable(value: String): List<GlyphVisualReference> =
         references.filter { it.syllable == value }
 
+    internal fun hasIdenticalDrawingForDifferentSign(query: ByteArray, wordSign: Int): Boolean =
+        references.any { ref ->
+            ref.twkmSign != wordSign &&
+                query.indices.all { query[it] == bitmapBits[ref.offset * BYTES_PER_REF + it] }
+        }
+
+    /** A second gallery can veto a word reading when its syllable drawing is substantially closer. */
+    internal fun hasStrongerSyllableReference(query: ByteArray, scores: FloatArray, word: GlyphEnglishMatch): Boolean {
+        require(scores.size == references.size)
+        val best = scores.indices.maxByOrNull { scores[it] } ?: return false
+        if (references[best].twkmSign == word.reference.twkmSign ||
+            scores[best] < .95f || scores[best] - word.visualOverlap < .035f
+        ) return false
+        return GlyphStrokeAgreement.compare(query, bitmapBits, best * BYTES_PER_REF) >= .98f
+    }
+
     /** White background with dark graph strokes, generated from licensed binary artwork. */
     fun referenceBitmap(reference: GlyphVisualReference): Bitmap {
         val start = reference.offset * BYTES_PER_REF

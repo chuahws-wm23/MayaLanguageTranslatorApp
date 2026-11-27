@@ -53,6 +53,7 @@ internal fun GlyphReferenceResults(matches: List<GlyphEnglishMatch>, photoHints:
                         val reason = when (decision) {
                             GlyphReferenceDecision.AMBIGUOUS -> "Several references look too similar to suggest one reliably."
                             GlyphReferenceDecision.STROKES_DIFFER -> "The outline and strokes differ from the nearest drawing."
+                            GlyphReferenceDecision.SYLLABLE_REFERENCE -> "A syllable drawing is closer. Browse Syllables in the dictionary."
                             else -> "No reference exceeded 85% visual similarity."
                         }
                         Text(reason, style = MaterialTheme.typography.bodyMedium)

@@ -731,6 +731,26 @@ class GlyphReferenceWorkflowTest {
         }
     }
 
+    @Test fun syllableDrawingsDoNotPassAsTheFireLogogram() {
+        val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))
+        for (graph in listOf("126ex", "108md", "563st", "44bb")) {
+            val drawing = sounds.references.first { it.graph == graph }
+            val bitmap = sounds.referenceBitmap(drawing)
+            try {
+                val matches = words.search(bitmap, sounds, 5)
+                if (graph == "44bb") {
+                    assertEquals(drawing.twkmSign, matches.displayableReference()?.reference?.twkmSign)
+                } else {
+                    assertEquals(GlyphReferenceDecision.SYLLABLE_REFERENCE, matches.referenceDecision())
+                    assertNull(matches.displayableReference())
+                }
+            } finally {
+                bitmap.recycle()
+            }
+        }
+    }
+
     @Test fun scanPictureIgnoresDisplayGridAndLabelsWhileKeepingSeparateGlyphs() {
         val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val directory = File(context.cacheDir, "images").apply { mkdirs() }

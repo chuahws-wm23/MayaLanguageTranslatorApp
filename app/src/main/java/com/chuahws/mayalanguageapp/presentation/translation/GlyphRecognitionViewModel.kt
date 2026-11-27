@@ -1,6 +1,8 @@
 package com.chuahws.mayalanguageapp.presentation.translation
 
 import com.chuahws.mayalanguageapp.integration.glyph.displayableReference
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphReferenceDecision
+import com.chuahws.mayalanguageapp.integration.glyph.referenceDecision
 import android.app.Application
 import android.graphics.Bitmap
 import android.net.Uri
@@ -519,7 +521,8 @@ internal class GlyphRecognitionViewModel(application: Application) : AndroidView
         val sounds=requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(getApplication()))
         val original = words.search(image, sounds, 5)
         val hints = com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality.hints(image)
-        if (original.displayableReference() != null) {
+        val decision = original.referenceDecision()
+        if (decision == GlyphReferenceDecision.SHOW_REFERENCE || decision == GlyphReferenceDecision.SYLLABLE_REFERENCE) {
             return Triple(original, hints, null)
         }
         val crop = GlyphCaptionCrop.find(image) ?: return Triple(original, hints, null)
