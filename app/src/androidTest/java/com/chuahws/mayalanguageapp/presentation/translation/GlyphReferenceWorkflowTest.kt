@@ -95,6 +95,8 @@ class GlyphReferenceWorkflowTest {
             canvas.drawText("fire", 81f, 88f, paint)
             canvas.drawText("sample catalogue caption", 28f, 115f, paint)
             val crop = requireNotNull(cropper.find(labelled))
+            val box = requireNotNull(GlyphArtworkBounds.find(labelled))
+            assertTrue(box.left > 0f && box.right < 1f && box.bottom < .72f)
             val (x, y, width, height) = crop.pixels(labelled.width, labelled.height)
             val isolated = android.graphics.Bitmap.createBitmap(labelled, x, y, width, height)
             try {
@@ -722,8 +724,14 @@ class GlyphReferenceWorkflowTest {
             compose.waitUntil(30_000) { model.state.value.bitmap != null && !model.state.value.busy }
             compose.onNodeWithText("Scan picture").performScrollTo().performClick()
             compose.waitUntil(60_000) { !model.state.value.busy }
-            check(model.state.value.multiple.isEmpty())
-            check(model.state.value.referenceMatches?.firstOrNull()?.reference?.twkmSign == drawing.twkmSign)
+            val result = model.state.value
+            check(result.multiple.isEmpty())
+            check(result.referenceMatches?.firstOrNull()?.reference?.twkmSign == drawing.twkmSign)
+            val box = result.scanBoxes.single()
+            val (_, _, width, height) = box.pixels(large.width, large.height)
+            assertEquals(width, result.referenceComparisonImage?.width)
+            assertEquals(height, result.referenceComparisonImage?.height)
+            compose.onNodeWithContentDescription("Detected glyph region").assertExists()
         } finally {
             original.recycle()
             large.recycle()

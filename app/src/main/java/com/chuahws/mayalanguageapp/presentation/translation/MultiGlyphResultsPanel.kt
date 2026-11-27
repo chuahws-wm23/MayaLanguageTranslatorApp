@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageViewport
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import kotlin.math.roundToInt
 
 @Composable
@@ -122,21 +123,40 @@ internal fun GlyphRegionOverlay(
     selectedIndex: Int? = null,
     onRegionSelected: ((Int) -> Unit)? = null,
 ) {
+    GlyphBoxPreview(bitmap, results.map { it.region.crop }, results.map { it.number }, selectedIndex, onRegionSelected)
+}
+
+/** Draws detections during comparison and the boxed input of a single-glyph result. */
+@Composable
+internal fun GlyphScanBoxes(bitmap: Bitmap, boxes: List<GlyphCrop>) {
+    GlyphBoxPreview(bitmap, boxes, if (boxes.size > 1) boxes.indices.map { it + 1 } else emptyList())
+}
+
+@Composable
+private fun GlyphBoxPreview(
+    bitmap: Bitmap,
+    boxes: List<GlyphCrop>,
+    labels: List<Int>,
+    selectedIndex: Int? = null,
+    onRegionSelected: ((Int) -> Unit)? = null,
+) {
     val image = bitmap.asImageBitmap()
     val choose by rememberUpdatedState(onRegionSelected)
-    val touch = if (onRegionSelected != null && results.isNotEmpty()) Modifier.pointerInput(bitmap, results) {
+    val touch = if (onRegionSelected != null && boxes.isNotEmpty()) Modifier.pointerInput(bitmap, boxes) {
         detectTapGestures { point ->
             if (size.width > 0 && size.height > 0) {
                 GlyphImageViewport.fit(bitmap.width, bitmap.height, size.width.toFloat(), size.height.toFloat())
-                    .regionAt(point.x, point.y, results.map { it.region.crop })?.let { choose?.invoke(it) }
+                    .regionAt(point.x, point.y, boxes)?.let { choose?.invoke(it) }
             }
         }
     } else Modifier
-    Canvas(modifier = Modifier.fillMaxWidth().height(300.dp).background(Color(0xFF14231C))
+    Canvas(modifier = Modifier.fillMaxWidth().height(if (boxes.size == 1 && labels.isEmpty()) 240.dp else 300.dp)
+        .background(Color(0xFF14231C))
         .then(touch).semantics {
-            contentDescription = "Scan image with ${results.size} numbered glyph boxes"
-            selectedIndex?.let { index -> results.getOrNull(index)?.let {
-                stateDescription = "Region ${it.number} selected"
+            contentDescription = if (boxes.size == 1 && labels.isEmpty()) "Detected glyph region"
+                else "Scan image with ${boxes.size} numbered glyph boxes"
+            selectedIndex?.let { index -> labels.getOrNull(index)?.let {
+                stateDescription = "Region $it selected"
             } }
         }) {
         if (size.width <= 0 || size.height <= 0) return@Canvas
@@ -154,8 +174,7 @@ internal fun GlyphRegionOverlay(
             isFakeBoldText = true
             setShadowLayer(2f, 1f, 1f, android.graphics.Color.BLACK)
         }
-        results.forEachIndexed { index, result ->
-            val region = result.region.crop
+        boxes.forEachIndexed { index, region ->
             val l = originX + region.left * imageWidth
             val t = originY + region.top * imageHeight
             val w = (region.right - region.left) * imageWidth
@@ -165,9 +184,11 @@ internal fun GlyphRegionOverlay(
             drawRect(Color.Black.copy(alpha = .8f), Offset(l, t), Size(w, h), style = Stroke(5.dp.toPx()))
             drawRect(if (active || selectedIndex == null) yellow else Color.White.copy(alpha = .75f),
                 Offset(l, t), Size(w, h), style = Stroke((if (active) 3 else 2).dp.toPx()))
-            drawRect(if (active) Color(0xFF245A49) else Color.Black.copy(alpha = .8f), Offset(l, t),
-                Size(26.dp.toPx(), 20.dp.toPx()))
-            drawContext.canvas.nativeCanvas.drawText(result.number.toString(), l + 5.dp.toPx(), t + 15.dp.toPx(), paint)
+            labels.getOrNull(index)?.let { label ->
+                drawRect(if (active) Color(0xFF245A49) else Color.Black.copy(alpha = .8f), Offset(l, t),
+                    Size(26.dp.toPx(), 20.dp.toPx()))
+                drawContext.canvas.nativeCanvas.drawText(label.toString(), l + 5.dp.toPx(), t + 15.dp.toPx(), paint)
+            }
         }
     }
 }

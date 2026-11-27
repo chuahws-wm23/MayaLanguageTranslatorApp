@@ -13,6 +13,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphWhitespaceDetector
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphRegionMatcher
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCaptionCrop
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphArtworkBounds
 import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGrid
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGuard
@@ -72,6 +73,7 @@ internal data class GlyphUiState(
     val saveError: String? = null,
     val referenceMatches: List<GlyphEnglishMatch>? = null,
     val referenceComparisonImage: Bitmap? = null,
+    val scanBoxes: List<GlyphCrop> = emptyList(),
     val referenceHints: List<String> = emptyList(),
     val crop: GlyphCrop = GlyphCrop(),
     val result: GlyphNetwork.Result? = null,
@@ -305,7 +307,7 @@ internal class GlyphRecognitionViewModel(
         mutable.value = snapshot.copy(
             busy = true, activeMode = "multiple", referenceMatches = null, result = null, resultV2 = null, resultV3 = null,
             resultV4 = null, resultV25 = null, multiple = emptyList(), individualComponents = false,
-            assistedGrid = false, detectorNote = null, referenceComparisonImage = null,
+            assistedGrid = false, detectorNote = null, referenceComparisonImage = null, scanBoxes = emptyList(),
             multipleProgress = if (grid == null) "Finding glyph blocks…" else "Preparing grid…",
             message = null,
         )
@@ -376,11 +378,16 @@ internal class GlyphRecognitionViewModel(
                     if (allowSingleFallback && tryIsolatedPicture(workingImage, request)) return@launch
                     mutable.value = mutable.value.copy(
                         busy = false, multipleProgress = null,
-                        message = "The glyph regions could not be separated. Try a closer photo of one complete glyph " +
-                            "or a clearer picture with space between glyphs.",
+                        message = if (allowSingleFallback) {
+                            "No clear glyph region found. Try a closer photo with space around each complete glyph."
+                        } else {
+                            "The glyph regions could not be separated. Try a closer photo of one complete glyph " +
+                                "or a clearer picture with space between glyphs."
+                        },
                     )
                     return@launch
                 }
+                mutable.value = mutable.value.copy(scanBoxes = regions.map { it.crop })
                 val results = withContext(Dispatchers.Default) {
                     val visualCatalogue = runCatching {
                         GlyphVisualCatalogue.fromAssetsOrNull(getApplication())
@@ -499,7 +506,7 @@ internal class GlyphRecognitionViewModel(
         val request=++version
         work?.cancel()
         mutable.value=snapshot.copy(busy=true,activeMode="single",referenceMatches=null,referenceHints=emptyList(),
-            multiple=emptyList(),message=null,detectorNote=null,referenceComparisonImage=null)
+            multiple=emptyList(),message=null,detectorNote=null,referenceComparisonImage=null,scanBoxes=emptyList())
         work=viewModelScope.launch {
             try {
                 val result=withContext(Dispatchers.Default) {
@@ -549,16 +556,35 @@ internal class GlyphRecognitionViewModel(
     }
 
     private suspend fun tryIsolatedPicture(image: Bitmap, request: Int): Boolean {
-        val result = withContext(Dispatchers.Default) {
-            if (GlyphPanelGuard.looksLikeDensePanel(image)) null else compareIsolatedPicture(image)
+        val box = withContext(Dispatchers.Default) {
+            if (GlyphPanelGuard.looksLikeDensePanel(image)) null else GlyphArtworkBounds.find(image)
         } ?: return false
-        if (request == version) {
-            mutable.value = mutable.value.copy(
-                activeMode = "single", busy = false, multipleProgress = null,
-                referenceMatches = result.first, referenceHints = result.second,
-                referenceComparisonImage = result.third, resultRevision = request,
-            )
-        } else result.third?.takeUnless { it === image }?.recycle()
+        if (request != version) return true
+        mutable.value = mutable.value.copy(
+            activeMode = "single", scanBoxes = listOf(box), multipleProgress = "Comparing the boxed glyph…",
+        )
+        var preview: Bitmap? = null
+        var keepPreview = false
+        try {
+            val (matches, hints) = withContext(Dispatchers.Default) {
+                val (x, y, width, height) = box.pixels(image.width, image.height)
+                val glyph = Bitmap.createBitmap(image, x, y, width, height)
+                if (glyph !== image) preview = glyph
+                val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(getApplication()))
+                val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(getApplication()))
+                words.search(glyph, sounds, 5) to
+                    com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality.hints(glyph)
+            }
+            if (request == version) {
+                mutable.value = mutable.value.copy(
+                    busy = false, multipleProgress = null, referenceMatches = matches, referenceHints = hints,
+                    referenceComparisonImage = preview, resultRevision = request,
+                )
+                keepPreview = true
+            }
+        } finally {
+            if (!keepPreview) preview?.recycle()
+        }
         return true
     }
 
