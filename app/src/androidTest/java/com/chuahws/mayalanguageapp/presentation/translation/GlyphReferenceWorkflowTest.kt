@@ -775,6 +775,29 @@ class GlyphReferenceWorkflowTest {
         }
     }
 
+    @Test fun darkBackgroundFilledArtworkCanBeComparedWithTheGallery() {
+        val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))
+        val image = Bitmap.createBitmap(160, 160, Bitmap.Config.ARGB_8888)
+        val paint = android.graphics.Paint()
+        try {
+            Canvas(image).apply {
+                drawColor(Color.BLACK)
+                paint.color = Color.RED
+                drawOval(40f, 39f, 120f, 121f, paint)
+                paint.color = Color.rgb(246, 114, 18)
+                drawOval(44f, 43f, 116f, 117f, paint)
+                paint.color = Color.BLACK
+                drawRect(77f, 55f, 83f, 105f, paint)
+                drawOval(55f, 70f, 70f, 90f, paint)
+            }
+            assertNotNull(sounds.canonicalBitplane(image))
+            assertTrue(words.search(image, sounds, 5).isNotEmpty())
+        } finally {
+            image.recycle()
+        }
+    }
+
     @Test fun syllableDrawingsDoNotPassAsTheFireLogogram() {
         val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))

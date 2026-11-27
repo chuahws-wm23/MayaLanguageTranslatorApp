@@ -93,7 +93,12 @@ internal class GlyphVisualCatalogue private constructor(
             best >= .60f && best - next >= .10f
 
         /** Select ink before resizing so a dark frame never becomes the sign. */
-        internal fun foregroundMask(gray: IntArray, width: Int, height: Int): BooleanArray? {
+        internal fun foregroundMask(
+            gray: IntArray,
+            width: Int,
+            height: Int,
+            recoverFilledArtwork: Boolean = false,
+        ): BooleanArray? {
             require(width > 0 && height > 0 && gray.size == width * height)
             val border = ArrayList<Int>(2 * width + 2 * height)
             val hist = IntArray(256)
@@ -106,7 +111,9 @@ internal class GlyphVisualCatalogue private constructor(
                 }
             }
             border.sort()
-            val darkBorder = border[border.size / 2] < 110
+            val borderMedian = border[border.size / 2]
+            val darkBorder = borderMedian < 110
+            if (recoverFilledArtwork && !darkBorder) return null
             val total = gray.size.toDouble()
             val weighted = hist.indices.sumOf { it.toDouble() * hist[it] }
             var count = 0.0
@@ -125,11 +132,14 @@ internal class GlyphVisualCatalogue private constructor(
                     threshold = t
                 }
             }
-            val lightFraction = gray.count { it > threshold }.toFloat() / gray.size
-            val darkInkInsideLightFigure = darkBorder && lightFraction > .55f
+            // A near-black background can sit far below red and orange fills of different luminance.
+            if (recoverFilledArtwork && borderMedian <= 24) threshold = minOf(threshold, borderMedian + 32)
+            val lightCount = gray.count { it > threshold }
+            val lightFraction = lightCount.toFloat() / gray.size
+            val darkInkInsideLightFigure = darkBorder && (lightFraction > .55f || recoverFilledArtwork)
             val outside = BooleanArray(gray.size)
             if (darkInkInsideLightFigure) {
-                // On a white filled figure, dark interior lines are the drawing.
+                // On a bright filled figure, dark interior lines are part of the drawing.
                 // Flood from all four edges to discard the black surrounding field.
                 val queue = IntArray(gray.size)
                 var tail = 0
@@ -157,8 +167,22 @@ internal class GlyphVisualCatalogue private constructor(
                     if (index + width < gray.size) enqueue(index + width)
                 }
             }
+            if (recoverFilledArtwork) {
+                val interiorInk = gray.indices.count { gray[it] <= threshold && !outside[it] }
+                if (interiorInk < max(6, (lightCount * .015f).roundToInt())) return null
+            }
+            val outlineWidth = max(1, max(width, height) / (SIDE - 8))
+            val verticalStep = outlineWidth * width
             val ink = BooleanArray(gray.size) { index ->
                 when {
+                    recoverFilledArtwork && gray[index] > threshold -> {
+                        val x = index % width
+                        // Keep the real edge of the figure alongside its interior strokes.
+                        (x >= outlineWidth && outside[index - outlineWidth]) ||
+                            (x + outlineWidth < width && outside[index + outlineWidth]) ||
+                            (index >= verticalStep && outside[index - verticalStep]) ||
+                            (index + verticalStep < gray.size && outside[index + verticalStep])
+                    }
                     darkInkInsideLightFigure -> gray[index] <= threshold && !outside[index]
                     darkBorder -> gray[index] > threshold
                     else -> gray[index] <= threshold
@@ -242,47 +266,52 @@ internal class GlyphVisualCatalogue private constructor(
                 val value = (lum*a+255*(255-a)+127)/255
                 gray[y*w+x]=value
             }
-            val foreground = foregroundMask(gray, w, h) ?: return null
-            var minX=w;var minY=h;var maxX=-1;var maxY=-1
-            for(y in 0 until h)for(x in 0 until w){
-                if(foreground[y*w+x]){
-                    minX=min(minX,x);maxX=max(maxX,x)
-                    minY=min(minY,y);maxY=max(maxY,y)
-                }
-            }
-            val cw=maxX-minX+1
-            val ch=maxY-minY+1
-            val blackOnWhite = IntArray(cw*ch) { index ->
-                val x=index%cw + minX
-                val y=index/cw + minY
-                if(foreground[y*w+x]) Color.WHITE else Color.BLACK
-            }
-            val cropped = Bitmap.createBitmap(blackOnWhite,cw,ch,Bitmap.Config.ARGB_8888)
-            try {
-                val factor=56f/max(cw,ch)
-                val sw=max(1,(cw*factor).roundToInt())
-                val sh=max(1,(ch*factor).roundToInt())
-                val scaled = Bitmap.createScaledBitmap(cropped,sw,sh,true)
-                try {
-                    val px=IntArray(sw*sh)
-                    scaled.getPixels(px,0,sw,0,0,sw,sh)
-                    val packed=ByteArray(BYTES_PER_REF)
-                    val dx=(SIDE-sw)/2
-                    val dy=(SIDE-sh)/2
-                    var totalInk=0
-                    for(y in 0 until sh)for(x in 0 until sw){
-                        // scaled image uses white foreground on black background.
-                        if(Color.red(px[y*sw+x])>127){
-                            val bit=(dy+y)*SIDE+dx+x
-                            packed[bit ushr 3]=(packed[bit ushr 3].toInt() or
-                                (0x80 ushr (bit and 7))).toByte()
-                            totalInk++
-                        }
-                    }
-                    return if(totalInk>=6 && totalInk <= SIDE*SIDE*.42f)packed else null
-                }finally{if(scaled !== cropped)scaled.recycle()}
-            }finally{cropped.recycle()}
+            val original = foregroundMask(gray, w, h)?.let { packBitplane(it, w, h) }
+            if (original != null) return original
+            return foregroundMask(gray, w, h, recoverFilledArtwork = true)?.let { packBitplane(it, w, h) }
         }finally{if(resized !== bitmap)resized.recycle()}
+    }
+
+    private fun packBitplane(foreground: BooleanArray, w: Int, h: Int): ByteArray? {
+        var minX=w;var minY=h;var maxX=-1;var maxY=-1
+        for(y in 0 until h)for(x in 0 until w){
+            if(foreground[y*w+x]){
+                minX=min(minX,x);maxX=max(maxX,x)
+                minY=min(minY,y);maxY=max(maxY,y)
+            }
+        }
+        val cw=maxX-minX+1
+        val ch=maxY-minY+1
+        val blackOnWhite = IntArray(cw*ch) { index ->
+            val x=index%cw + minX
+            val y=index/cw + minY
+            if(foreground[y*w+x]) Color.WHITE else Color.BLACK
+        }
+        val cropped = Bitmap.createBitmap(blackOnWhite,cw,ch,Bitmap.Config.ARGB_8888)
+        try {
+            val factor=56f/max(cw,ch)
+            val sw=max(1,(cw*factor).roundToInt())
+            val sh=max(1,(ch*factor).roundToInt())
+            val scaled = Bitmap.createScaledBitmap(cropped,sw,sh,true)
+            try {
+                val px=IntArray(sw*sh)
+                scaled.getPixels(px,0,sw,0,0,sw,sh)
+                val packed=ByteArray(BYTES_PER_REF)
+                val dx=(SIDE-sw)/2
+                val dy=(SIDE-sh)/2
+                var totalInk=0
+                for(y in 0 until sh)for(x in 0 until sw){
+                    // scaled image uses white foreground on black background.
+                    if(Color.red(px[y*sw+x])>127){
+                        val bit=(dy+y)*SIDE+dx+x
+                        packed[bit ushr 3]=(packed[bit ushr 3].toInt() or
+                            (0x80 ushr (bit and 7))).toByte()
+                        totalInk++
+                    }
+                }
+                return if(totalInk>=6 && totalInk <= SIDE*SIDE*.42f)packed else null
+            }finally{if(scaled !== cropped)scaled.recycle()}
+        }finally{cropped.recycle()}
     }
 }
 

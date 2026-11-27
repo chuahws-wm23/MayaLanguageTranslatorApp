@@ -41,4 +41,18 @@ class GlyphForegroundTest {
         assertFalse(GlyphVisualCatalogue.hasClearVisualMatch(.64f, .61f))
         assertTrue(GlyphVisualCatalogue.hasClearVisualMatch(.72f, .48f))
     }
+
+    @Test fun filledArtworkRecoveryKeepsTheOutlineAndInteriorInk() {
+        val width = 80
+        val gray = IntArray(width * width)
+        for (y in 15 until 65) for (x in 15 until 65) gray[y * width + x] = 155
+        assertTrue(GlyphVisualCatalogue.foregroundMask(gray, width, width, recoverFilledArtwork = true) == null)
+        for (y in 26 until 54) for (x in 38 until 42) gray[y * width + x] = 0
+
+        val mask = requireNotNull(GlyphVisualCatalogue.foregroundMask(gray, width, width, recoverFilledArtwork = true))
+        assertFalse(mask[0])
+        assertTrue(mask[40 * width + 15])
+        assertFalse(mask[40 * width + 24])
+        assertTrue(mask[40 * width + 40])
+    }
 }
