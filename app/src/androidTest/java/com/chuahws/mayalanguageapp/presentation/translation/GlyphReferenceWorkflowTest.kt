@@ -980,6 +980,7 @@ class GlyphReferenceWorkflowTest {
         compose.onNodeWithText("Scan picture").performScrollTo().performClick()
         compose.waitUntil(60_000) { (model.state.value.referenceMatches != null || model.state.value.multiple.isNotEmpty()) && !model.state.value.busy }
         compose.onNodeWithText("No readable glyph found").assertExists()
+        assertTrue(model.state.value.scanBoxes.isEmpty())
         compose.onNodeWithText("Photo tips").performScrollTo().assertExists()
         compose.onNodeWithText("Contrast is low.",substring=true).assertExists()
         compose.onAllNodes(numericSimilarity).assertCountEquals(0)

@@ -14,6 +14,7 @@ import com.chuahws.mayalanguageapp.integration.glyph.GlyphRegionMatcher
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphCaptionCrop
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphArtworkBounds
+import com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality
 import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGrid
 import com.chuahws.mayalanguageapp.integration.glyph.GlyphPanelGuard
@@ -556,10 +557,19 @@ internal class GlyphRecognitionViewModel(
     }
 
     private suspend fun tryIsolatedPicture(image: Bitmap, request: Int): Boolean {
-        val box = withContext(Dispatchers.Default) {
-            if (GlyphPanelGuard.looksLikeDensePanel(image)) null else GlyphArtworkBounds.find(image)
+        val (box, unreadableHints) = withContext(Dispatchers.Default) {
+            if (GlyphPanelGuard.looksLikeDensePanel(image)) return@withContext null
+            val detected = GlyphArtworkBounds.find(image)
+            detected to if (detected == null) GlyphImageQuality.hints(image) else emptyList()
         } ?: return false
         if (request != version) return true
+        if (box == null) {
+            mutable.value = mutable.value.copy(
+                activeMode = "single", busy = false, multipleProgress = null, referenceMatches = emptyList(),
+                referenceHints = unreadableHints, resultRevision = request,
+            )
+            return true
+        }
         mutable.value = mutable.value.copy(
             activeMode = "single", scanBoxes = listOf(box), multipleProgress = "Comparing the boxed glyph…",
         )
@@ -572,8 +582,7 @@ internal class GlyphRecognitionViewModel(
                 if (glyph !== image) preview = glyph
                 val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(getApplication()))
                 val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(getApplication()))
-                words.search(glyph, sounds, 5) to
-                    com.chuahws.mayalanguageapp.integration.glyph.GlyphImageQuality.hints(glyph)
+                words.search(glyph, sounds, 5) to GlyphImageQuality.hints(glyph)
             }
             if (request == version) {
                 mutable.value = mutable.value.copy(
