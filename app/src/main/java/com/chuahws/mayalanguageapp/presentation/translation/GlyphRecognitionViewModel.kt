@@ -582,7 +582,7 @@ internal class GlyphRecognitionViewModel(
                 if (glyph !== image) preview = glyph
                 val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(getApplication()))
                 val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(getApplication()))
-                words.search(glyph, sounds, 5) to GlyphImageQuality.hints(glyph)
+                words.searchForScan(glyph, sounds) to GlyphImageQuality.hints(glyph)
             }
             if (request == version) {
                 mutable.value = mutable.value.copy(

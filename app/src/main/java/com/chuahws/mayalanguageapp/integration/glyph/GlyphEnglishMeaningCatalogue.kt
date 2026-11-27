@@ -95,20 +95,47 @@ internal class GlyphEnglishMeaningCatalogue private constructor(
 
     private val identities = references.map { it.twkmSign.toString() }
 
+    private fun identicalRows(query: ByteArray): BooleanArray = BooleanArray(references.size) { row ->
+        query.indices.all { query[it] == bits[row * REF_BYTES + it] }
+    }
+
+    /** An identical normalized drawing carries direct evidence without embedding inference. */
+    fun searchForScan(singleSignCrop: Bitmap, phonograms: GlyphVisualCatalogue): List<GlyphEnglishMatch> {
+        val query = phonograms.canonicalBitplane(singleSignCrop) ?: return emptyList()
+        val identical = identicalRows(query)
+        val exact = references.asSequence()
+            .filter { identical[it.offset] }
+            .distinctBy { it.twkmSign }
+            .take(2)
+            .map { reference ->
+                GlyphEnglishMatch(
+                    reference, 1f, identicalNormalizedDrawing = true,
+                    syllableConflict = phonograms.hasIdenticalDrawingForDifferentSign(query, reference.twkmSign),
+                )
+            }.toList()
+        return exact.ifEmpty { searchRanked(query, phonograms, 5, identical) }
+    }
+
     fun search(
         singleSignCrop: Bitmap,
         phonograms: GlyphVisualCatalogue,
         top: Int = 3,
     ): List<GlyphEnglishMatch> {
         require(top in 1..10)
-        val query=phonograms.canonicalBitplane(singleSignCrop) ?: return emptyList()
+        val query = phonograms.canonicalBitplane(singleSignCrop) ?: return emptyList()
+        return searchRanked(query, phonograms, top, identicalRows(query))
+    }
+
+    private fun searchRanked(
+        query: ByteArray,
+        phonograms: GlyphVisualCatalogue,
+        top: Int,
+        identical: BooleanArray,
+    ): List<GlyphEnglishMatch> {
         val index = embeddings()
         val vector = index.embed(query)
         val scores = index.similarities(vector, "logogram")
         require(scores.size == references.size)
-        val identical = BooleanArray(references.size) { row ->
-            query.indices.all { query[it] == bits[row * REF_BYTES + it] }
-        }
         // Examine one extra identity when callers only request the top reference.
         val ranked = GlyphReferenceRanking.bestRows(scores, identities, identical, maxOf(top, 2))
         val strokeScores = mutableMapOf<Int, Float>()

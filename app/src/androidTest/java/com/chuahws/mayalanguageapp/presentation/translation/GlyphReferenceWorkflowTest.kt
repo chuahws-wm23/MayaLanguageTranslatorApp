@@ -806,6 +806,30 @@ class GlyphReferenceWorkflowTest {
         }
     }
 
+    @Test fun scanReturnsAnIdenticalFireDrawingDirectly() {
+        val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
+        val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))
+        val reference = words.references.first { it.graph == "122bv" }
+        val drawing = words.imageFor(reference)
+        val photo = Bitmap.createBitmap(140, 100, Bitmap.Config.ARGB_8888)
+        try {
+            Canvas(photo).apply {
+                drawColor(Color.WHITE)
+                drawBitmap(drawing, 49f, 17f, null)
+            }
+            val match = words.searchForScan(photo, sounds).single()
+            assertEquals(122, match.reference.twkmSign)
+            assertEquals(reference.graph, match.reference.graph)
+            assertTrue(match.identicalNormalizedDrawing)
+            assertEquals(1f, match.visualOverlap, 0f)
+            assertNull(match.strokeAgreement)
+            assertEquals(match, listOf(match).displayableReference())
+        } finally {
+            drawing.recycle()
+            photo.recycle()
+        }
+    }
+
     @Test fun syllableDrawingsDoNotPassAsTheFireLogogram() {
         val words = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val sounds = requireNotNull(GlyphVisualCatalogue.fromAssetsOrNull(context))
@@ -813,7 +837,7 @@ class GlyphReferenceWorkflowTest {
             val drawing = sounds.references.first { it.graph == graph }
             val bitmap = sounds.referenceBitmap(drawing)
             try {
-                val matches = words.search(bitmap, sounds, 5)
+                val matches = words.searchForScan(bitmap, sounds)
                 if (graph == "44bb") {
                     assertEquals(drawing.twkmSign, matches.displayableReference()?.reference?.twkmSign)
                 } else {

@@ -103,6 +103,7 @@ class PublicGlyphPhotoProbeTest {
                 outcome.put("automatic_visible_signs", JSONArray(visibleReferenceLists.mapNotNull {
                     it.displayableReference()?.reference?.twkmSign
                 })).put("automatic_decisions", JSONArray(visibleReferenceLists.map { it.referenceDecision().name }))
+                    .put("automatic_candidates_by_region", JSONArray(visibleReferenceLists.map { candidates(it) }))
                     .put("automatic_region_count", automatic.multiple.size)
                     .put("automatic_message", automatic.message ?: JSONObject.NULL)
                 // This diagnostic also records the experimental detector fallbacks.
