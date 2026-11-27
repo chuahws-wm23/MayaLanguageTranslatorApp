@@ -557,10 +557,10 @@ internal class GlyphRecognitionViewModel(
     }
 
     private suspend fun tryIsolatedPicture(image: Bitmap, request: Int): Boolean {
-        val (box, unreadableHints) = withContext(Dispatchers.Default) {
+        val (box, unreadableHints) = withContext<Pair<GlyphCrop?, List<String>>?>(Dispatchers.Default) {
             if (GlyphPanelGuard.looksLikeDensePanel(image)) return@withContext null
             val detected = GlyphArtworkBounds.find(image)
-            detected to if (detected == null) GlyphImageQuality.hints(image) else emptyList()
+            detected to (if (detected == null) GlyphImageQuality.hints(image) else emptyList())
         } ?: return false
         if (request != version) return true
         if (box == null) {
