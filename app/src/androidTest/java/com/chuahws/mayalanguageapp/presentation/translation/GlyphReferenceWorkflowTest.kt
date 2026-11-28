@@ -1018,7 +1018,10 @@ class GlyphReferenceWorkflowTest {
         assertEquals(242,bitmap.height)
         val catalogue = requireNotNull(GlyphEnglishMeaningCatalogue.fromAssetsOrNull(context))
         val fireDrawings = catalogue.references.filter { it.twkmSign == 122 && it.drawingSource != null }
-        assertEquals(setOf("122-gallet", "122-la-amelia"), fireDrawings.map { it.graph }.toSet())
+        assertEquals(setOf("122-gallet", "122-la-amelia", "122-crosshatched-study"),
+            fireDrawings.map { it.graph }.toSet())
+        val study = fireDrawings.single { it.graph == "122-crosshatched-study" }
+        assertTrue(requireNotNull(study.drawingSource).adaptation.startsWith("Digital study adaptation"))
         fireDrawings.forEach { drawing ->
             assertEquals("fire", drawing.english)
             assertTrue(requireNotNull(drawing.drawingSource).sourceUrl.startsWith("https://"))

@@ -6,10 +6,10 @@
   "score": "L2-normalized feature cosine, not confidence",
   "galleries": {
     "logogram": {
-      "count": 368,
-      "index_sha256": "a3a491bd6b39f07a39fa3fad0b877753b9a0106689ad00d34859717fcc362911",
-      "artwork_sha256": "0c191a5787424aa2cff31c5cd77ff33b7fd7b1d779b12029fbb4e455f8b12eae",
-      "vectors_sha256": "9b80d99bc42aca03eded4db92ad6951e02a4b52a5a9a3a1b2647f46ac09b257e"
+      "count": 369,
+      "index_sha256": "aa1b585f2036f298a03340f430d71a21b45311b425542970543fd437a20558a9",
+      "artwork_sha256": "3b7a8ac5c4177a7a6436db1d962be5ceca8e9729b2783db8d9cd9a5b466609fd",
+      "vectors_sha256": "224846e786a3607246e3f2e87e5683ec9b3b2479285795acc711b8553164b4fa"
     },
     "phonogram": {
       "count": 382,

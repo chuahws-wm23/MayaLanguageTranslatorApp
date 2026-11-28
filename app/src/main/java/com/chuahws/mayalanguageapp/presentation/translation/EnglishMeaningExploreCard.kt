@@ -343,7 +343,7 @@ internal fun EnglishMeaningMatchRow(
             Text("TWKM #${ref.twkmSign} · Reference drawing", style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             ref.drawingSource?.let { source ->
-                Text("Drawing by ${source.creator} · ${source.license}",
+                Text("Drawing by ${source.creator} · ${source.license}\n${source.adaptation}",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             var expanded by remember(ref.twkmSign) { mutableStateOf(false) }

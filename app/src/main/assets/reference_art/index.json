@@ -687,6 +687,17 @@
       "license": "CC BY 4.0",
       "source_url": "https://classicmayan.org/portal/sc/client/data/images/graphs/3r4sm.0.jpg"
     },
+    "122-crosshatched-study": {
+      "file": "3a6999da08afa649062bc8cd510a7f6a2ad02793a5a68a376c93ff373ba036aa.png",
+      "sha256": "3a6999da08afa649062bc8cd510a7f6a2ad02793a5a68a376c93ff373ba036aa",
+      "width": 512,
+      "height": 482,
+      "creator": "Christian Prager / University of Bonn",
+      "license": "CC BY 4.0",
+      "source_url": "https://classicmayan.org/portal/sc/client/data/images/graphs/3r4st.0.jpg",
+      "adaptation": "Digital study adaptation of Christian Prager\u2019s TWKM 122bv. Crosshatching was added to the central panel for visual comparison.",
+      "supplemental_sign": 122
+    },
     "122-gallet": {
       "file": "788f8bf248cad9b0bd286b1bc2406f6a0ea0aec213f8181592e73dffa96d490f.png",
       "sha256": "788f8bf248cad9b0bd286b1bc2406f6a0ea0aec213f8181592e73dffa96d490f",
