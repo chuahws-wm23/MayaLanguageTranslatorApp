@@ -104,7 +104,7 @@ private enum class AppPage {
     HISTORY,
     ANALYTICS,
     REPORTS,
-    ASSEMBLY,
+    NOTES,
     FEEDBACK,
     PROFILE,
 }
@@ -130,7 +130,7 @@ private val translateDrawerItems = listOf(
 )
 
 private val learnDrawerItems = listOf(
-    DrawerItem(AppPage.ASSEMBLY, "Glyph workspace", Icons.Rounded.MenuBook),
+    DrawerItem(AppPage.NOTES, "Research notes", Icons.Rounded.MenuBook),
     DrawerItem(
         AppPage.DICTIONARY,
         "Glyph dictionary",
@@ -289,7 +289,6 @@ private fun MainShell(
 ) {
     val state by appDataViewModel.uiState.collectAsStateWithLifecycle()
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
-    val researchState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val snackbarHostState = remember { SnackbarHostState() }
     val drawerState = rememberDrawerState(
         initialValue = DrawerValue.Closed,
@@ -536,7 +535,7 @@ private fun MainShell(
         AppPage.REPORTS -> "Reports"
         AppPage.FEEDBACK -> "Feedback"
         AppPage.PROFILE -> "Profile"
-        AppPage.ASSEMBLY -> "Glyph workspace"
+        AppPage.NOTES -> "Research notes"
     }
 
     ModalNavigationDrawer(
@@ -888,7 +887,11 @@ private fun MainShell(
                             glyphModel = glyphModel,
                         )
 
-                    AppPage.ASSEMBLY -> researchState.SaveableStateProvider("assembly-${state.userId}") { com.chuahws.mayalanguageapp.presentation.research.GlyphWorkspaceScreen() }
+                    AppPage.NOTES -> GlyphDictionaryHubScreen(
+                        accountId = state.userId ?: "local",
+                        notesOnly = true,
+                        onOpenDictionary = { goTo(AppPage.DICTIONARY) },
+                    )
                     AppPage.DICTIONARY ->
                         GlyphDictionaryHubScreen(
                             accountId = state.userId ?: "local",

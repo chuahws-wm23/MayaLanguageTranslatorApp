@@ -101,9 +101,20 @@ internal fun ResearchNotes(
     onEdit: (ArchiveEntry) -> Unit,
     onClose: () -> Unit,
 ) {
-    val context = LocalContext.current
-    var query by remember { mutableStateOf("") }
     DictionaryToolDialog("Research notes", onClose) {
+        ResearchNotesContent(entries, notes, onEdit)
+    }
+}
+
+@Composable
+internal fun ResearchNotesContent(
+    entries: Map<String, ArchiveEntry>,
+    notes: Map<String, ResearchNote>,
+    onEdit: (ArchiveEntry) -> Unit,
+) {
+    val context = LocalContext.current
+    var query by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(query, { query = it }, label = { Text("Search notes") },
             singleLine = true, modifier = Modifier.fillMaxWidth())
         val matches = notes.mapNotNull { (key, note) ->

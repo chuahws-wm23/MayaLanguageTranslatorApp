@@ -1,66 +1,58 @@
 package com.chuahws.mayalanguageapp.presentation.research
 
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.*
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
+import com.chuahws.mayalanguageapp.presentation.dictionary.DictionaryNotebook
+import com.chuahws.mayalanguageapp.presentation.dictionary.DictionaryNotebookStore
+import com.chuahws.mayalanguageapp.presentation.dictionary.GlyphDictionaryHubScreen
+import com.chuahws.mayalanguageapp.presentation.dictionary.ResearchNote
 import com.chuahws.mayalanguageapp.presentation.theme.MayaTranslateTheme
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import java.util.UUID
 
 class ResearchWorkflowTest {
     @get:Rule val compose = createComposeRule()
-    private fun find(value: String) {
-        compose.onNodeWithTag("syllable-palette").performScrollToNode(hasText("Find a syllable"))
-        compose.onNodeWithText("Find a syllable").performTextReplacement(value)
-        compose.onNodeWithTag("syllable-palette").performScrollToNode(hasContentDescription("Syllable card $value"))
-    }
-    private fun shot(name: String) {
-        val context=androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
-        val folder=requireNotNull(context.getExternalFilesDir("screenshots")).apply { mkdirs() }
-        val image=compose.onRoot().captureToImage().asAndroidBitmap()
-        java.io.File(folder,"two-syllables-$name.png").outputStream().use { image.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
-    }
-    @Test fun dragTwoCardsMoveOneAndRevealReadingOnlyAfterNext() {
-        compose.setContent { MayaTranslateTheme { GlyphWorkspaceScreen() } }
-        compose.onNodeWithText("Next").assertIsNotEnabled()
-        find("ka")
-        val board=compose.onNodeWithTag("syllable-canvas").fetchSemanticsNode().boundsInRoot
-        val first=compose.onNodeWithContentDescription("Syllable card ka")
-        val origin=first.fetchSemanticsNode().boundsInRoot.topLeft
-        val left=Offset(board.left+board.width*.25f,board.center.y)
-        first.performTouchInput { down(center);advanceEventTime(700);moveTo(left-origin,delayMillis=500);up() }
-        compose.onNodeWithText("Next").assertIsNotEnabled()
-        find("wa")
-        compose.onNodeWithContentDescription("Syllable card wa").performClick()
-        compose.onNodeWithText("ka-wa").assertDoesNotExist()
-        compose.onNodeWithText("Next").assertIsEnabled()
-        val placed=compose.onNodeWithTag("placed-0")
-        val placedOrigin=placed.fetchSemanticsNode().boundsInRoot.topLeft
-        val right=Offset(board.left+board.width*.84f,board.center.y)
-        placed.performTouchInput { down(center);advanceEventTime(700);moveTo(right-placedOrigin,delayMillis=500);up() }
-        shot("canvas")
-        compose.onNodeWithText("Next").performClick()
-        compose.onNodeWithText("wa-ka").assertExists()
-        compose.onNodeWithText("Your combination").assertExists()
-        shot("result")
-        compose.onNodeWithText("Edit combination").performClick()
-        compose.onNodeWithTag("placed-0").assertExists()
-        compose.onNodeWithText("wa-ka").assertDoesNotExist()
-        compose.onNodeWithText("Next").performClick()
-        compose.onNodeWithText("Start again").performClick()
-        compose.onNodeWithText("Next").assertIsNotEnabled()
-        compose.onNodeWithText("Drop two syllable cards here").assertExists()
-    }
-    @Test fun clearRequiresTwoNewPartsAndSearchHasEmptyState() {
-        compose.setContent { MayaTranslateTheme { GlyphWorkspaceScreen() } }
-        find("ka")
-        compose.onNodeWithContentDescription("Syllable card ka").performClick()
-        compose.onNodeWithText("Clear canvas").performClick()
-        compose.onNodeWithText("Next").assertIsNotEnabled()
-        compose.onNodeWithTag("syllable-palette").performScrollToNode(hasText("Find a syllable"))
-        compose.onNodeWithText("Find a syllable").performTextReplacement("zzzzzz")
-        compose.onNodeWithTag("syllable-palette").performScrollToNode(hasText("No syllables found"))
-        compose.onNodeWithText("No syllables found").assertIsDisplayed()
+
+    @Test fun notesPageReadsAndEditsTheExistingDictionaryNotebook() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val account = UUID.randomUUID().toString()
+        val store = DictionaryNotebookStore(context, account)
+        val original = DictionaryNotebook(
+            notes = mapOf("word-122" to ResearchNote("Compare the central panel", "Catalogue source")),
+            sets = mapOf("Fire signs" to listOf("word-122")),
+        )
+        store.save(original)
+        val session = mutableStateOf(0)
+        try {
+            compose.setContent {
+                MayaTranslateTheme {
+                    key(session.value) { GlyphDictionaryHubScreen(accountId = account, notesOnly = true) }
+                }
+            }
+            compose.waitUntil(20_000) {
+                compose.onAllNodesWithText("Compare the central panel").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("Search notes").performTextInput("unmatched")
+            compose.onNodeWithText("No matching notes.").assertExists()
+            compose.onNodeWithText("Search notes").performTextClearance()
+            compose.onNodeWithText("Edit").performClick()
+            compose.onNodeWithText("Your note").performTextReplacement("Updated fire note")
+            compose.onNodeWithText("Save note").performClick()
+            compose.onNodeWithText("Updated fire note").assertExists()
+            assertEquals(original.sets, store.load().sets)
+
+            compose.runOnIdle { session.value++ }
+            compose.waitUntil(20_000) {
+                compose.onAllNodesWithText("Updated fire note").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("Catalogue source").assertExists()
+        } finally {
+            store.save(DictionaryNotebook())
+        }
     }
 }

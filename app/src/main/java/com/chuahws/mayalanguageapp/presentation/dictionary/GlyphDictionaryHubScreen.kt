@@ -1,5 +1,8 @@
 package com.chuahws.mayalanguageapp.presentation.dictionary
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 import com.chuahws.mayalanguageapp.presentation.components.ClearSearchButton
 import android.graphics.Bitmap
 import androidx.compose.foundation.text.KeyboardActions
@@ -95,6 +98,8 @@ fun GlyphDictionaryHubScreen(
     requestedDrawing: String? = null,
     onReferenceOpened: () -> Unit = {},
     onBackToScan: (() -> Unit)? = null,
+    notesOnly: Boolean = false,
+    onOpenDictionary: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val store = remember(context, accountId) { DictionaryNotebookStore(context, accountId) }
@@ -180,6 +185,39 @@ fun GlyphDictionaryHubScreen(
     }
     val entries = archiveEntries[selected].orEmpty()
     val byKey = remember(archiveEntries) { archiveEntries.values.flatten().associateBy { it.key } }
+    fun saveNote(key: String, note: ResearchNote) {
+        val current = store.load()
+        val notes = if (note.text.isBlank() && note.source.isBlank()) current.notes - key
+            else current.notes + (key to note)
+        updateNotebook(current.copy(notes = notes))
+    }
+    if (notesOnly) {
+        AppGradientBackground {
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                when {
+                    loaded == null -> CircularProgressIndicator()
+                    archive == null -> {
+                        Text("Notes could not be loaded.")
+                        TextButton(onClick = { reload++ }) { Text("Try again") }
+                    }
+                    else -> {
+                        ResearchNotesContent(byKey, notebook.notes) { activeEntry = it.key }
+                        TextButton(onClick = onOpenDictionary) { Text("Open glyph dictionary") }
+                    }
+                }
+            }
+        }
+        byKey[activeEntry]?.let { entry ->
+            ResearchNoteEditor(entry, notebook.notes[entry.key] ?: ResearchNote(), { note ->
+                saveNote(entry.key, note)
+                activeEntry = null
+            }, { activeEntry = null })
+        }
+        return
+    }
     LaunchedEffect(archive, requestedSign, requestedDrawing) {
         if (archive == null || requestedSign == null) return@LaunchedEffect
         val entry = byKey["word-$requestedSign"]
@@ -199,9 +237,7 @@ fun GlyphDictionaryHubScreen(
             closeTool()
         }
         "note" -> if (chosen != null) ResearchNoteEditor(chosen, notebook.notes[chosen.key] ?: ResearchNote(), { note ->
-            val notes = notebook.notes.toMutableMap()
-            if (note.text.isBlank() && note.source.isBlank()) notes.remove(chosen.key) else notes[chosen.key] = note
-            updateNotebook(notebook.copy(notes = notes))
+            saveNote(chosen.key, note)
             closeTool()
         }, ::closeTool)
         "notes" -> ResearchNotes(byKey, notebook.notes, { entry -> activeEntry = entry.key; tool = "note" }, ::closeTool)

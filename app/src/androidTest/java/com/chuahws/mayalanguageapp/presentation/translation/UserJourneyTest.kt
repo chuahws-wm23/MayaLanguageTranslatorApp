@@ -142,6 +142,13 @@ class UserJourneyTest {
             compose.waitUntil(15_000) { app.uiState.value.message==null }
             shot("profile")
             compose.onNodeWithContentDescription("Open menu").performClick()
+            compose.onNodeWithText("Glyph workspace").assertDoesNotExist()
+            button("Research notes").performScrollTo().performClick()
+            compose.waitUntil(20_000) {
+                compose.onAllNodesWithText("Search notes").fetchSemanticsNodes().isNotEmpty()
+            }
+            button("Open glyph dictionary").assertExists()
+            compose.onNodeWithContentDescription("Open menu").performClick()
             button("My activity").performScrollTo().performClick()
             compose.onNodeWithText("Your activity").assertExists()
             compose.onNodeWithText("Saved items").assertExists()
