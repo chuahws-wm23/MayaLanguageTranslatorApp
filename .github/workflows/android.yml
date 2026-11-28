@@ -1,0 +1,91 @@
+name: Android checks
+
+on:
+  push:
+    branches:
+      - fyp-development
+  pull_request:
+    branches:
+      - main
+      - fyp-development
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Run unit tests
+        run: gradle testDebugUnitTest assembleDebug --stacktrace -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8" --max-workers=2
+
+      - name: Save debug APK for real-photo checks
+        uses: actions/upload-artifact@v4
+        with:
+          name: MayaFypV4PhotoRobustDebug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+  glyph-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Enable KVM for the Android runtime tests
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Exercise image loading, real ONNX inference and reference UI
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          target: default
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
+          script: bash scripts/run-android-user-checks.sh
+      - name: Save runtime reports and theme screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GlyphReferenceRuntimeChecks
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+            app/build/outputs/glyph-screenshots/
+          retention-days: 7
+
+  photo-evaluation-tooling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install manifest-test dependencies
+        run: python -m pip install numpy==2.5.5 Pillow==13.0.0
+      - name: Check source separation and held-out photo staging
+        run: |
+          python -m unittest discover -s dataset/scripts -p test_validate_real_glyph_photos.py -v
+          python -m unittest discover -s ml/logogram_expansion -p test_independent_photo_test.py -v
+          python -m unittest discover -s ml/logogram_expansion -p test_photo_benchmark.py -v

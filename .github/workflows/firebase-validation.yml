@@ -1,0 +1,32 @@
+name: Firebase emulator integration
+on:
+  push:
+    branches: [fyp-development]
+  pull_request:
+    branches: [main, fyp-development]
+permissions:
+  contents: read
+jobs:
+  firebase-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: validation/firebase/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --ignore-scripts
+        working-directory: validation/firebase
+      - run: npm test
+        working-directory: validation/firebase
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: FirebaseEmulatorLogs
+          path: "*-debug.log"

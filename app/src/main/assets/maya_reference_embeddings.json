@@ -1,0 +1,25 @@
+{
+  "format_version": 1,
+  "dimension": 576,
+  "model_sha256": "e2887dae439a9cc39d0035d31bf55c7deeee7c1002b81d59ecc7f1e6171fc6de",
+  "preprocessing": "binary64_float_bilinear224_imagenet_nchw_v1",
+  "score": "L2-normalized feature cosine, not confidence",
+  "galleries": {
+    "logogram": {
+      "count": 369,
+      "index_sha256": "aa1b585f2036f298a03340f430d71a21b45311b425542970543fd437a20558a9",
+      "artwork_sha256": "3b7a8ac5c4177a7a6436db1d962be5ceca8e9729b2783db8d9cd9a5b466609fd",
+      "vectors_sha256": "224846e786a3607246e3f2e87e5683ec9b3b2479285795acc711b8553164b4fa"
+    },
+    "phonogram": {
+      "count": 382,
+      "index_sha256": "47efb5c9a4328c638a4d8c6ea23d4b03cb77745a3c1dc17fd9845a5b6fe573c1",
+      "artwork_sha256": "f45c4288157c151425afbe22f72659f54e39d856a2c7c4ab212ce027e644b175",
+      "vectors_sha256": "8b8e5ad87d0923a08f3c83b8ef1ce7a77d11c6ba0ec0fd6100047427e0a3cedc"
+    }
+  },
+  "export_versions": {
+    "numpy": "2.5.5",
+    "onnxruntime": "1.32.0"
+  }
+}

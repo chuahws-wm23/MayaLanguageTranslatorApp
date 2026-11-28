@@ -1,0 +1,705 @@
+{
+  "format_version": 1,
+  "study": "Public-photograph development probe; not expert-verified photo accuracy",
+  "runtime": "Production Android image loader, single-photo ViewModel and bundled ONNX retrieval",
+  "manifest_sha256": "94fac02971e9a409ab18a417b7a288d6797f0f3d49d8c7e0ed08f2859642d38b",
+  "embedding_manifest_sha256": "b64e610fc33312609980463d2b70bd7491fbb856d4929f31ac0cf0ddfa12882f",
+  "model_sha256": "e2887dae439a9cc39d0035d31bf55c7deeee7c1002b81d59ecc7f1e6171fc6de",
+  "source_groups": 5,
+  "inputs": 6,
+  "runtime_errors": 0,
+  "research_illumination_control_is_enabled_in_app": false,
+  "release_approved": false,
+  "results": [
+    {
+      "id": "princeton-ajaw",
+      "source_group": "princeton-y1983-51",
+      "url": "https://media.artmuseum.princeton.edu/iiif/3/collection/INV014967/full/!1024,1024/0/default.jpg",
+      "source_url": "https://artmuseum.princeton.edu/art/collections/objects/32863",
+      "license": "Public Domain (museum download permission)",
+      "creator": "Princeton University Art Museum",
+      "expected_readings": [
+        "AJAW"
+      ],
+      "label_status": "museum title; reading only, exact sign unverified",
+      "content": "single sculptural glyph",
+      "file": "princeton-ajaw.jpg",
+      "label_is_expert_verified_exact_sign": false,
+      "width": 825,
+      "height": 1024,
+      "sha256": "99a0ae2a1c43c9c431703d593f1d2cbdbaa6ebffe29b5c6d5c9bf62330ee5e09",
+      "loaded_width": 825,
+      "loaded_height": 1024,
+      "production_elapsed_ms": 202.690047,
+      "production_message": null,
+      "production_candidates": [
+        {
+          "sign": 4,
+          "reading": "NAAH / NAH",
+          "english": "first | house",
+          "graph": "4va",
+          "similarity": 0.7891095280647278,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 184,
+          "reading": "K'INICH",
+          "english": "resplendent | sunny",
+          "graph": "184vi",
+          "similarity": 0.7825512290000916,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1687,
+          "reading": "WI'",
+          "english": "last | root",
+          "graph": "1687bv",
+          "similarity": 0.7791377305984497,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 503,
+          "reading": "IK'",
+          "english": "breath | spirit | wind",
+          "graph": "503fh",
+          "similarity": 0.7790721654891968,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1026,
+          "reading": "IXIK",
+          "english": "woman",
+          "graph": "1026bh",
+          "similarity": 0.7739570140838623,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "photo_hints": [],
+      "production_top1_contains_source_reading": false,
+      "production_top5_contains_source_reading": false,
+      "research_illumination_candidates": [
+        {
+          "sign": 503,
+          "reading": "IK'",
+          "english": "breath | spirit | wind",
+          "graph": "503fh",
+          "similarity": 0.8494285941123962,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 184,
+          "reading": "K'INICH",
+          "english": "resplendent | sunny",
+          "graph": "184vi",
+          "similarity": 0.8426902294158936,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1678,
+          "reading": "AJ",
+          "english": "person (who)",
+          "graph": "1678hc",
+          "similarity": 0.8380246162414551,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1030,
+          "reading": "K'AWIIL",
+          "english": "K'awiil (deity)",
+          "graph": "1030bh",
+          "similarity": 0.8266329169273376,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 755,
+          "reading": "ITZ'AAT",
+          "english": "artist",
+          "graph": "755st",
+          "similarity": 0.824955403804779,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "research_illumination_dense_panel_guard": false,
+      "research_illumination_top1_contains_source_reading": false,
+      "research_illumination_top5_contains_source_reading": false,
+      "region_proposal_count": 0,
+      "region_proposals": [],
+      "region_ground_truth_available": false
+    },
+    {
+      "id": "carlos-seven-ajaw",
+      "filename": "Maya Ceramic, Late Classic, \"7 Ahau\" Glyph, 711-889 AD (10452410093).jpg",
+      "source_group": "carlos-seven-ahau-vessel",
+      "expected_readings": [
+        "AJAW"
+      ],
+      "label_status": "photographer title; reading only, exact sign unverified",
+      "content": "whole vessel containing a numeral and glyph",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/8/83/Maya_Ceramic%2C_Late_Classic%2C_%227_Ahau%22_Glyph%2C_711-889_AD_%2810452410093%29.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Maya_Ceramic%2C_Late_Classic%2C_%227_Ahau%22_Glyph%2C_711-889_AD_%2810452410093%29.jpg",
+      "creator": "Gary Todd",
+      "license": "CC0 1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "file": "carlos-seven-ajaw.jpg",
+      "label_is_expert_verified_exact_sign": false,
+      "width": 3888,
+      "height": 2592,
+      "sha256": "353e476b612dee99be429521f99de6c18f9c2f25987fca9f25c200ab353013a3",
+      "loaded_width": 1944,
+      "loaded_height": 1296,
+      "production_elapsed_ms": 51.024601,
+      "production_message": null,
+      "production_candidates": [
+        {
+          "sign": 1536,
+          "reading": "CHAPAAT",
+          "english": "centipede",
+          "graph": "1536fc",
+          "similarity": 0.729236900806427,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 86,
+          "reading": "NAL",
+          "english": "ear of corn | habitant | place with cultivated crops",
+          "graph": "86hh",
+          "similarity": 0.7154031991958618,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 503,
+          "reading": "IK'",
+          "english": "breath | spirit | wind",
+          "graph": "503fh",
+          "similarity": 0.7104842662811279,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1544,
+          "reading": "CH'EEN",
+          "english": "cave",
+          "graph": "1544bh",
+          "similarity": 0.7014633417129517,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 751,
+          "reading": "BALAM",
+          "english": "jaguar",
+          "graph": "751fc",
+          "similarity": 0.6895486116409302,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "photo_hints": [],
+      "production_top1_contains_source_reading": false,
+      "production_top5_contains_source_reading": false,
+      "research_illumination_candidates": [
+        {
+          "sign": 751,
+          "reading": "BALAM",
+          "english": "jaguar",
+          "graph": "751fc",
+          "similarity": 0.8214350342750549,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 86,
+          "reading": "NAL",
+          "english": "ear of corn | habitant | place with cultivated crops",
+          "graph": "86hh",
+          "similarity": 0.801369845867157,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 503,
+          "reading": "IK'",
+          "english": "breath | spirit | wind",
+          "graph": "503fh",
+          "similarity": 0.7743972539901733,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 4,
+          "reading": "NAAH / NAH",
+          "english": "first | house",
+          "graph": "4vb",
+          "similarity": 0.7597011923789978,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 184,
+          "reading": "K'INICH",
+          "english": "resplendent | sunny",
+          "graph": "184vt",
+          "similarity": 0.7483060956001282,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "research_illumination_dense_panel_guard": false,
+      "research_illumination_top1_contains_source_reading": false,
+      "research_illumination_top5_contains_source_reading": false,
+      "region_proposal_count": 0,
+      "region_proposals": [],
+      "region_ground_truth_available": false
+    },
+    {
+      "id": "inah-ceramic",
+      "filename": "Classic Maya Ceramic Glyph (9756961171).jpg",
+      "source_group": "inah-ceramic-9756961171",
+      "expected_readings": [],
+      "label_status": "no verified sign label",
+      "content": "ceramic glyph",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/37/Classic_Maya_Ceramic_Glyph_%289756961171%29.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Classic_Maya_Ceramic_Glyph_%289756961171%29.jpg",
+      "creator": "Gary Todd",
+      "license": "CC0 1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "file": "inah-ceramic.jpg",
+      "label_is_expert_verified_exact_sign": false,
+      "width": 5184,
+      "height": 3456,
+      "sha256": "45d808207ac93552dde9017fe49e3b4769e9e2fe90ad4f74465d1e75a22ddeeb",
+      "loaded_width": 1296,
+      "loaded_height": 864,
+      "production_elapsed_ms": 50.842782,
+      "production_message": null,
+      "production_candidates": [
+        {
+          "sign": 1544,
+          "reading": "CH'EEN",
+          "english": "cave",
+          "graph": "1544bh",
+          "similarity": 0.7635737657546997,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1771,
+          "reading": "NAAB",
+          "english": "body of water | pool | sea | waterlily",
+          "graph": "1771bv",
+          "similarity": 0.7283701300621033,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1687,
+          "reading": "WI'",
+          "english": "last | root",
+          "graph": "1687bv",
+          "similarity": 0.7282354831695557,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 185,
+          "reading": "NAAB",
+          "english": "body of water | pool | sea | waterlily",
+          "graph": "185bv",
+          "similarity": 0.7162519693374634,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 44,
+          "reading": "TOK",
+          "english": "cloud | mist",
+          "graph": "44hp",
+          "similarity": 0.7159711122512817,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "photo_hints": [],
+      "research_illumination_candidates": [
+        {
+          "sign": 1544,
+          "reading": "CH'EEN",
+          "english": "cave",
+          "graph": "1544bh",
+          "similarity": 0.7713348269462585,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 503,
+          "reading": "IK'",
+          "english": "breath | spirit | wind",
+          "graph": "503fh",
+          "similarity": 0.769390344619751,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1030,
+          "reading": "K'AWIIL",
+          "english": "K'awiil (deity)",
+          "graph": "1030bh",
+          "similarity": 0.7681486010551453,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 184,
+          "reading": "K'INICH",
+          "english": "resplendent | sunny",
+          "graph": "184vb",
+          "similarity": 0.7662627696990967,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 86,
+          "reading": "NAL",
+          "english": "ear of corn | habitant | place with cultivated crops",
+          "graph": "86hh",
+          "similarity": 0.7616912126541138,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "research_illumination_dense_panel_guard": false,
+      "region_proposal_count": 0,
+      "region_proposals": [],
+      "region_ground_truth_available": false
+    },
+    {
+      "id": "palenque-head",
+      "filename": "Classic Maya Stucco Glyph \"Head Variant,\" Forgotten Temple, Palenque (9756977652).jpg",
+      "source_group": "palenque-forgotten-temple-stucco",
+      "expected_readings": [],
+      "label_status": "no verified sign label",
+      "content": "stucco head-variant glyph",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/8/8f/Classic_Maya_Stucco_Glyph_%22Head_Variant%2C%22_Forgotten_Temple%2C_Palenque_%289756977652%29.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Classic_Maya_Stucco_Glyph_%22Head_Variant%2C%22_Forgotten_Temple%2C_Palenque_%289756977652%29.jpg",
+      "creator": "Gary Todd",
+      "license": "CC0 1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "file": "palenque-head.jpg",
+      "label_is_expert_verified_exact_sign": false,
+      "width": 5184,
+      "height": 3456,
+      "sha256": "6e60ac210fad17fa80c10437918797d317f4ad26411de087a7ee648a8547b7d2",
+      "loaded_width": 1296,
+      "loaded_height": 864,
+      "production_elapsed_ms": 51.022748,
+      "production_message": null,
+      "production_candidates": [
+        {
+          "sign": 751,
+          "reading": "BALAM",
+          "english": "jaguar",
+          "graph": "751fc",
+          "similarity": 0.8511955738067627,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 503,
+          "reading": "IK'",
+          "english": "breath | spirit | wind",
+          "graph": "503fh",
+          "similarity": 0.8086799383163452,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1520,
+          "reading": "YOPAAT",
+          "english": "Yopaat (name of deity)",
+          "graph": "1520fc",
+          "similarity": 0.8037546277046204,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 164,
+          "reading": "HA'AL",
+          "english": "rainy | watery",
+          "graph": "164bb",
+          "similarity": 0.7598018646240234,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 544,
+          "reading": "CHAN / K'IN",
+          "english": "day | heat | sun | time",
+          "graph": "544fh",
+          "similarity": 0.7533326148986816,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "photo_hints": [],
+      "research_illumination_candidates": [
+        {
+          "sign": 1520,
+          "reading": "YOPAAT",
+          "english": "Yopaat (name of deity)",
+          "graph": "1520fc",
+          "similarity": 0.828419029712677,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 746,
+          "reading": "CHAN",
+          "english": "K'atun",
+          "graph": "746fc",
+          "similarity": 0.8125472664833069,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 751,
+          "reading": "BALAM",
+          "english": "jaguar",
+          "graph": "751fc",
+          "similarity": 0.8091450929641724,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 173,
+          "reading": "MIH",
+          "english": "no | nothing | zero",
+          "graph": "173fh",
+          "similarity": 0.7964012026786804,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1005,
+          "reading": "BULUCH / BULUK",
+          "english": "eleven",
+          "graph": "1005fh",
+          "similarity": 0.7936962842941284,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "research_illumination_dense_panel_guard": false,
+      "region_proposal_count": 0,
+      "region_proposals": [],
+      "region_ground_truth_available": false
+    },
+    {
+      "id": "palenque-stone",
+      "filename": "Language Glyph, Palenque, Late Classic, 600-900 AD 01.jpg",
+      "source_group": "palenque-language-glyph-15647167217",
+      "expected_readings": [],
+      "label_status": "no verified sign label",
+      "content": "stone inscription fragment",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/da/Language_Glyph%2C_Palenque%2C_Late_Classic%2C_600-900_AD_01.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Language_Glyph%2C_Palenque%2C_Late_Classic%2C_600-900_AD_01.jpg",
+      "creator": "Gary Todd",
+      "license": "CC0 1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "file": "palenque-stone.jpg",
+      "label_is_expert_verified_exact_sign": false,
+      "width": 5184,
+      "height": 3456,
+      "sha256": "bf861cb11810004d0372e8b51f00268a83cb692a6be8825ecd25a1f1a52c9819",
+      "loaded_width": 1296,
+      "loaded_height": 864,
+      "production_elapsed_ms": 51.1977,
+      "production_message": null,
+      "production_candidates": [
+        {
+          "sign": 503,
+          "reading": "IK'",
+          "english": "breath | spirit | wind",
+          "graph": "503fh",
+          "similarity": 0.819693922996521,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 751,
+          "reading": "BALAM",
+          "english": "jaguar",
+          "graph": "751fc",
+          "similarity": 0.8114745616912842,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1536,
+          "reading": "CHAPAAT",
+          "english": "centipede",
+          "graph": "1536fc",
+          "similarity": 0.776355504989624,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1520,
+          "reading": "YOPAAT",
+          "english": "Yopaat (name of deity)",
+          "graph": "1520fc",
+          "similarity": 0.7627753615379333,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 544,
+          "reading": "CHAN / K'IN",
+          "english": "day | heat | sun | time",
+          "graph": "544fh",
+          "similarity": 0.7571284770965576,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "photo_hints": [],
+      "research_illumination_candidates": [
+        {
+          "sign": 1520,
+          "reading": "YOPAAT",
+          "english": "Yopaat (name of deity)",
+          "graph": "1520fc",
+          "similarity": 0.8488156199455261,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 746,
+          "reading": "CHAN",
+          "english": "K'atun",
+          "graph": "746fc",
+          "similarity": 0.8458946347236633,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1697,
+          "reading": "K'IN",
+          "english": "day | sun",
+          "graph": "1697fc",
+          "similarity": 0.8419241309165955,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 44,
+          "reading": "TOK",
+          "english": "cloud | mist",
+          "graph": "44bt",
+          "similarity": 0.820133626461029,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 751,
+          "reading": "BALAM",
+          "english": "jaguar",
+          "graph": "751fc",
+          "similarity": 0.795547604560852,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "research_illumination_dense_panel_guard": false,
+      "region_proposal_count": 0,
+      "region_proposals": [],
+      "region_ground_truth_available": false
+    },
+    {
+      "id": "carlos-ajaw-closeup",
+      "filename": "Maya Ceramic, Late Classic, \"7 Ahau\" Glyph, 711-889 AD (10452410093).jpg",
+      "source_group": "carlos-seven-ahau-vessel",
+      "expected_readings": [
+        "AJAW"
+      ],
+      "label_status": "photographer title; reading only, exact sign unverified",
+      "content": "operator-cropped AJAW close-up; diagnostic only",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/8/83/Maya_Ceramic%2C_Late_Classic%2C_%227_Ahau%22_Glyph%2C_711-889_AD_%2810452410093%29.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Maya_Ceramic%2C_Late_Classic%2C_%227_Ahau%22_Glyph%2C_711-889_AD_%2810452410093%29.jpg",
+      "creator": "Gary Todd",
+      "license": "CC0 1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "file": "carlos-ajaw-closeup.png",
+      "label_is_expert_verified_exact_sign": false,
+      "width": 1020,
+      "height": 1120,
+      "sha256": "827ab816e015399b8b7b0afecc95ae763ebc7c27fa50fd214ba5788c273b7686",
+      "derived_from": "carlos-seven-ajaw.jpg",
+      "crop_pixels": [
+        840,
+        780,
+        1860,
+        1900
+      ],
+      "loaded_width": 1020,
+      "loaded_height": 1120,
+      "production_elapsed_ms": 76.679584,
+      "production_message": null,
+      "production_candidates": [
+        {
+          "sign": 588,
+          "reading": "WA'",
+          "english": "to set up",
+          "graph": "588st",
+          "similarity": 0.842639148235321,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 529,
+          "reading": "WITZ",
+          "english": "hill | mountain | woods",
+          "graph": "529hp",
+          "similarity": 0.8408111333847046,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1599,
+          "reading": "KALOOM",
+          "english": "opener",
+          "graph": "1599st",
+          "similarity": 0.8320988416671753,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 186,
+          "reading": "SIHOOM",
+          "english": "sihoom-flower",
+          "graph": "186hc",
+          "similarity": 0.8307653069496155,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1030,
+          "reading": "K'AWIIL",
+          "english": "K'awiil (deity)",
+          "graph": "1030bh",
+          "similarity": 0.83064204454422,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "photo_hints": [],
+      "production_top1_contains_source_reading": false,
+      "production_top5_contains_source_reading": false,
+      "research_illumination_candidates": [
+        {
+          "sign": 588,
+          "reading": "WA'",
+          "english": "to set up",
+          "graph": "588st",
+          "similarity": 0.8598732352256775,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 529,
+          "reading": "WITZ",
+          "english": "hill | mountain | woods",
+          "graph": "529hp",
+          "similarity": 0.8570032715797424,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1520,
+          "reading": "YOPAAT",
+          "english": "Yopaat (name of deity)",
+          "graph": "1520bv",
+          "similarity": 0.8521625995635986,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1599,
+          "reading": "KALOOM",
+          "english": "opener",
+          "graph": "1599st",
+          "similarity": 0.8520651459693909,
+          "identical_normalized_drawing": false
+        },
+        {
+          "sign": 1030,
+          "reading": "K'AWIIL",
+          "english": "K'awiil (deity)",
+          "graph": "1030bh",
+          "similarity": 0.8495330810546875,
+          "identical_normalized_drawing": false
+        }
+      ],
+      "research_illumination_dense_panel_guard": false,
+      "research_illumination_top1_contains_source_reading": false,
+      "research_illumination_top5_contains_source_reading": false,
+      "region_proposal_count": 0,
+      "region_proposals": [],
+      "region_ground_truth_available": false
+    }
+  ],
+  "snapshot_note": "Only binary mask previews omitted; input provenance and complete production/control candidates retained. No photographs are embedded."
+}

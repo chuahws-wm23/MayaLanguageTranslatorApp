@@ -1,0 +1,5 @@
+# CPU-only export and reproducible development retrieval diagnostics.
+numpy==2.5.5
+onnxruntime==1.32.0
+scikit-learn==1.8.0
+Pillow==13.0.0

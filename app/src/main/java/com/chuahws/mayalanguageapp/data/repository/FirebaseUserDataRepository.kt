@@ -1,0 +1,254 @@
+package com.chuahws.mayalanguageapp.data.repository
+
+import com.chuahws.mayalanguageapp.domain.model.FeedbackItem
+import com.chuahws.mayalanguageapp.domain.model.InputType
+import com.chuahws.mayalanguageapp.domain.model.SavedVocabularyItem
+import com.chuahws.mayalanguageapp.domain.model.TranslationRecord
+import com.chuahws.mayalanguageapp.domain.model.UsageAnalytics
+import com.chuahws.mayalanguageapp.domain.repository.UserDataRepository
+import com.google.firebase.firestore.AggregateSource
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import android.util.Log
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.tasks.await
+
+class FirebaseUserDataRepository(
+    private val firestore: FirebaseFirestore =
+        FirebaseFirestore.getInstance(),
+) : UserDataRepository {
+
+    override suspend fun recordTranslation(record: TranslationRecord) {
+        firestore.collection("translations")
+            .document(record.translationId)
+            .set(record)
+            .await()
+
+        val analytics = mutableMapOf<String, Any>(
+            "userId" to record.userId,
+            "totalTranslations" to FieldValue.increment(1),
+            "lastUpdatedMillis" to record.createdAtMillis,
+        )
+
+        when (record.inputType) {
+            InputType.IMAGE.name ->
+                analytics["imageTranslations"] =
+                    FieldValue.increment(1)
+
+            InputType.VOICE.name ->
+                analytics["voiceTranslations"] =
+                    FieldValue.increment(1)
+
+            else ->
+                analytics["textTranslations"] =
+                    FieldValue.increment(1)
+        }
+
+        runCatching {
+            firestore.collection("analytics")
+                .document(record.userId)
+                .set(analytics, SetOptions.merge())
+                .await()
+        }.onFailure { error ->
+            // History is already stored at this point. Analytics is
+            // intentionally best-effort so an analytics outage never
+            // removes or hides a successful translation/history record.
+            Log.w(
+                "MayaTranslate",
+                "Could not update usage analytics.",
+                error,
+            )
+        }
+    }
+
+    override suspend fun getHistory(
+        userId: String,
+        limit: Int,
+    ): List<TranslationRecord> =
+        firestore.collection("translations")
+            .whereEqualTo("userId", userId)
+            .get()
+            .await()
+            .documents
+            .mapNotNull {
+                it.toObject(TranslationRecord::class.java)
+            }
+            .sortedByDescending { it.createdAtMillis }
+            .take(limit)
+
+    override suspend fun getAllHistory(
+        limit: Int,
+    ): List<TranslationRecord> =
+        firestore.collection("translations")
+            .orderBy(
+                "createdAtMillis",
+                Query.Direction.DESCENDING,
+            )
+            .limit(limit.toLong())
+            .get()
+            .await()
+            .documents
+            .mapNotNull {
+                it.toObject(
+                    TranslationRecord::class.java
+                )
+            }
+
+    override suspend fun deleteTranslation(
+        translationId: String,
+        userId: String,
+    ) {
+        val ref = firestore.collection("translations")
+            .document(translationId)
+
+        val record = ref.get()
+            .await()
+            .toObject(TranslationRecord::class.java)
+
+        require(record?.userId == userId) {
+            "This translation does not belong to the current user."
+        }
+
+        ref.delete().await()
+    }
+
+    override suspend fun saveVocabulary(item: SavedVocabularyItem) {
+        firestore.collection("savedVocabulary")
+            .document(item.savedId)
+            .set(item)
+            .await()
+
+        runCatching {
+            firestore.collection("analytics")
+                .document(item.userId)
+                .set(
+                    mapOf(
+                        "userId" to item.userId,
+                        "savedWords" to FieldValue.increment(1),
+                        "lastUpdatedMillis" to item.savedAtMillis,
+                    ),
+                    SetOptions.merge(),
+                )
+                .await()
+        }.onFailure { error ->
+            // The favourite has already been saved successfully. A failed
+            // analytics increment must not cause the UI to report that it
+            // was not saved and accidentally double-increment on retry.
+            Log.w("MayaTranslate", "Could not update saved-item analytics.", error)
+        }
+    }
+
+    override suspend fun removeSavedVocabulary(savedId: String) {
+        val ref = firestore.collection("savedVocabulary")
+            .document(savedId)
+
+        val item = ref.get()
+            .await()
+            .toObject(SavedVocabularyItem::class.java)
+
+        ref.delete().await()
+
+        if (item != null) {
+            runCatching {
+                firestore.collection("analytics")
+                    .document(item.userId)
+                    .set(
+                        mapOf(
+                            "userId" to item.userId,
+                            "savedWords" to FieldValue.increment(-1),
+                            "lastUpdatedMillis" to
+                                System.currentTimeMillis(),
+                        ),
+                        SetOptions.merge(),
+                    )
+                    .await()
+            }.onFailure { error ->
+                Log.w("MayaTranslate", "Could not update removal analytics.", error)
+            }
+        }
+    }
+
+    override suspend fun getSavedVocabulary(
+        userId: String
+    ): List<SavedVocabularyItem> =
+        firestore.collection("savedVocabulary")
+            .whereEqualTo("userId", userId)
+            .get()
+            .await()
+            .documents
+            .mapNotNull {
+                it.toObject(SavedVocabularyItem::class.java)
+            }
+            .sortedByDescending { it.savedAtMillis }
+
+    override suspend fun submitFeedback(item: FeedbackItem) {
+        firestore.collection("feedback")
+            .document(item.feedbackId)
+            .set(item)
+            .await()
+    }
+
+    override suspend fun getFeedback(
+        userId: String,
+    ): List<FeedbackItem> =
+        firestore.collection("feedback")
+            .whereEqualTo("userId", userId)
+            .get()
+            .await()
+            .documents
+            .mapNotNull {
+                it.toObject(FeedbackItem::class.java)
+            }
+            .sortedByDescending { it.submittedAtMillis }
+
+    override suspend fun getAnalytics(userId: String): UsageAnalytics = coroutineScope {
+        // Server counts reflect actual documents, including deletion and repeated saves.
+        // Aggregations avoid downloading every stored photo just to calculate totals.
+        val records = firestore.collection("translations").whereEqualTo("userId", userId)
+        val total = async { records.count().get(AggregateSource.SERVER).await().count }
+        val text = async { records.whereEqualTo("inputType", InputType.TEXT.name).count().get(AggregateSource.SERVER).await().count }
+        val image = async { records.whereEqualTo("inputType", InputType.IMAGE.name).count().get(AggregateSource.SERVER).await().count }
+        val voice = async { records.whereEqualTo("inputType", InputType.VOICE.name).count().get(AggregateSource.SERVER).await().count }
+        val saved = async { firestore.collection("savedVocabulary").whereEqualTo("userId", userId).count().get(AggregateSource.SERVER).await().count }
+        UsageAnalytics(userId = userId, totalTranslations = total.await(), textTranslations = text.await(),
+            imageTranslations = image.await(), voiceTranslations = voice.await(), savedWords = saved.await())
+    }
+
+    override suspend fun getAllAnalytics(): List<UsageAnalytics> =
+        firestore.collection("analytics")
+            .get()
+            .await()
+            .documents
+            .mapNotNull {
+                it.toObject(UsageAnalytics::class.java)
+            }
+
+    override suspend fun getAllFeedback(): List<FeedbackItem> =
+        firestore.collection("feedback")
+            .get()
+            .await()
+            .documents
+            .mapNotNull {
+                it.toObject(FeedbackItem::class.java)
+            }
+            .sortedByDescending { it.submittedAtMillis }
+
+    override suspend fun updateFeedbackStatus(
+        feedbackId: String,
+        status: String,
+        reviewedAtMillis: Long,
+    ) {
+        firestore.collection("feedback")
+            .document(feedbackId)
+            .update(
+                mapOf(
+                    "status" to status,
+                    "reviewedAtMillis" to reviewedAtMillis,
+                )
+            )
+            .await()
+    }
+}

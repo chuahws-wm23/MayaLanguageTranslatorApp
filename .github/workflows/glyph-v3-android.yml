@@ -1,0 +1,58 @@
+name: Validate Maya glyph v3 Android unknown screening
+on:
+  push:
+    branches: [glyph-v3-android-integration]
+    paths:
+      - 'app/**'
+      - '.github/workflows/glyph-v3-android.yml'
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: glyph-v3-android-integration
+          fetch-depth: 0
+      - name: Import validated compact v3 gallery from research experiment
+        run: |
+          git fetch origin glyph-v3-open-set-experiment
+          git show "origin/glyph-v3-open-set-experiment:ml/glyph_v3/outputs/maya_gallery_v3.bin" > app/src/main/assets/maya_gallery_v3.bin
+          git show "origin/glyph-v3-open-set-experiment:ml/glyph_v3/outputs/metadata.json" > /tmp/maya_v3_metadata.json
+          python - <<'PY'
+          from pathlib import Path
+          import json, hashlib
+          meta=json.loads(Path('/tmp/maya_v3_metadata.json').read_text())
+          gallery=Path('app/src/main/assets/maya_gallery_v3.bin').read_bytes()
+          assert len(gallery)==8+meta['num_reference_originals']+4*meta['num_reference_originals']*meta['embedding_dim']
+          assert hashlib.sha256(gallery).hexdigest()==meta['gallery_sha256']
+          assert meta['threshold_min_similarity']==0.89
+          assert meta['threshold_min_margin']==0.05
+          print('Verified v3 gallery:',len(gallery),'bytes')
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Compile Android APK and all JVM tests (including v3 screening)
+        run: gradle testDebugUnitTest assembleDebug --stacktrace
+      - name: Upload debug APK for device smoke test
+        uses: actions/upload-artifact@v4
+        with:
+          name: MayaGlyphV3ExperimentalDebugAPK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+      - name: Commit integrity-checked v3 screening gallery after passing
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f app/src/main/assets/maya_gallery_v3.bin
+          if ! git diff --cached --quiet; then
+            git commit -m 'Bundle verified v3 reference gallery after Android checks'
+            git push origin HEAD:glyph-v3-android-integration
+          fi
